@@ -161,6 +161,7 @@ export const TINYSTEPS: ProductConfig = {
     vi: {
       iphone: [
         {
+          // sc1: Home / Growth Dashboard
           id: "hero",
           copy: {
             label: "THEO DÕI BÉ LỚN",
@@ -170,31 +171,54 @@ export const TINYSTEPS: ProductConfig = {
           Component: TinyStepsViSlide1,
         },
         {
-          id: "milestones",
-          copy: {
-            label: "CỘT MỐC PHÁT TRIỂN",
-            headline: <>Đừng bỏ lỡ<br /><span style={{ color: T.accent }}>khoảnh khắc nào.</span></>,
-            subtitle: <>Theo dõi 42+ cột mốc từ<br />0–12 tháng, theo từng giai đoạn.</>,
-          },
-          Component: TinyStepsViSlide2,
-        },
-        {
-          id: "vaccinations",
-          copy: {
-            label: "LỊCH TIÊM CHỦNG",
-            headline: <>Đúng lịch.<br /><span style={{ color: T.accent }}>An tâm.</span></>,
-            subtitle: <>Theo dõi từng mũi tiêm,<br />không bao giờ quên lịch hẹn.</>,
-          },
-          Component: TinyStepsViSlide3,
-        },
-        {
+          // sc2: Journal (photo timeline)
           id: "journal",
           copy: {
             label: "NHẬT KÝ BÉ YÊU",
             headline: <>Kỷ niệm<br /><span style={{ color: T.accent }}>đáng giữ.</span></>,
             subtitle: <>Dòng thời gian xinh đẹp ghi lại<br />những khoảnh khắc quý giá nhất.</>,
           },
+          Component: TinyStepsViSlide2,
+        },
+        {
+          // sc3: AI Chat
+          id: "ai-chat",
+          copy: {
+            label: "TRỢ LÝ AI CHO BỐ MẸ",
+            headline: <>Hỏi gì<br /><span style={{ color: T.accent }}>cũng được.</span></>,
+            subtitle: <>AI phân tích sự phát triển và<br />tăng trưởng của bé cho bạn.</>,
+          },
+          Component: TinyStepsViSlide3,
+        },
+        {
+          // sc4: Settings (bilingual / customisation)
+          id: "settings",
+          copy: {
+            label: "TUỲ CHỈNH THEO Ý BẠN",
+            headline: <>Cài đặt<br /><span style={{ color: T.accent }}>theo sở thích.</span></>,
+            subtitle: <>Chọn ngôn ngữ, đơn vị đo lường,<br />và thông báo phù hợp với gia đình bạn.</>,
+          },
           Component: TinyStepsViSlide4,
+        },
+        {
+          // sc5: Developmental Milestones
+          id: "milestones",
+          copy: {
+            label: "CỘT MỐC PHÁT TRIỂN",
+            headline: <>Đừng bỏ lỡ<br /><span style={{ color: T.accent }}>khoảnh khắc nào.</span></>,
+            subtitle: <>Theo dõi 42+ cột mốc từ<br />0–24 tháng, theo từng giai đoạn.</>,
+          },
+          Component: TinyStepsViSlide5,
+        },
+        {
+          // sc6: Vaccinations
+          id: "vaccinations",
+          copy: {
+            label: "LỊCH TIÊM CHỦNG",
+            headline: <>Đúng lịch.<br /><span style={{ color: T.accent }}>An tâm.</span></>,
+            subtitle: <>Theo dõi từng mũi tiêm,<br />không bao giờ quên lịch hẹn.</>,
+          },
+          Component: TinyStepsViSlide6,
         },
       ],
     },

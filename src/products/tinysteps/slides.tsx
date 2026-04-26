@@ -161,9 +161,10 @@ export function TinyStepsSlide6({ theme: T, base, copy }: SlideProps) {
   );
 }
 
-/* ── Vi Slides (separate screenshots, sc1–4) ─────────── */
+/* ── Vi Slides (vi/sc1–6, each screen differs from en) ──── */
 
 export function TinyStepsViSlide1({ theme: T, base, copy }: SlideProps) {
+  // sc1: Home / Growth Dashboard
   return (
     <CenteredSlide
       theme={T} base={base}
@@ -180,56 +181,14 @@ export function TinyStepsViSlide1({ theme: T, base, copy }: SlideProps) {
       label={copy.label}
       headline={copy.headline}
       subtitle={copy.subtitle}
-      screenshot="sc1.png" alt="Home"
+      screenshot="sc1.png" alt="Trang chủ"
       captionMt={0.04}
     />
   );
 }
 
 export function TinyStepsViSlide2({ theme: T, base, copy }: SlideProps) {
-  return (
-    <CenteredSlide
-      theme={T} base={base}
-      gradient={T.gradients.warm}
-      orbs={[
-        { size: 800, top: "5%", left: "50%", color: "rgba(107,142,104,0.14)" },
-        { size: 500, bottom: "-10%", left: "-20%", color: "rgba(107,142,104,0.08)" },
-      ]}
-      decoration={<DotGrid color="rgba(107,142,104,0.05)" gap="48px" />}
-      label={copy.label}
-      headline={copy.headline}
-      subtitle={copy.subtitle}
-      screenshot="sc2.png" alt="Milestones"
-      captionMt={0.05}
-      subtitleMaxW={0.78}
-      phoneWidth="86%" phoneTy="12%"
-      fadeH="6%"
-    />
-  );
-}
-
-export function TinyStepsViSlide3({ theme: T, base, copy }: SlideProps) {
-  return (
-    <CenteredSlide
-      theme={T} base={base}
-      gradient={T.gradients.accent}
-      orbs={[
-        { size: 900, top: "-10%", right: "-25%", color: "rgba(107,142,104,0.20)" },
-        { size: 500, top: "45%", left: "-15%", color: "rgba(107,142,104,0.10)" },
-      ]}
-      decoration={<Rings sizes={[700, 900, 1100]} color="rgba(107,142,104,0.07)" />}
-      label={copy.label}
-      headline={copy.headline}
-      subtitle={copy.subtitle}
-      screenshot="sc3.png" alt="Vaccinations"
-      captionMt={0.05}
-      subtitleMaxW={0.7}
-      phoneTy="5%"
-    />
-  );
-}
-
-export function TinyStepsViSlide4({ theme: T, base, copy }: SlideProps) {
+  // sc2: Journal (photo timeline)
   return (
     <CenteredSlide
       theme={T} base={base}
@@ -241,7 +200,7 @@ export function TinyStepsViSlide4({ theme: T, base, copy }: SlideProps) {
       label={copy.label}
       headline={copy.headline}
       subtitle={copy.subtitle}
-      screenshot="sc4.png" alt="Journal"
+      screenshot="sc2.png" alt="Nhật ký"
       captionMt={0.05}
       subtitleMaxW={0.78}
       phoneWidth="86%" phoneTy="6%"
@@ -250,7 +209,8 @@ export function TinyStepsViSlide4({ theme: T, base, copy }: SlideProps) {
   );
 }
 
-export function TinyStepsViSlide5({ theme: T, base, copy }: SlideProps) {
+export function TinyStepsViSlide3({ theme: T, base, copy }: SlideProps) {
+  // sc3: AI Chat
   const { W } = dims("iphone");
   return (
     <CenteredSlide
@@ -267,7 +227,7 @@ export function TinyStepsViSlide5({ theme: T, base, copy }: SlideProps) {
       label={copy.label}
       headline={copy.headline}
       subtitle={copy.subtitle}
-      screenshot="sc5.png" alt="AI Chat"
+      screenshot="sc3.png" alt="Chat và hỏi AI"
       captionMt={0.05}
       subtitleMaxW={0.78}
       phoneWidth="82%" phoneTy="0%"
@@ -277,24 +237,69 @@ export function TinyStepsViSlide5({ theme: T, base, copy }: SlideProps) {
   );
 }
 
-export function TinyStepsViSlide6({ theme: T, base, copy }: SlideProps) {
+export function TinyStepsViSlide4({ theme: T, base, copy }: SlideProps) {
+  // sc4: Settings
   return (
     <CenteredSlide
       theme={T} base={base}
-      gradient={T.gradients.deep}
+      gradient={T.gradients.accent}
       orbs={[
-        { size: 700, top: "40%", left: "-10%", color: "rgba(107,142,104,0.15)" },
-        { size: 600, top: "-20%", right: "-10%", color: "rgba(107,142,104,0.10)" },
+        { size: 900, top: "-10%", right: "-25%", color: "rgba(107,142,104,0.20)" },
+        { size: 500, top: "45%", left: "-15%", color: "rgba(107,142,104,0.10)" },
       ]}
-      decoration={<GridPattern opacity={0.025} />}
+      decoration={<Rings sizes={[700, 900, 1100]} color="rgba(107,142,104,0.07)" />}
       label={copy.label}
       headline={copy.headline}
       subtitle={copy.subtitle}
-      screenshot="sc6.png" alt="Growth Tracking"
+      screenshot="sc4.png" alt="Cài đặt"
       captionMt={0.05}
-      subtitleMaxW={0.8}
-      phoneWidth="86%" phoneTy="6%"
-      fadeH="10%"
+      subtitleMaxW={0.75}
+      phoneTy="5%"
+    />
+  );
+}
+
+export function TinyStepsViSlide5({ theme: T, base, copy }: SlideProps) {
+  // sc5: Developmental Milestones
+  return (
+    <CenteredSlide
+      theme={T} base={base}
+      gradient={T.gradients.warm}
+      orbs={[
+        { size: 800, top: "5%", left: "50%", color: "rgba(107,142,104,0.14)" },
+        { size: 500, bottom: "-10%", left: "-20%", color: "rgba(107,142,104,0.08)" },
+      ]}
+      decoration={<DotGrid color="rgba(107,142,104,0.05)" gap="48px" />}
+      label={copy.label}
+      headline={copy.headline}
+      subtitle={copy.subtitle}
+      screenshot="sc5.png" alt="Cột mốc phát triển"
+      captionMt={0.05}
+      subtitleMaxW={0.78}
+      phoneWidth="86%" phoneTy="12%"
+      fadeH="6%"
+    />
+  );
+}
+
+export function TinyStepsViSlide6({ theme: T, base, copy }: SlideProps) {
+  // sc6: Vaccinations
+  return (
+    <CenteredSlide
+      theme={T} base={base}
+      gradient={T.gradients.accent}
+      orbs={[
+        { size: 900, top: "-10%", right: "-25%", color: "rgba(107,142,104,0.20)" },
+        { size: 500, top: "45%", left: "-15%", color: "rgba(107,142,104,0.10)" },
+      ]}
+      decoration={<Rings sizes={[700, 900, 1100]} color="rgba(107,142,104,0.07)" />}
+      label={copy.label}
+      headline={copy.headline}
+      subtitle={copy.subtitle}
+      screenshot="sc6.png" alt="Vắc-xin"
+      captionMt={0.05}
+      subtitleMaxW={0.7}
+      phoneTy="5%"
     />
   );
 }
