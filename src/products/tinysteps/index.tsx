@@ -3,6 +3,8 @@ import type { ProductConfig, ThemeTokens } from "@/lib/types";
 import {
   TinyStepsSlide1, TinyStepsSlide2, TinyStepsSlide3,
   TinyStepsSlide4, TinyStepsSlide5, TinyStepsSlide6, TinyStepsSlide7,
+  TinyStepsViSlide1, TinyStepsViSlide2, TinyStepsViSlide3, TinyStepsViSlide4,
+  TinyStepsViSlide5, TinyStepsViSlide6,
 } from "./slides";
 
 export const TINYSTEPS_THEME: ThemeTokens = {
@@ -29,7 +31,11 @@ export const TINYSTEPS: ProductConfig = {
   id: "tinysteps",
   name: "TinySteps: Baby Tracker",
   iconPath: "/products/tinysteps/icon.png",
-  screenshotBase: "/products/tinysteps/screenshots",
+  screenshotBase: "/products/tinysteps/screenshots/en",
+  screenshotBaseByLocale: {
+    en: "/products/tinysteps/screenshots/en",
+    vi: "/products/tinysteps/screenshots/vi",
+  },
   theme: TINYSTEPS_THEME,
   locales: [
     { code: "en", label: "English", flag: "🇺🇸" },
@@ -150,6 +156,48 @@ export const TINYSTEPS: ProductConfig = {
         Component: TinyStepsSlide7,
       },
     ],
+  },
+  slidesByLocale: {
+    vi: {
+      iphone: [
+        {
+          id: "hero",
+          copy: {
+            label: "THEO DÕI BÉ LỚN",
+            headline: <>Từng bước nhỏ.<br /><span style={{ color: T.accent }}>Đều đáng nhớ.</span></>,
+            subtitle: <>Theo dõi cân nặng, chiều cao,<br />và vòng đầu với biểu đồ trực quan.</>,
+          },
+          Component: TinyStepsViSlide1,
+        },
+        {
+          id: "milestones",
+          copy: {
+            label: "CỘT MỐC PHÁT TRIỂN",
+            headline: <>Đừng bỏ lỡ<br /><span style={{ color: T.accent }}>khoảnh khắc nào.</span></>,
+            subtitle: <>Theo dõi 42+ cột mốc từ<br />0–12 tháng, theo từng giai đoạn.</>,
+          },
+          Component: TinyStepsViSlide2,
+        },
+        {
+          id: "vaccinations",
+          copy: {
+            label: "LỊCH TIÊM CHỦNG",
+            headline: <>Đúng lịch.<br /><span style={{ color: T.accent }}>An tâm.</span></>,
+            subtitle: <>Theo dõi từng mũi tiêm,<br />không bao giờ quên lịch hẹn.</>,
+          },
+          Component: TinyStepsViSlide3,
+        },
+        {
+          id: "journal",
+          copy: {
+            label: "NHẬT KÝ BÉ YÊU",
+            headline: <>Kỷ niệm<br /><span style={{ color: T.accent }}>đáng giữ.</span></>,
+            subtitle: <>Dòng thời gian xinh đẹp ghi lại<br />những khoảnh khắc quý giá nhất.</>,
+          },
+          Component: TinyStepsViSlide4,
+        },
+      ],
+    },
   },
   featureGraphic: {
     tagline: "TinySteps: Baby Growth Tracker",

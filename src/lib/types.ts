@@ -68,6 +68,8 @@ export type ProductConfig = {
   name: string;
   iconPath: string;
   screenshotBase: string;
+  /** Per-locale screenshot base path overrides, e.g. { en: "/products/foo/screenshots/en", vi: "..." } */
+  screenshotBaseByLocale?: Record<string, string>;
   mockupPath?: string;
   theme: ThemeTokens;
   /**
@@ -81,6 +83,8 @@ export type ProductConfig = {
     iphone: SlideDef[];
     android?: SlideDef[];
   };
+  /** Per-locale slide overrides. Key is locale code. When present, replaces the default slides for that locale. */
+  slidesByLocale?: Record<string, { iphone: SlideDef[]; android?: SlideDef[] }>;
   /** Feature Graphic slide (1024×500 Google Play banner) */
   featureGraphic?: {
     tagline: string;

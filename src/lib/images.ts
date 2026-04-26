@@ -27,18 +27,19 @@ export function img(path: string): string {
 }
 
 export function getImagePathsForProduct(product: ProductConfig): string[] {
-  const base = product.screenshotBase;
-  const paths = [
+  const paths = new Set<string>([
     product.mockupPath ?? "/mockup.png",
     product.iconPath,
-    ...product.slides.iphone.map((_: unknown, i: number) => `${base}/sc${i + 1}.png`),
-  ];
-  if (product.slides.android) {
-    // Android uses the same screenshot files as iPhone for this product
-    product.slides.android.forEach((_: unknown, i: number) => {
-      const p = `${base}/sc${i + 1}.png`;
-      if (!paths.includes(p)) paths.push(p);
-    });
+  ]);
+
+  const bases = product.screenshotBaseByLocale
+    ? Object.values(product.screenshotBaseByLocale)
+    : [product.screenshotBase];
+
+  for (const base of bases) {
+    product.slides.iphone.forEach((_: unknown, i: number) => paths.add(`${base}/sc${i + 1}.png`));
+    product.slides.android?.forEach((_: unknown, i: number) => paths.add(`${base}/sc${i + 1}.png`));
   }
-  return paths;
+
+  return [...paths];
 }

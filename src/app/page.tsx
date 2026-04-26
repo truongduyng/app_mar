@@ -116,12 +116,14 @@ export default function ScreenshotsPage() {
   const product = PRODUCTS.find((p) => p.id === productId)!;
   const T = product.theme;
 
-  const hasAndroid = Boolean(product.slides.android?.length);
+  const activeSlides = product.slidesByLocale?.[locale] ?? product.slides;
+  const hasAndroid = Boolean(activeSlides.android?.length);
   const activeDevice = hasAndroid ? device : "iphone";
-  const slides = (activeDevice === "android" ? product.slides.android : product.slides.iphone) ?? [];
+  const slides = (activeDevice === "android" ? activeSlides.android : activeSlides.iphone) ?? [];
   const sizes = activeDevice === "android" ? ANDROID_SIZES : IPHONE_SIZES;
   const canvasW = activeDevice === "android" ? ANDROID_W : IPHONE_W;
   const canvasH = activeDevice === "android" ? ANDROID_H : IPHONE_H;
+  const screenshotBase = product.screenshotBaseByLocale?.[locale] ?? product.screenshotBase;
 
   // Preload images whenever the active product changes
   useEffect(() => {
@@ -413,7 +415,7 @@ export default function ScreenshotsPage() {
               device={activeDevice}
               selectedSize={selectedSize}
             >
-              <slide.Component theme={T} base={product.screenshotBase} copy={copy} />
+              <slide.Component theme={T} base={screenshotBase} copy={copy} />
             </ScreenshotPreview>
           );
         })}
@@ -428,7 +430,7 @@ export default function ScreenshotsPage() {
               key={`export-${product.id}-${activeDevice}-${slide.id}-${locale}`}
               style={{ width: canvasW, height: canvasH, position: "absolute", left: -9999, fontFamily: "inherit" }}
             >
-              <slide.Component theme={T} base={product.screenshotBase} copy={copy} />
+              <slide.Component theme={T} base={screenshotBase} copy={copy} />
             </div>
           );
         })}
