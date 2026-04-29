@@ -317,11 +317,12 @@ export function CtaImage({
           style={{
             background: T.accent,
             borderRadius: 100,
-            padding: `${ctaH * 0.01}px ${CTA_W * 0.08}px`,
+            padding: `${ctaH * 0.01}px ${CTA_W * 0.1}px`,
             fontSize: CTA_W * 0.03,
             fontWeight: 700,
             color: T.bg,
             letterSpacing: "-0.01em",
+            whiteSpace: "nowrap",
             boxShadow: `0 4px 20px ${hexToRgba(T.accent, 0.4)}`,
           }}
         >

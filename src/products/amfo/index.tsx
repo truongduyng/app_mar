@@ -78,7 +78,7 @@ export const AMFO: ProductConfig = {
     ],
   },
   ctaImage: {
-    headline: "find your focus",
+    headline: "drown out the world, dial into focus",
     sc1: "sc_amfo2.png",
     sc2: "sc_amfo3.png",
     ctaLabel: "↑ link in bio",

@@ -8,7 +8,7 @@ import {
   OG_W, OG_H,
 } from "@/lib/constants";
 import { preloadImages, getImagePathsForProduct, img } from "@/lib/images";
-import { exportSingle, exportAllToZip } from "@/lib/export";
+import { exportSingle, exportAllToZip, exportCtaImage } from "@/lib/export";
 import { ScreenshotPreview } from "@/components/ui";
 import { FeatureGraphic } from "@/components/feature-graphic";
 import { SocialOgImage } from "@/components/social-og";
@@ -653,7 +653,7 @@ export default function ScreenshotsPage() {
               <button
                 onClick={async () => {
                   if (!ctaOffscreenRef.current) return;
-                  await exportSingle(ctaOffscreenRef.current, 0, "cta", { label: "CTA", w: CTA_W, h: ctaH }, product.id, PRODUCTS.length > 1, "social-og");
+                  await exportCtaImage(ctaOffscreenRef.current, CTA_W, ctaH, `${product.id}-cta-${CTA_W}x${ctaH}.png`);
                 }}
                 style={{
                   display: "flex", alignItems: "center", gap: 5,
@@ -699,7 +699,7 @@ export default function ScreenshotsPage() {
       </div>
 
       {/* Offscreen export for CTA Image */}
-      <div ref={ctaOffscreenRef} style={{ position: "absolute", left: -9999, top: 0, fontFamily: "inherit" }}>
+      <div ref={ctaOffscreenRef} style={{ position: "absolute", top: 0, fontFamily: "inherit", pointerEvents: "none" }}>
         <div style={{ width: CTA_W, height: ctaH, position: "absolute", left: -9999, fontFamily: "inherit" }}>
           <CtaImage
             theme={T}

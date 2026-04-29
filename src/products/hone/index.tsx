@@ -96,7 +96,7 @@ export const HONE: ProductConfig = {
     ],
   },
   ctaImage: {
-    headline: "everything you need to start",
+    headline: "Small habits repeated = Big change",
     sc1: "sc_hone1.png",
     sc2: "sc_hone2.png",
     ctaLabel: "↑ link in bio",

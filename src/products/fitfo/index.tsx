@@ -111,7 +111,7 @@ export const FITFO: ProductConfig = {
     ],
   },
   ctaImage: {
-    headline: "everything you need to start",
+    headline: "train. track. transform",
     sc1: "sc1.png",
     sc2: "sc2.png",
     ctaLabel: "↑ link in bio",

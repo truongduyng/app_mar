@@ -224,7 +224,7 @@ export const TINYSTEPS: ProductConfig = {
     },
   },
   ctaImage: {
-    headline: "every milestone captured",
+    headline: "track your baby's growth, milestones, and vaccinations",
     sc1: "sc1.png",
     sc2: "sc2.png",
     ctaLabel: "↑ link in bio",

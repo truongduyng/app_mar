@@ -268,7 +268,7 @@ export const LICHTA: ProductConfig = {
     ],
   },
   ctaImage: {
-    headline: "everything you need to start",
+    headline: "Lịch Âm & Tử Vi trong tầm tay",
     sc1: "sc1.png",
     sc2: "sc2.png",
     ctaLabel: "↑ link in bio",

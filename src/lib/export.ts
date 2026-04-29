@@ -73,6 +73,31 @@ export async function exportSingle(
   }
 }
 
+/* ── CTA image export (1080×1080 or 1080×1350) ────────────── */
+export async function exportCtaImage(
+  container: HTMLElement,
+  w: number,
+  h: number,
+  filename: string,
+) {
+  const el = container.children[0] as HTMLElement;
+  if (!el) return;
+
+  el.style.left = "0px";
+  el.style.opacity = "1";
+  el.style.zIndex = "-1";
+
+  const opts = { width: w, height: h, pixelRatio: 1, cacheBust: true };
+  await toPng(el, opts);
+  const dataUrl = await toPng(el, opts);
+
+  el.style.left = "-9999px";
+  el.style.opacity = "";
+  el.style.zIndex = "";
+
+  downloadDataUrl(dataUrl, filename);
+}
+
 /* ── Batch ZIP export ──────────────────────────────────────── */
 export type ZipExportOptions = {
   container: HTMLElement;
