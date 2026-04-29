@@ -118,10 +118,31 @@ export default function ScreenshotsPage() {
   const product = PRODUCTS.find((p) => p.id === productId)!;
   const T = product.theme;
 
-  // CTA screenshot selectors + ratio
-  const [ctaSc1, setCtaSc1] = useState<string>(() => PRODUCTS[0].ctaImage?.sc1 ?? "sc1.png");
-  const [ctaSc2, setCtaSc2] = useState<string>(() => PRODUCTS[0].ctaImage?.sc2 ?? "sc2.png");
-  const [ctaRatio, setCtaRatio] = useState<CtaRatio>("1:1");
+  // CTA screenshot selectors — persisted per product in localStorage
+  const [ctaScMap, setCtaScMap] = useState<Record<string, { sc1: string; sc2: string }>>(() => {
+    const defaults: Record<string, { sc1: string; sc2: string }> = {};
+    for (const p of PRODUCTS) {
+      if (p.ctaImage) defaults[p.id] = { sc1: p.ctaImage.sc1, sc2: p.ctaImage.sc2 };
+    }
+    try {
+      const saved = typeof window !== "undefined" ? localStorage.getItem("ctaScMap") : null;
+      if (saved) return { ...defaults, ...JSON.parse(saved) };
+    } catch { /* ignore */ }
+    return defaults;
+  });
+  const ctaSc1 = ctaScMap[product.id]?.sc1 ?? product.ctaImage?.sc1 ?? "sc1.png";
+  const ctaSc2 = ctaScMap[product.id]?.sc2 ?? product.ctaImage?.sc2 ?? "sc2.png";
+  const setCtaSc1 = (v: string) => setCtaScMap((m) => {
+    const next = { ...m, [product.id]: { ...m[product.id], sc1: v } };
+    localStorage.setItem("ctaScMap", JSON.stringify(next));
+    return next;
+  });
+  const setCtaSc2 = (v: string) => setCtaScMap((m) => {
+    const next = { ...m, [product.id]: { ...m[product.id], sc2: v } };
+    localStorage.setItem("ctaScMap", JSON.stringify(next));
+    return next;
+  });
+  const [ctaRatio, setCtaRatio] = useState<CtaRatio>("4:5");
   const ctaH = ctaRatio === "4:5" ? CTA_H_4x5 : CTA_H_1x1;
 
   const activeSlides = product.slidesByLocale?.[locale] ?? product.slides;
@@ -148,10 +169,6 @@ export default function ScreenshotsPage() {
     const locales = getProductLocales(product);
     if (!locales.find((l) => l.code === locale)) {
       setLocale(locales[0].code);
-    }
-    if (product.ctaImage) {
-      setCtaSc1(product.ctaImage.sc1);
-      setCtaSc2(product.ctaImage.sc2);
     }
   }, [productId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -230,7 +247,7 @@ export default function ScreenshotsPage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#09090B", color: T.fg, fontFamily: "inherit", overflowX: "hidden" }}>
+    <div style={{ minHeight: "100vh", background: "#09090B", color: T.fg, fontFamily: "inherit" }}>
 
       {/* ── Toolbar ───────────────────────────────────────── */}
       <div
@@ -688,10 +705,10 @@ export default function ScreenshotsPage() {
               screenshotBase={product.screenshotBase}
               sc1={ctaSc1}
               sc2={ctaSc2}
-              headline={product.ctaImage?.headline ?? product.name}
+              headline={product.ctaImage?.headlineByLocale?.[locale] ?? product.ctaImage?.headline ?? product.name}
               productName={product.name}
-              subheadline={product.metadata?.subtitle}
-              ctaLabel={product.ctaImage?.ctaLabel}
+              subheadline={product.metadataByLocale?.[locale]?.subtitle ?? product.metadata?.subtitle}
+              ctaLabel={product.ctaImage?.ctaLabelByLocale?.[locale] ?? product.ctaImage?.ctaLabel}
               ratio={ctaRatio}
             />
           </div>
@@ -707,10 +724,10 @@ export default function ScreenshotsPage() {
             screenshotBase={product.screenshotBase}
             sc1={ctaSc1}
             sc2={ctaSc2}
-            headline={product.ctaImage?.headline ?? product.name}
+            headline={product.ctaImage?.headlineByLocale?.[locale] ?? product.ctaImage?.headline ?? product.name}
             productName={product.name}
-            subheadline={product.metadata?.subtitle}
-            ctaLabel={product.ctaImage?.ctaLabel}
+            subheadline={product.metadataByLocale?.[locale]?.subtitle ?? product.metadata?.subtitle}
+            ctaLabel={product.ctaImage?.ctaLabelByLocale?.[locale] ?? product.ctaImage?.ctaLabel}
             ratio={ctaRatio}
           />
         </div>

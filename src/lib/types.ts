@@ -98,10 +98,12 @@ export type ProductConfig = {
   /** CTA image (1080×1080 square for social) */
   ctaImage?: {
     headline: string;
+    headlineByLocale?: Record<string, string>;
     /** Filename within screenshotBase, e.g. "sc1.png" or "sc_hone1.png" */
     sc1: string;
     sc2: string;
     ctaLabel?: string;
+    ctaLabelByLocale?: Record<string, string>;
   };
   /** Store metadata defaults (primary / first locale) */
   metadata?: MetadataConfig;

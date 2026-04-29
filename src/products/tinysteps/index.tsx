@@ -225,6 +225,9 @@ export const TINYSTEPS: ProductConfig = {
   },
   ctaImage: {
     headline: "track your baby's growth, milestones, and vaccinations",
+    headlineByLocale: {
+      vi: "theo dõi sự phát triển, cột mốc và lịch tiêm chủng của bé",
+    },
     sc1: "sc1.png",
     sc2: "sc2.png",
     ctaLabel: "↑ link in bio",
