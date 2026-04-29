@@ -223,6 +223,12 @@ export const TINYSTEPS: ProductConfig = {
       ],
     },
   },
+  ctaImage: {
+    headline: "every milestone captured",
+    sc1: "sc1.png",
+    sc2: "sc2.png",
+    ctaLabel: "↑ link in bio",
+  },
   featureGraphic: {
     tagline: "TinySteps: Baby Growth Tracker",
     subtitle: "Track milestones, vaccinations, and growth — all in one place.",

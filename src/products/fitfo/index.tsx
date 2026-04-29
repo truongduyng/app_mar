@@ -110,6 +110,12 @@ export const FITFO: ProductConfig = {
       },
     ],
   },
+  ctaImage: {
+    headline: "everything you need to start",
+    sc1: "sc1.png",
+    sc2: "sc2.png",
+    ctaLabel: "↑ link in bio",
+  },
   featureGraphic: {
     tagline: "FitFo Workout AI Planner & Log",
     subtitle: "Workouts, nutrition, progress photos, and a personal Fit Score — all in one place.",
@@ -120,7 +126,7 @@ export const FITFO: ProductConfig = {
   },
   metadata: {
     name: "FitFo Workout AI Planner & Log",
-    subtitle: "Gym & Nutrition with AI coach",
+    subtitle: "Workout Plan & Nutrition with AI coach",
     promoText: "AI-generated workout plans and macro tracking built around your body type and goals.",
     shortDescription: "AI fitness tracker with workouts, nutrition, progress photos, and Fit Score.",
     keywords: "fitness tracker,workout planner,macro tracker,AI workout,calorie tracker,strength training",

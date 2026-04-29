@@ -95,6 +95,14 @@ export type ProductConfig = {
     tagline: string;
     subtitle?: string;
   };
+  /** CTA image (1080×1080 square for social) */
+  ctaImage?: {
+    headline: string;
+    /** Filename within screenshotBase, e.g. "sc1.png" or "sc_hone1.png" */
+    sc1: string;
+    sc2: string;
+    ctaLabel?: string;
+  };
   /** Store metadata defaults (primary / first locale) */
   metadata?: MetadataConfig;
   /** Per-locale metadata overrides. Key is locale code (e.g. "vi", "de") */

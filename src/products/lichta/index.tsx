@@ -267,6 +267,12 @@ export const LICHTA: ProductConfig = {
       },
     ],
   },
+  ctaImage: {
+    headline: "everything you need to start",
+    sc1: "sc1.png",
+    sc2: "sc2.png",
+    ctaLabel: "↑ link in bio",
+  },
   featureGraphic: {
     tagline: "Lịch Ta",
     subtitle: "Lịch âm, Can Chi, Tiết Khí - tất cả ở một chỗ.",

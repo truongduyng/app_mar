@@ -77,6 +77,12 @@ export const AMFO: ProductConfig = {
       },
     ],
   },
+  ctaImage: {
+    headline: "find your focus",
+    sc1: "sc_amfo2.png",
+    sc2: "sc_amfo3.png",
+    ctaLabel: "↑ link in bio",
+  },
   featureGraphic: {
     tagline: "Amfo: Ambient Focus Sounds",
     subtitle: "50+ ambient sounds for focus, sleep, and flow.",

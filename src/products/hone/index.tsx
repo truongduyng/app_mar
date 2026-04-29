@@ -95,6 +95,12 @@ export const HONE: ProductConfig = {
       },
     ],
   },
+  ctaImage: {
+    headline: "everything you need to start",
+    sc1: "sc_hone1.png",
+    sc2: "sc_hone2.png",
+    ctaLabel: "↑ link in bio",
+  },
   featureGraphic: {
     tagline: "Refine your life daily with HONE",
     subtitle: "Sharpen your edge. Every day.",

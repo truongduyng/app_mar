@@ -12,6 +12,7 @@ import { exportSingle, exportAllToZip } from "@/lib/export";
 import { ScreenshotPreview } from "@/components/ui";
 import { FeatureGraphic } from "@/components/feature-graphic";
 import { SocialOgImage } from "@/components/social-og";
+import { CtaImage, CTA_W, CTA_H_1x1, CTA_H_4x5, type CtaRatio } from "@/components/cta-image";
 import { MetadataPanel } from "@/components/metadata-panel";
 import { PRODUCTS } from "@/products";
 import type { MetadataConfig, LocaleDef } from "@/lib/types";
@@ -93,6 +94,7 @@ export default function ScreenshotsPage() {
   const ssOffscreenRef = useRef<HTMLDivElement>(null);
   const fgOffscreenRef = useRef<HTMLDivElement>(null);
   const ogOffscreenRef = useRef<HTMLDivElement>(null);
+  const ctaOffscreenRef = useRef<HTMLDivElement>(null);
 
   const [selectedSize, setSelectedSize] = useState(0);
   const [exporting, setExporting] = useState(false);
@@ -116,6 +118,12 @@ export default function ScreenshotsPage() {
   const product = PRODUCTS.find((p) => p.id === productId)!;
   const T = product.theme;
 
+  // CTA screenshot selectors + ratio
+  const [ctaSc1, setCtaSc1] = useState<string>(() => PRODUCTS[0].ctaImage?.sc1 ?? "sc1.png");
+  const [ctaSc2, setCtaSc2] = useState<string>(() => PRODUCTS[0].ctaImage?.sc2 ?? "sc2.png");
+  const [ctaRatio, setCtaRatio] = useState<CtaRatio>("1:1");
+  const ctaH = ctaRatio === "4:5" ? CTA_H_4x5 : CTA_H_1x1;
+
   const activeSlides = product.slidesByLocale?.[locale] ?? product.slides;
   const hasAndroid = Boolean(activeSlides.android?.length);
   const activeDevice = hasAndroid ? device : "iphone";
@@ -128,12 +136,22 @@ export default function ScreenshotsPage() {
   // Preload images whenever the active product changes
   useEffect(() => {
     setReady(false);
-    preloadImages(getImagePathsForProduct(product)).then(() => setReady(true));
 
-    // Reset locale if not available for the new product
+    // Include CTA screenshot paths in preload
+    const ctaBase = product.screenshotBase;
+    const extraPaths = product.ctaImage
+      ? [`${ctaBase}/${product.ctaImage.sc1}`, `${ctaBase}/${product.ctaImage.sc2}`]
+      : [];
+    preloadImages([...getImagePathsForProduct(product), ...extraPaths]).then(() => setReady(true));
+
+    // Reset locale and CTA selectors when product changes
     const locales = getProductLocales(product);
     if (!locales.find((l) => l.code === locale)) {
       setLocale(locales[0].code);
+    }
+    if (product.ctaImage) {
+      setCtaSc1(product.ctaImage.sc1);
+      setCtaSc2(product.ctaImage.sc2);
     }
   }, [productId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -569,7 +587,139 @@ export default function ScreenshotsPage() {
       <SectionDivider />
 
       {/* ══════════════════════════════════════════════════════
-          SECTION 4: STORE METADATA
+          SECTION 4: CTA IMAGE
+         ══════════════════════════════════════════════════════ */}
+      <div style={{ padding: "32px 24px 0", maxWidth: 1200, margin: "0 auto" }}>
+        <SectionHeader
+          title="CTA Image"
+          subtitle={`Social post · ${CTA_W}×${ctaH}`}
+          accentColor="#F472B6"
+          right={
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              {/* Screenshot selectors */}
+              {(() => {
+                const base = product.screenshotBase;
+                const allSlides = product.slides.iphone;
+                const scFiles = allSlides.map((_, i) => {
+                  // derive filename from each slide component's slide index
+                  // we just offer sc1..scN based on how many slides exist
+                  const n = i + 1;
+                  // detect prefix from ctaImage defaults
+                  const defaultSc = product.ctaImage?.sc1 ?? "sc1.png";
+                  const prefix = defaultSc.replace(/\d+\.png$/, "");
+                  return `${prefix}${n}.png`;
+                });
+                const uniqueFiles = [...new Set([...(product.ctaImage ? [product.ctaImage.sc1, product.ctaImage.sc2] : []), ...scFiles])];
+                return (
+                  <>
+                    <select
+                      value={ctaSc1}
+                      onChange={(e) => setCtaSc1(e.target.value)}
+                      style={{ background: "rgba(255,255,255,0.06)", color: T.fg, border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "5px 10px", fontSize: 12, cursor: "pointer" }}
+                    >
+                      {uniqueFiles.map((f) => (
+                        <option key={f} value={f}>{f} (left)</option>
+                      ))}
+                    </select>
+                    <select
+                      value={ctaSc2}
+                      onChange={(e) => setCtaSc2(e.target.value)}
+                      style={{ background: "rgba(255,255,255,0.06)", color: T.fg, border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "5px 10px", fontSize: 12, cursor: "pointer" }}
+                    >
+                      {uniqueFiles.map((f) => (
+                        <option key={f} value={f}>{f} (right)</option>
+                      ))}
+                    </select>
+                    {/* suppress unused warning — base used in JSX above */}
+                    <span style={{ display: "none" }}>{base}</span>
+                  </>
+                );
+              })()}
+              {/* Ratio toggle */}
+              <div style={{ display: "flex", gap: 2, background: "rgba(255,255,255,0.04)", borderRadius: 6, padding: 3 }}>
+                {(["1:1", "4:5"] as CtaRatio[]).map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => setCtaRatio(r)}
+                    style={{
+                      background: ctaRatio === r ? T.accent : "transparent",
+                      color: ctaRatio === r ? "#fff" : T.fgMuted,
+                      border: "none", borderRadius: 4, padding: "4px 10px",
+                      fontSize: 11, fontWeight: 600, cursor: "pointer", transition: "all 0.15s",
+                    }}
+                  >{r}</button>
+                ))}
+              </div>
+              <button
+                onClick={async () => {
+                  if (!ctaOffscreenRef.current) return;
+                  await exportSingle(ctaOffscreenRef.current, 0, "cta", { label: "CTA", w: CTA_W, h: ctaH }, product.id, PRODUCTS.length > 1, "social-og");
+                }}
+                style={{
+                  display: "flex", alignItems: "center", gap: 5,
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: 6, padding: "5px 12px",
+                  fontSize: 12, fontWeight: 600, color: T.fgMuted,
+                  cursor: "pointer", transition: "all 0.15s",
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.1)"; (e.currentTarget as HTMLButtonElement).style.color = T.fg; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.06)"; (e.currentTarget as HTMLButtonElement).style.color = T.fgMuted; }}
+              >
+                <svg width={12} height={12} viewBox="0 0 12 12" fill="none">
+                  <path d="M6 1v7M3 5l3 3 3-3M1 10h10" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Export PNG
+              </button>
+            </div>
+          }
+        />
+      </div>
+      <div style={{ padding: "0 24px 40px", maxWidth: 600, margin: "0 auto" }}>
+        <div style={{
+          borderRadius: 12, overflow: "hidden",
+          border: "1px solid rgba(255,255,255,0.08)",
+          background: T.bg,
+        }}>
+          <div style={{ position: "relative", width: "100%", aspectRatio: `${CTA_W}/${ctaH}`, overflow: "hidden" }}>
+            <CtaImageScaled
+              theme={T}
+              iconPath={product.iconPath}
+              screenshotBase={product.screenshotBase}
+              sc1={ctaSc1}
+              sc2={ctaSc2}
+              headline={product.ctaImage?.headline ?? product.name}
+              productName={product.name}
+              subheadline={product.metadata?.subtitle}
+              ctaLabel={product.ctaImage?.ctaLabel}
+              ratio={ctaRatio}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Offscreen export for CTA Image */}
+      <div ref={ctaOffscreenRef} style={{ position: "absolute", left: -9999, top: 0, fontFamily: "inherit" }}>
+        <div style={{ width: CTA_W, height: ctaH, position: "absolute", left: -9999, fontFamily: "inherit" }}>
+          <CtaImage
+            theme={T}
+            iconPath={product.iconPath}
+            screenshotBase={product.screenshotBase}
+            sc1={ctaSc1}
+            sc2={ctaSc2}
+            headline={product.ctaImage?.headline ?? product.name}
+            productName={product.name}
+            subheadline={product.metadata?.subtitle}
+            ctaLabel={product.ctaImage?.ctaLabel}
+            ratio={ctaRatio}
+          />
+        </div>
+      </div>
+
+      <SectionDivider />
+
+      {/* ══════════════════════════════════════════════════════
+          SECTION 5: STORE METADATA
          ══════════════════════════════════════════════════════ */}
       <MetadataPanel
         theme={T}
@@ -634,6 +784,29 @@ function SocialOgScaled(props: React.ComponentProps<typeof SocialOgImage>) {
     <div ref={containerRef} style={{ width: "100%", height: "100%", position: "relative", overflow: "hidden" }}>
       <div style={{ width: OG_W, height: OG_H, transform: `scale(${scale})`, transformOrigin: "top left", position: "absolute", top: 0, left: 0 }}>
         <SocialOgImage {...props} />
+      </div>
+    </div>
+  );
+}
+
+function CtaImageScaled(props: React.ComponentProps<typeof CtaImage>) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(0.5);
+  const h = props.ratio === "4:5" ? CTA_H_4x5 : CTA_H_1x1;
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const obs = new ResizeObserver((entries) => {
+      for (const entry of entries) setScale(entry.contentRect.width / CTA_W);
+    });
+    obs.observe(containerRef.current);
+    return () => obs.disconnect();
+  }, []);
+
+  return (
+    <div ref={containerRef} style={{ width: "100%", height: "100%", position: "relative", overflow: "hidden" }}>
+      <div style={{ width: CTA_W, height: h, transform: `scale(${scale})`, transformOrigin: "top left", position: "absolute", top: 0, left: 0 }}>
+        <CtaImage {...props} />
       </div>
     </div>
   );
