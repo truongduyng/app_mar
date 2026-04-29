@@ -66,7 +66,7 @@ Based on the user's style direction, brand colors, and app aesthetic, decide:
 
 When generating screenshots for **multiple apps** in one project, use this architecture. Default to single-product (backward compatible) - only activate multi-product when the user explicitly has multiple apps or is adding a product to an existing generator.
 
-#### Product Config Type
+#### Type System
 
 ```typescript
 type ThemeTokens = {
@@ -78,98 +78,143 @@ type ThemeTokens = {
   accentGlow: string;
   accentSoft: string;
   surface: string;
-  gradients: Record<string, string>; // named gradients for slide backgrounds
+  gradients: {
+    dark: string;
+    warm: string;
+    accent: string;
+    deep: string;
+    hero: string;
+  };
+};
+
+type SlideCopy = {
+  label: string;
+  headline: React.ReactNode;
+  subtitle: React.ReactNode;
+};
+
+type SlideDef = {
+  id: string;
+  copy: SlideCopy;                              // default (first locale) copy
+  copyByLocale?: Record<string, SlideCopy>;     // per-locale copy overrides
+  Component: React.FC<{ theme: ThemeTokens; base: string; copy: SlideCopy }>;
+};
+
+type LocaleDef = {
+  code: string;   // e.g. "en", "vi", "de"
+  label: string;  // e.g. "English", "Tiếng Việt"
+  flag?: string;  // e.g. "🇺🇸", "🇻🇳"
+};
+
+type MetadataConfig = {
+  name: string;             // Both stores - 30 chars
+  subtitle: string;         // Apple - 30 chars
+  promoText: string;        // Apple - 170 chars
+  shortDescription: string; // Google - 80 chars
+  description: string;      // Both - 4000 chars
+  keywords: string;         // Apple - 100 chars
 };
 
 type ProductConfig = {
-  id: string;                        // slug: "hone", "lichta", "futkui"
-  name: string;                      // display: "Hone", "Lịch Ta"
-  iconPath: string;                  // "/products/hone/icon.png"
-  screenshotBase: string;            // "/products/hone/screenshots"
-  mockupPath?: string;               // override default "/mockup.png" if needed
-  themes: Record<string, ThemeTokens>;
-  defaultTheme: string;
-  font?: string;                     // Google Font name if different per product
+  id: string;                // slug: "tinysteps", "fitfo"
+  name: string;              // display: "TinySteps: Baby Tracker"
+  iconPath: string;          // "/products/tinysteps/icon.png"
+  screenshotBase: string;    // "/products/tinysteps/screenshots/en" (default locale)
+  /** Per-locale screenshot base overrides. Use when each locale has different screenshot files. */
+  screenshotBaseByLocale?: Record<string, string>;
+  mockupPath?: string;       // override default "/mockup.png" if needed
+  theme: ThemeTokens;        // single theme per product (not a theme map)
+  locales?: LocaleDef[];     // supported locales; first entry is default
   slides: {
-    iphone?: SlideDef[];
+    iphone: SlideDef[];
     android?: SlideDef[];
-    "android-7"?: { portrait?: SlideDef[]; landscape?: SlideDef[] };
-    "android-10"?: { portrait?: SlideDef[]; landscape?: SlideDef[] };
-    ipad?: SlideDef[];
-    "feature-graphic"?: SlideDef[];
   };
-  locales?: readonly string[];       // per-product locale list
-  copyByLocale?: Record<string, Record<string, { label: string; headline: React.ReactNode }>>;
+  /**
+   * Per-locale slide overrides. Use when locales have different screenshot files
+   * (different screens, different count) — replaces slides entirely for that locale.
+   * Each slide component hardcodes the screenshot filename it shows (e.g. "sc1.png").
+   * The `base` prop (resolved from screenshotBaseByLocale) points to the right folder.
+   */
+  slidesByLocale?: Record<string, { iphone: SlideDef[]; android?: SlideDef[] }>;
+  featureGraphic?: { tagline: string; subtitle?: string };
+  socialOg?: { tagline: string; subtitle?: string };
+  metadata?: MetadataConfig;
+  metadataByLocale?: Record<string, MetadataConfig>;
 };
 ```
+
+#### Slide Components
+
+Each slide is a React component, not a factory function. The component receives `theme`, `base` (locale-resolved screenshot folder path), and `copy` (locale-resolved text). Screenshot filenames are hardcoded inside the component:
+
+```tsx
+// src/products/myapp/slides.tsx
+export function MyAppSlide1({ theme: T, base, copy }: SlideProps) {
+  return (
+    <CenteredSlide
+      theme={T} base={base}
+      gradient={T.gradients.hero}
+      orbs={[{ size: 1000, top: "-15%", left: "-25%", color: "rgba(107,142,104,0.18)" }]}
+      label={copy.label}
+      headline={copy.headline}
+      subtitle={copy.subtitle}
+      screenshot="sc1.png" alt="Home"   // filename within `base` folder
+      captionMt={0.04}
+    />
+  );
+}
+```
+
+**Screenshot filename convention:** Use `sc1.png`, `sc2.png`, … (or `sc_ts1.png` etc. if the product has a prefix). Keep it consistent within a product. **Never rename files to match code** — if the naming breaks, raise an error and ask the user to clarify.
 
 #### Products Array
 
 ```typescript
-const PRODUCTS: ProductConfig[] = [
-  {
-    id: "hone",
-    name: "Hone",
-    iconPath: "/products/hone/icon.png",
-    screenshotBase: "/products/hone/screenshots",
-    themes: {
-      "dark-warm": { bg: "#0A0A0C", fg: "#F8F8F2", accent: "#F97316", /* ... */ },
-    },
-    defaultTheme: "dark-warm",
-    slides: {
-      iphone: [makeSlide1(Phone, phoneW, "products/hone/screenshots", MK_RATIO), /* ... */],
-    },
-  },
-  {
-    id: "lichta",
-    name: "Lịch Ta",
-    iconPath: "/products/lichta/icon.png",
-    screenshotBase: "/products/lichta/screenshots",
-    themes: {
-      "warm-red": { bg: "#1A0A0A", fg: "#FFF5F0", accent: "#DC2626", /* ... */ },
-    },
-    defaultTheme: "warm-red",
-    slides: {
-      iphone: [makeSlide1(Phone, phoneW, "products/lichta/screenshots", MK_RATIO), /* ... */],
-    },
-  },
-];
+// src/products/index.ts
+export const PRODUCTS: ProductConfig[] = [TINYSTEPS, FITFO, /* ... */];
 ```
+
+Each product lives in `src/products/{id}/index.tsx` and `slides.tsx`.
 
 #### State Management
 
 ```typescript
-// In ScreenshotsPage:
+// In ScreenshotsPage (page.tsx):
 const [productId, setProductId] = useState(PRODUCTS[0].id);
+const [locale, setLocale] = useState(getProductLocales(PRODUCTS[0])[0].code);
 const product = PRODUCTS.find(p => p.id === productId)!;
-const T = product.themes[product.defaultTheme]; // or use themeId state per-product
+const T = product.theme;
 
-// Derive everything from current product:
-const locales = product.locales ?? ["en"];
-const slides = /* resolve from product.slides + current device + orientation */;
-const iconPath = product.iconPath;
-const screenshotBase = product.screenshotBase;
+// Resolve locale-specific slides and base path:
+const activeSlides = product.slidesByLocale?.[locale] ?? product.slides;
+const slides = activeDevice === "android" ? activeSlides.android : activeSlides.iphone;
+const screenshotBase = product.screenshotBaseByLocale?.[locale] ?? product.screenshotBase;
+
+// Pass to each slide component:
+<slide.Component theme={T} base={screenshotBase} copy={slide.copyByLocale?.[locale] ?? slide.copy} />
 ```
 
 #### Image Preloading (Product-Aware)
 
-When the user switches products, re-preload that product's images:
+When the user switches products, re-preload all locale variants of that product's images:
 
 ```typescript
 function getImagePathsForProduct(product: ProductConfig): string[] {
-  return [
-    product.mockupPath ?? "/mockup.png",
-    product.iconPath,
-    // Enumerate all screenshot paths used by this product's slides
-    // ... derive from product.screenshotBase + locales + device paths
-  ];
+  const paths = new Set<string>([product.mockupPath ?? "/mockup.png", product.iconPath]);
+  const bases = product.screenshotBaseByLocale
+    ? Object.values(product.screenshotBaseByLocale)
+    : [product.screenshotBase];
+  for (const base of bases) {
+    product.slides.iphone.forEach((_, i) => paths.add(`${base}/sc${i + 1}.png`));
+    product.slides.android?.forEach((_, i) => paths.add(`${base}/sc${i + 1}.png`));
+  }
+  return [...paths];
 }
 
 const [ready, setReady] = useState(false);
 useEffect(() => {
   setReady(false);
-  const paths = getImagePathsForProduct(product);
-  preloadImages(paths).then(() => setReady(true));
+  preloadImages(getImagePathsForProduct(product)).then(() => setReady(true));
 }, [productId]);
 ```
 
@@ -179,7 +224,7 @@ In multi-product mode, prefix filenames with the product id:
 
 ```typescript
 // Single-product: 01-hero-en-1320x2868.png
-// Multi-product:  hone-01-hero-en-1320x2868.png
+// Multi-product:  tinysteps-01-hero-en-1320x2868.png
 const prefix = PRODUCTS.length > 1 ? `${product.id}-` : "";
 a.download = `${prefix}${String(i + 1).padStart(2, "0")}-${slides[i].id}-${locale}-${size.w}x${size.h}.png`;
 ```
@@ -188,11 +233,11 @@ a.download = `${prefix}${String(i + 1).padStart(2, "0")}-${slides[i].id}-${local
 
 When the user asks to add a new app to an existing multi-product generator:
 
-1. Create the product directory under `public/products/{product-id}/`
-2. Copy the app icon and screenshots into it
-3. Define the product's theme tokens, slides, and copy
-4. Add the new `ProductConfig` entry to the `PRODUCTS` array
-5. The toolbar product selector automatically picks it up
+1. Create `src/products/{id}/index.tsx` and `slides.tsx`
+2. Place image assets in `public/products/{id}/`
+3. Define `ProductConfig` — copy an existing product as template
+4. Add slide components in `slides.tsx` accepting `{ theme, base, copy }`
+5. Add the new product to `src/products/index.ts` PRODUCTS array
 
 If the existing generator is single-product and needs to become multi-product:
 
@@ -308,50 +353,62 @@ project/
 ├── public/
 │   ├── mockup.png              # Shared iPhone frame
 │   └── products/
-│       ├── hone/
+│       ├── tinysteps/
 │       │   ├── icon.png
 │       │   └── screenshots/
-│       │       ├── home.png
-│       │       ├── feature-1.png
-│       │       └── ...
-│       ├── lichta/
-│       │   ├── icon.png
-│       │   └── screenshots/
-│       │       ├── home.png
-│       │       └── ...
+│       │       ├── en/         # locale-separated (screenshotBaseByLocale)
+│       │       │   ├── sc1.png
+│       │       │   └── sc2.png
+│       │       └── vi/
+│       │           ├── sc1.png
+│       │           └── sc2.png
 │       └── {product-id}/
 │           ├── icon.png
 │           └── screenshots/
-│               └── ...
-├── src/app/
-│   ├── layout.tsx
-│   └── page.tsx                # Single file, product-aware
+│               └── sc1.png     # flat (no locale folders) when screenshots are shared
+├── src/
+│   ├── app/
+│   │   └── page.tsx            # Main page
+│   ├── products/
+│   │   ├── index.ts            # PRODUCTS array
+│   │   ├── tinysteps/
+│   │   │   ├── index.tsx       # ProductConfig
+│   │   │   └── slides.tsx      # Slide components
+│   │   └── {product-id}/
+│   │       ├── index.tsx
+│   │       └── slides.tsx
+│   ├── components/
+│   │   ├── slide-layouts.tsx   # Shared layout primitives
+│   │   └── ui.tsx              # PhoneFrame, Caption, etc.
+│   └── lib/
+│       ├── types.ts            # ProductConfig, SlideDef, etc.
+│       ├── constants.ts        # Canvas sizes
+│       ├── images.ts           # Preload cache
+│       └── export.ts           # Export pipeline
 └── package.json
 ```
 
-For multi-product + multi-platform + multi-locale, combine the patterns:
+**Locale-separated screenshots** (`screenshotBaseByLocale`): use when each locale has different screenshot files — different screens shown, different count, or different UI language baked into the screenshots. Configure in `ProductConfig`:
 
-```
-└── products/
-    └── hone/
-        ├── icon.png
-        └── screenshots/
-            ├── apple/
-            │   ├── iphone/
-            │   │   ├── en/
-            │   │   └── {locale}/
-            │   └── ipad/
-            │       └── {locale}/
-            └── android/
-                └── phone/
-                    └── {locale}/
+```typescript
+screenshotBase: "/products/myapp/screenshots/en",   // default (first locale)
+screenshotBaseByLocale: {
+  en: "/products/myapp/screenshots/en",
+  vi: "/products/myapp/screenshots/vi",
+},
+// If vi has different screens than en, also add slidesByLocale.vi
+slidesByLocale: {
+  vi: {
+    iphone: [/* vi-specific SlideDef[] referencing sc1..scN in the vi folder */],
+  },
+},
 ```
 
 **Only create subdirectories for devices the user actually has screenshots for.** An empty directory will cause broken image placeholders in the generator.
 
 **Use the iPhone-only single-product structure by default.** Switch to multi-platform when targeting Android. Switch to multi-product when the user has multiple apps.
 
-**The entire generator is a single `page.tsx` file.** No routing, no extra layouts, no API routes.
+**The generator splits into multiple files** in the multi-product pattern: `page.tsx` for UI/state, `src/products/{id}/` for product configs and slide components, `src/lib/` for shared utilities, `src/components/` for layout primitives.
 
 ### Multi-language: Locale Select
 
@@ -426,7 +483,17 @@ Adapt this framework to the user's requested slide count. Not all slots are requ
 - Include 1-2 contrast slides (inverted bg) for visual rhythm.
 - **Landscape tablets**: use caption-left + device-right layout. The wide canvas rewards asymmetric composition. Never try two devices side-by-side in landscape - there's not enough room.
 
-## Step 4: Write Copy FIRST
+## Step 4: Read Screenshots, Then Write Copy
+
+**Before writing any copy, read every screenshot image.** Use the Read tool on each PNG to see what's actually shown. Copy must match the screen — mismatched copy (e.g. "Journal" copy on a Vaccinations screen) is worse than no copy at all.
+
+For each locale separately:
+1. Read all screenshot files (`sc1.png`, `sc2.png`, …) for that locale
+2. Map each file to the feature it shows
+3. Note that locales may show *different screens in different order* — do not assume locale B has the same screens as locale A
+4. Only then write copy and assign slide components
+
+**Screenshot file naming convention:** Files are named `sc1.png`, `sc2.png`, … (sequential integers). If the product uses a prefix (e.g. `sc_ts1.png`), keep that convention consistently. **Never rename screenshot files to match code** — if a filename breaks something, raise an error instead.
 
 Get all headlines approved before building layouts. Bad copy ruins good design.
 
@@ -1288,3 +1355,8 @@ When you present the finished work:
 | Product assets leak into wrong product | Derive all paths from `product.screenshotBase` and `product.iconPath` - never hardcode paths |
 | Product switch shows stale images | Re-run `preloadImages()` in a `useEffect` keyed on `productId` - gate rendering on `ready` state |
 | Single-product projects break after update | `PRODUCTS.length === 1` hides the product selector and skips filename prefix - fully backward compatible |
+| Copy doesn't match the screenshot shown | Always read every screenshot PNG with the Read tool before writing any copy — locales often show different screens in different order |
+| Locale B slides show wrong screens | Each locale's screenshots may differ; use `slidesByLocale` with locale-specific components when screens differ between locales |
+| Renamed screenshot files to match code | Never rename user's files — raise an error and ask for clarification instead |
+| All locales share one screenshot folder | Use `screenshotBaseByLocale` when each locale has its own screenshot files |
+| Locale switch doesn't update screenshots | Pass `base={screenshotBase}` (locale-resolved) to slide components, not `product.screenshotBase` directly |
