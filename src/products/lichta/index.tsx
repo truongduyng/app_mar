@@ -43,7 +43,7 @@ export const LICHTA: ProductConfig = {
         id: "hero",
         copy: {
           label: "LỊCH ÂM VIỆT NAM",
-          headline: <>Ngày hôm nay<br /><span style={{ color: T.accent }}>trong tầm tay.</span></>,
+          headline: <>Lịch Âm<br /><span style={{ color: T.accent }}>trong tầm tay.</span></>,
           subtitle: <>Âm lịch, Can Chi, Tiết Khí,<br />Hoàng Đạo - tất cả ở một chỗ.</>,
         },
         copyByLocale: {
@@ -59,7 +59,7 @@ export const LICHTA: ProductConfig = {
         id: "events",
         copy: {
           label: "SỰ KIỆN ÂM LỊCH",
-          headline: <>Không bao giờ<br /><span style={{ color: T.accent }}>bỏ lỡ giỗ.</span></>,
+          headline: <>Không bao giờ<br /><span style={{ color: T.accent }}>quên ngày giỗ.</span></>,
           subtitle: <>Giỗ chạp, sinh nhật, ngày cưới<br />theo âm lịch - nhắc tự động.</>,
         },
         copyByLocale: {
@@ -90,9 +90,9 @@ export const LICHTA: ProductConfig = {
       {
         id: "ai",
         copy: {
-          label: "THẦY LỊCH TA AI",
-          headline: <>Thầy Tử Vi AI<br /><span style={{ color: T.accent }}>bất cứ lúc nào.</span></>,
-          subtitle: <>Tử vi, phong thủy, phong tục<br />Việt Nam - AI trả lời ngay.</>,
+          label: "XEM TỬ VI AI",
+          headline: <>Tử Vi AI<br /><span style={{ color: T.accent }}>bất cứ lúc nào.</span></>,
+          subtitle: <>Tử vi, vận mệnh, phong thủy<br />AI trả lời ngay.</>,
         },
         copyByLocale: {
           en: {
@@ -157,7 +157,7 @@ export const LICHTA: ProductConfig = {
         id: "hero",
         copy: {
           label: "LỊCH ÂM VIỆT NAM",
-          headline: <>Ngày hôm nay<br /><span style={{ color: T.accent }}>trong tầm tay.</span></>,
+          headline: <>Lịch Âm<br /><span style={{ color: T.accent }}>trong tầm tay.</span></>,
           subtitle: <>Âm lịch, Can Chi, Tiết Khí,<br />Hoàng Đạo - tất cả ở một chỗ.</>,
         },
         copyByLocale: {
@@ -173,7 +173,7 @@ export const LICHTA: ProductConfig = {
         id: "events",
         copy: {
           label: "SỰ KIỆN ÂM LỊCH",
-          headline: <>Không bao giờ<br /><span style={{ color: T.accent }}>bỏ lỡ giỗ.</span></>,
+          headline: <>Không bao giờ<br /><span style={{ color: T.accent }}>quên ngày giỗ.</span></>,
           subtitle: <>Giỗ chạp, sinh nhật, ngày cưới<br />theo âm lịch - nhắc tự động.</>,
         },
         copyByLocale: {
@@ -205,8 +205,8 @@ export const LICHTA: ProductConfig = {
         id: "ai",
         copy: {
           label: "THẦY LỊCH TA AI",
-          headline: <>Thầy Tử Vi AI<br /><span style={{ color: T.accent }}>bất cứ lúc nào.</span></>,
-          subtitle: <>Tử vi, phong thủy, phong tục<br />Việt Nam - AI trả lời ngay.</>,
+          headline: <>Tử Vi AI<br /><span style={{ color: T.accent }}>bất cứ lúc nào.</span></>,
+          subtitle: <>Tử vi, vận mệnh, phong thủy<br />AI trả lời ngay.</>,
         },
         copyByLocale: {
           en: {
