@@ -24,7 +24,7 @@ const T = HONE_THEME;
 
 export const HONE: ProductConfig = {
   id: "hone",
-  name: "Hone Daily",
+  name: "Life Refine",
   iconPath: "/products/hone/icon.png",
   screenshotBase: "/products/hone/screenshots",
   theme: HONE_THEME,
@@ -110,7 +110,7 @@ export const HONE: ProductConfig = {
     subtitle: "Daily protocols, AI coaching, and progress tracking for peak performance.",
   },
   metadata: {
-    name: "Hone Daily",
+    name: "Life Refine: Hone Skills Daily",
     subtitle: "Refine your life daily with AI",
     promoText: "Focus on the daily, sustainable actions that improve your physical, mental, and emotional well-being.",
     shortDescription: "Cultivate lasting change through small, consistent habits and AI-guided reflection.",
