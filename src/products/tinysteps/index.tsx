@@ -29,7 +29,7 @@ const T = TINYSTEPS_THEME;
 
 export const TINYSTEPS: ProductConfig = {
   id: "tinysteps",
-  name: "TinySteps: Baby Tracker",
+  name: "TinySteps: Baby Growth Tracker",
   iconPath: "/products/tinysteps/icon.png",
   screenshotBase: "/products/tinysteps/screenshots/en",
   screenshotBaseByLocale: {
@@ -286,8 +286,8 @@ Terms: https://yikudo.xyz/tinysteps/terms`,
   },
   metadataByLocale: {
     vi: {
-      name: "TinySteps: Theo Dõi Bé",
-      subtitle: "Tăng Trưởng & Cột Mốc",
+      name: "TinySteps: ",
+      subtitle: "Theo dõi tăng trưởng, cột mốc & tiêm chủng với AI",
       promoText: "Theo dõi sự phát triển, cột mốc, và lịch tiêm chủng của bé với biểu đồ đẹp và AI.",
       shortDescription: "Theo dõi bé với biểu đồ tăng trưởng, cột mốc phát triển, tiêm chủng và AI.",
       keywords: "theo dõi bé,biểu đồ tăng trưởng,cột mốc,tiêm chủng,nhật ký bé,nuôi con,sơ sinh",

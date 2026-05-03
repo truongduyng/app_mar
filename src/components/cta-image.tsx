@@ -140,15 +140,14 @@ export function CtaImage({
 }) {
   const ctaH = ratio === "4:5" ? CTA_H_4x5 : CTA_H_1x1;
 
-  /* Phones are anchored at the bottom bar and sized to fill ~55% of canvas height.
-     Phone aspect ratio MK_W/MK_H ≈ 0.491, so phoneW = phoneH * 0.491. */
-  const phoneH = ctaH * 0.5;
+  /* Phone aspect ratio MK_W/MK_H ≈ 0.491 */
+  const bottomBarH = ctaH * 0.22;
+  const headlineH = ctaH * 0.18;
+  const headlineTop = ctaH * 0.03;
+  /* Phones fill the middle — top of phone = bottom of headline zone */
+  const phoneTop = headlineTop + headlineH;
+  const phoneH = ctaH - bottomBarH - phoneTop;
   const phoneW = phoneH * (MK_W / MK_H);
-
-  /* Layout zones */
-  const headlineTop = ctaH * 0.02;
-  const headlineH = ctaH * 0.20;       // headline: 2% → 22%
-  const bottomBarH = ctaH * 0.3;      // bottom bar: 80% → 100%
 
   return (
     <div
@@ -207,10 +206,10 @@ export function CtaImage({
       >
         <div
           style={{
-            fontSize: CTA_W * 0.06,
-            fontWeight: 800,
+            fontSize: CTA_W * 0.05,
+            fontWeight: 400,
             color: T.fg,
-            lineHeight: 1.1,
+            lineHeight: 1.12,
             letterSpacing: "-0.025em",
             textAlign: "center",
           }}
@@ -229,10 +228,10 @@ export function CtaImage({
         mockupPath={mockupPath}
         style={{
           position: "absolute",
-          bottom: bottomBarH,
-          left: CTA_W * 0.5 - phoneW * 1.2, // 0.86 is empirically determined to create a nice overlap
+          top: phoneTop,
+          left: CTA_W * 0.5 - phoneW * 1.1,
           width: phoneW,
-          transform: "rotate(-5deg) translateY(4%)",
+          transform: "rotate(-6deg)",
           zIndex: 2,
           filter: "drop-shadow(0 24px 48px rgba(0,0,0,0.22))",
         }}
@@ -244,11 +243,11 @@ export function CtaImage({
         mockupPath={mockupPath}
         style={{
           position: "absolute",
-          bottom: bottomBarH,
-          right: CTA_W * 0.5 - phoneW - phoneW * 0.07,
+          top: phoneTop,
+          right: CTA_W * 0.5 - phoneW * 1.2,
           width: phoneW,
-          transform: "rotate(5deg) translateY(0%)",
-          zIndex: 2,
+          transform: "rotate(5deg)",
+          zIndex: 3,
           filter: "drop-shadow(0 32px 60px rgba(0,0,0,0.28))",
         }}
       />
@@ -267,7 +266,7 @@ export function CtaImage({
           alignItems: "center",
           justifyContent: "center",
           gap: ctaH * 0.022,
-          paddingBottom: ctaH * 0.032,
+          paddingBottom: ctaH * 0.03,
           background: `linear-gradient(transparent, ${T.bg}F0 28%)`,
         }}
       >
@@ -277,9 +276,9 @@ export function CtaImage({
             src={img(iconPath)}
             alt=""
             style={{
-              width: CTA_W * 0.054,
-              height: CTA_W * 0.054,
-              borderRadius: CTA_W * 0.012,
+              width: CTA_W * 0.08,
+              height: CTA_W * 0.08,
+              borderRadius: CTA_W * 0.018,
               boxShadow: `0 4px 16px ${hexToRgba(T.accent, 0.35)}`,
             }}
             draggable={false}
@@ -287,8 +286,8 @@ export function CtaImage({
           <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
             <div
               style={{
-                fontSize: CTA_W * 0.04,
-                fontWeight: 800,
+                fontSize: CTA_W * 0.03,
+                fontWeight: 600,
                 color: T.accent,
                 letterSpacing: "-0.015em",
                 lineHeight: 1.1,
@@ -317,8 +316,8 @@ export function CtaImage({
           style={{
             background: T.accent,
             borderRadius: 100,
-            padding: `${ctaH * 0.01}px ${CTA_W * 0.1}px`,
-            fontSize: CTA_W * 0.03,
+            padding: `${ctaH * 0.011}px ${CTA_W * 0.06}px`,
+            fontSize: CTA_W * 0.025,
             fontWeight: 700,
             color: T.bg,
             letterSpacing: "-0.01em",
