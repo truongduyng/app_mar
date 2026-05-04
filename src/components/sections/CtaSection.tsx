@@ -3,25 +3,29 @@
 import React, { useRef, useEffect, useState } from "react";
 import { CtaImage, CTA_W, CTA_H_1x1, CTA_H_4x5, type CtaRatio } from "@/components/cta-image";
 import { exportCtaImage } from "@/lib/export";
-import type { ProductConfig } from "@/lib/types";
+import type { AppPlatform, ProductConfig } from "@/lib/types";
 import { ExportPngButton } from "./shared";
 
 type Props = {
   product: ProductConfig;
   locale: string;
+  platform: AppPlatform;
   ctaSc1: string;
   ctaSc2: string;
   onSc1Change: (v: string) => void;
   onSc2Change: (v: string) => void;
 };
 
-export function CtaSection({ product, locale, ctaSc1, ctaSc2, onSc1Change, onSc2Change }: Props) {
+export function CtaSection({ product, locale, platform, ctaSc1, ctaSc2, onSc1Change, onSc2Change }: Props) {
   const T = product.theme;
   const offscreenRef = useRef<HTMLDivElement>(null);
   const [ratio, setRatio] = useState<CtaRatio>("4:5");
   const ctaH = ratio === "4:5" ? CTA_H_4x5 : CTA_H_1x1;
 
-  const allSlides   = product.slides.iphone;
+  const localizedSlides = product.slidesByLocale?.[locale] ?? product.slides;
+  const allSlides = platform === "android" && localizedSlides.android?.length
+    ? localizedSlides.android
+    : localizedSlides.iphone;
   const defaultSc   = product.ctaImage?.sc1 ?? "sc1.png";
   const prefix      = defaultSc.replace(/\d+\.png$/, "");
   const scFiles     = allSlides.map((_, i) => `${prefix}${i + 1}.png`);
@@ -33,6 +37,7 @@ export function CtaSection({ product, locale, ctaSc1, ctaSc2, onSc1Change, onSc2
   const headline    = product.ctaImage?.headlineByLocale?.[locale] ?? product.ctaImage?.headline ?? product.name;
   const subheadline = product.metadataByLocale?.[locale]?.subtitle ?? product.metadata?.subtitle;
   const ctaLabel    = product.ctaImage?.ctaLabelByLocale?.[locale] ?? product.ctaImage?.ctaLabel;
+  const screenshotBase = product.screenshotBaseByLocale?.[locale] ?? product.screenshotBase;
 
   const selectStyle: React.CSSProperties = {
     background: "rgba(255,255,255,0.06)", color: T.fg,
@@ -70,7 +75,7 @@ export function CtaSection({ product, locale, ctaSc1, ctaSc2, onSc1Change, onSc2
       {/* Preview */}
       <div style={{ borderRadius: 12, overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)", background: T.bg }}>
         <div style={{ position: "relative", width: "100%", aspectRatio: `${CTA_W}/${ctaH}`, overflow: "hidden" }}>
-          <ScaledCtaImage theme={T} iconPath={product.iconPath} screenshotBase={product.screenshotBase}
+          <ScaledCtaImage theme={T} iconPath={product.iconPath} screenshotBase={screenshotBase}
             sc1={ctaSc1} sc2={ctaSc2} headline={headline} productName={product.name}
             subheadline={subheadline} ctaLabel={ctaLabel} ratio={ratio} />
         </div>
@@ -79,7 +84,7 @@ export function CtaSection({ product, locale, ctaSc1, ctaSc2, onSc1Change, onSc2
       {/* Offscreen */}
       <div ref={offscreenRef} style={{ position: "absolute", top: 0, fontFamily: "inherit", pointerEvents: "none" }}>
         <div style={{ width: CTA_W, height: ctaH, position: "absolute", left: -9999, fontFamily: "inherit" }}>
-          <CtaImage theme={T} iconPath={product.iconPath} screenshotBase={product.screenshotBase}
+          <CtaImage theme={T} iconPath={product.iconPath} screenshotBase={screenshotBase}
             sc1={ctaSc1} sc2={ctaSc2} headline={headline} productName={product.name}
             subheadline={subheadline} ctaLabel={ctaLabel} ratio={ratio} />
         </div>

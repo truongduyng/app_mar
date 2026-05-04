@@ -8,7 +8,7 @@ import { FeatureGraphicSection } from "@/components/sections/FeatureGraphicSecti
 import { SocialOgSection } from "@/components/sections/SocialOgSection";
 import { CtaSection } from "@/components/sections/CtaSection";
 import { PRODUCTS } from "@/products";
-import type { MetadataConfig, LocaleDef } from "@/lib/types";
+import type { AppPlatform, MetadataConfig, LocaleDef, ProductConfig } from "@/lib/types";
 
 type Section = "screenshots" | "feature-graphic" | "social-og" | "cta" | "metadata";
 
@@ -45,6 +45,28 @@ function getProductLocales(product: typeof PRODUCTS[number]): LocaleDef[] {
   return product.locales ?? [{ code: "en", label: "English", flag: "🇺🇸" }];
 }
 
+function productSupportsAndroid(product: ProductConfig, locale: string) {
+  const slides = product.slidesByLocale?.[locale] ?? product.slides;
+  return Boolean(slides.android?.length);
+}
+
+function isSectionAvailable(section: Section, product: ProductConfig, platform: AppPlatform) {
+  switch (section) {
+    case "screenshots":
+      return true;
+    case "feature-graphic":
+      return platform === "android" && Boolean(product.featureGraphic);
+    case "social-og":
+      return Boolean(product.socialOg);
+    case "cta":
+      return Boolean(product.ctaImage);
+    case "metadata":
+      return true;
+    default:
+      return false;
+  }
+}
+
 export default function ScreenshotsPage() {
   const [section, setSection]   = useState<Section>("screenshots");
   const [productId, setProductId] = useState(() => {
@@ -53,6 +75,11 @@ export default function ScreenshotsPage() {
     return PRODUCTS.find((p) => p.id === saved) ? saved! : PRODUCTS[0].id;
   });
   const [locale, setLocale]     = useState<string>(() => getProductLocales(PRODUCTS[0])[0].code);
+  const [platform, setPlatform] = useState<AppPlatform>(() => {
+    if (typeof window === "undefined") return "iphone";
+    const saved = localStorage.getItem("selectedPlatform");
+    return saved === "android" ? "android" : "iphone";
+  });
   const [ready, setReady]       = useState(false);
   const [productMenuOpen, setProductMenuOpen] = useState(false);
   const productMenuRef = useRef<HTMLDivElement>(null);
@@ -74,6 +101,9 @@ export default function ScreenshotsPage() {
   const product        = PRODUCTS.find((p) => p.id === productId)!;
   const T              = product.theme;
   const productLocales = getProductLocales(product);
+  const supportsAndroid = productSupportsAndroid(product, locale);
+  const activePlatform = supportsAndroid ? platform : "iphone";
+  const sectionAvailable = isSectionAvailable(section, product, activePlatform);
   const ctaSc1         = ctaScMap[product.id]?.sc1 ?? product.ctaImage?.sc1 ?? "sc1.png";
   const ctaSc2         = ctaScMap[product.id]?.sc2 ?? product.ctaImage?.sc2 ?? "sc2.png";
 
@@ -97,6 +127,13 @@ export default function ScreenshotsPage() {
     preloadImages([...getImagePathsForProduct(product), ...extraPaths]).then(() => setReady(true));
     if (!productLocales.find((l) => l.code === locale)) setLocale(productLocales[0].code);
   }, [productId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!supportsAndroid && platform !== "iphone") {
+      setPlatform("iphone");
+      localStorage.setItem("selectedPlatform", "iphone");
+    }
+  }, [supportsAndroid, platform]);
 
   useEffect(() => {
     if (!productMenuOpen) return;
@@ -190,26 +227,45 @@ export default function ScreenshotsPage() {
           )}
         </div>
 
-        {/* Language picker */}
-        {productLocales.length > 1 && (
-          <div style={{ display: "flex", gap: 3, background: "rgba(255,255,255,0.04)", padding: 3, borderRadius: 8, marginLeft: "auto" }}>
-            {productLocales.map((loc) => (
-              <button key={loc.code} onClick={() => setLocale(loc.code)}
-                style={{
-                  background: locale === loc.code ? T.accent : "rgba(255,255,255,0.06)",
-                  color: locale === loc.code ? "#fff" : T.fgMuted,
-                  border: "none", borderRadius: 6, padding: "5px 10px",
-                  fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all 0.15s",
-                  display: "flex", alignItems: "center", gap: 4,
-                  boxShadow: locale === loc.code ? `0 2px 10px ${T.accentGlow}` : "none",
-                }}
-              >
-                {loc.flag && <span style={{ fontSize: 13 }}>{loc.flag}</span>}
-                {loc.code.toUpperCase()}
-              </button>
-            ))}
-          </div>
-        )}
+        <div style={{ display: "flex", gap: 8, marginLeft: "auto", flexWrap: "wrap", justifyContent: "flex-end" }}>
+          {supportsAndroid && (
+            <div style={{ display: "flex", gap: 3, background: "rgba(255,255,255,0.04)", padding: 3, borderRadius: 8 }}>
+              {(["iphone", "android"] as const).map((value) => (
+                <button key={value} onClick={() => { setPlatform(value); localStorage.setItem("selectedPlatform", value); }}
+                  style={{
+                    background: activePlatform === value ? T.accent : "rgba(255,255,255,0.06)",
+                    color: activePlatform === value ? "#fff" : T.fgMuted,
+                    border: "none", borderRadius: 6, padding: "5px 10px",
+                    fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all 0.15s",
+                    boxShadow: activePlatform === value ? `0 2px 10px ${T.accentGlow}` : "none",
+                  }}
+                >
+                  {value === "iphone" ? "iPhone" : "Android"}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {productLocales.length > 1 && (
+            <div style={{ display: "flex", gap: 3, background: "rgba(255,255,255,0.04)", padding: 3, borderRadius: 8 }}>
+              {productLocales.map((loc) => (
+                <button key={loc.code} onClick={() => setLocale(loc.code)}
+                  style={{
+                    background: locale === loc.code ? T.accent : "rgba(255,255,255,0.06)",
+                    color: locale === loc.code ? "#fff" : T.fgMuted,
+                    border: "none", borderRadius: 6, padding: "5px 10px",
+                    fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all 0.15s",
+                    display: "flex", alignItems: "center", gap: 4,
+                    boxShadow: locale === loc.code ? `0 2px 10px ${T.accentGlow}` : "none",
+                  }}
+                >
+                  {loc.flag && <span style={{ fontSize: 13 }}>{loc.flag}</span>}
+                  {loc.code.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── Body: sidebar + main ── */}
@@ -254,28 +310,30 @@ export default function ScreenshotsPage() {
 
         {/* Main content */}
         <main style={{ marginLeft: SIDEBAR_W, flex: 1, minWidth: 0 }}>
-          {section === "screenshots" && (
-            <ScreenshotsSection product={product} locale={locale} multiProduct={PRODUCTS.length > 1} />
+          {section === "screenshots" && sectionAvailable && (
+            <ScreenshotsSection product={product} locale={locale} multiProduct={PRODUCTS.length > 1} platform={activePlatform} />
           )}
-          {section === "feature-graphic" && (
+          {section === "feature-graphic" && sectionAvailable && (
             <FeatureGraphicSection product={product} multiProduct={PRODUCTS.length > 1} />
           )}
-          {section === "social-og" && (
+          {section === "social-og" && sectionAvailable && (
             <SocialOgSection product={product} multiProduct={PRODUCTS.length > 1} />
           )}
-          {section === "cta" && (
+          {section === "cta" && sectionAvailable && (
             <CtaSection
               product={product}
               locale={locale}
+              platform={activePlatform}
               ctaSc1={ctaSc1}
               ctaSc2={ctaSc2}
               onSc1Change={setCtaSc1}
               onSc2Change={setCtaSc2}
             />
           )}
-          {section === "metadata" && (
+          {section === "metadata" && sectionAvailable && (
             <MetadataPanel
               theme={T}
+              platform={activePlatform}
               locales={productLocales}
               activeLocale={locale}
               metadata={
@@ -287,6 +345,13 @@ export default function ScreenshotsPage() {
                 setMetadataMap((prev) => ({ ...prev, [product.id]: { ...prev[product.id], [locale]: updated } }))
               }
               allLocaleData={metadataMap[product.id] ?? {}}
+            />
+          )}
+          {!sectionAvailable && (
+            <UnavailableSection
+              theme={T}
+              section={section}
+              platform={activePlatform}
             />
           )}
         </main>
@@ -306,4 +371,44 @@ function SectionIcon({ id, color }: { id: string; active: boolean; color: string
     case "metadata":        return <svg width={size} height={size} viewBox="0 0 16 16"><path d="M3 4h10M3 8h7M3 12h5" {...s}/></svg>;
     default:                return null;
   }
+}
+
+function UnavailableSection({
+  theme: T,
+  section,
+  platform,
+}: {
+  theme: ProductConfig["theme"];
+  section: Section;
+  platform: AppPlatform;
+}) {
+  const labels: Record<Section, string> = {
+    screenshots: "Screenshots",
+    "feature-graphic": "Feature Graphic",
+    "social-og": "Social OG",
+    cta: "CTA Image",
+    metadata: "Store Metadata",
+  };
+
+  return (
+    <div style={{ padding: "32px 24px" }}>
+      <div style={{
+        maxWidth: 720,
+        margin: "0 auto",
+        padding: "28px 30px",
+        borderRadius: 16,
+        border: "1px solid rgba(255,255,255,0.08)",
+        background: "rgba(255,255,255,0.03)",
+      }}>
+        <div style={{ fontSize: 20, fontWeight: 700, color: T.fg, marginBottom: 8 }}>
+          {labels[section]} unavailable
+        </div>
+        <div style={{ fontSize: 14, color: T.fgMuted, lineHeight: 1.6 }}>
+          {section === "feature-graphic"
+            ? `Feature Graphic is only available for Android / Google Play. Switch the header platform to ${platform === "iphone" ? "Android" : "iPhone"} to view the matching content.`
+            : `This section is not available for the current ${platform === "iphone" ? "iPhone" : "Android"} selection.`}
+        </div>
+      </div>
+    </div>
+  );
 }

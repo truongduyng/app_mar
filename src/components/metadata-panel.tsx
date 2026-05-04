@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import type { ThemeTokens, MetadataConfig, LocaleDef } from "@/lib/types";
+import type { AppPlatform, ThemeTokens, MetadataConfig, LocaleDef } from "@/lib/types";
 
 type FieldDef = {
   id: keyof MetadataConfig;
@@ -23,6 +23,7 @@ const FIELDS: FieldDef[] = [
 
 export function MetadataPanel({
   theme: T,
+  platform,
   locales,
   activeLocale,
   metadata,
@@ -30,6 +31,7 @@ export function MetadataPanel({
   allLocaleData,
 }: {
   theme: ThemeTokens;
+  platform: AppPlatform;
   locales: LocaleDef[];
   activeLocale: string;
   metadata: MetadataConfig;
@@ -38,6 +40,15 @@ export function MetadataPanel({
   allLocaleData: Record<string, MetadataConfig>;
 }) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const isFieldVisible = useCallback(
+    (field: FieldDef) => (
+      field.platform === "Both" ||
+      (platform === "iphone" && field.platform === "Apple") ||
+      (platform === "android" && field.platform === "Google")
+    ),
+    [platform]
+  );
+  const visibleFields = FIELDS.filter(isFieldVisible);
 
   const handleCopy = useCallback(async (id: string, value: string) => {
     await navigator.clipboard.writeText(value);
@@ -53,17 +64,20 @@ export function MetadataPanel({
   );
 
   const handleCopyAll = useCallback(async () => {
-    const text = FIELDS.map((f) => `${f.label}:\n${metadata[f.id]}`).join("\n\n---\n\n");
+    const text = visibleFields.map((f) => `${f.label}:\n${metadata[f.id]}`).join("\n\n---\n\n");
     await navigator.clipboard.writeText(text);
     setCopiedId("__all__");
     setTimeout(() => setCopiedId(null), 1500);
-  }, [metadata]);
+  }, [metadata, visibleFields]);
 
   const handleExportJson = useCallback(async () => {
+    const pickVisibleFields = (entry: MetadataConfig) =>
+      Object.fromEntries(visibleFields.map((field) => [field.id, entry[field.id]])) as MetadataConfig;
+
     // Export all locales, not just the active one
     const exportData = Object.keys(allLocaleData).length > 1
-      ? allLocaleData
-      : { [activeLocale]: metadata };
+      ? Object.fromEntries(Object.entries(allLocaleData).map(([localeCode, entry]) => [localeCode, pickVisibleFields(entry)]))
+      : { [activeLocale]: pickVisibleFields(metadata) };
 
     const json = JSON.stringify(exportData, null, 2);
     const blob = new Blob([json], { type: "application/json" });
@@ -75,9 +89,7 @@ export function MetadataPanel({
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }, [metadata, allLocaleData, activeLocale]);
-
-  const showLocaleTabs = locales.length > 1;
+  }, [metadata, allLocaleData, activeLocale, visibleFields]);
 
   return (
     <div style={{ maxWidth: 900, margin: "0 auto", padding: "32px 24px" }}>
@@ -157,7 +169,7 @@ export function MetadataPanel({
 
       {/* Field cards */}
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-        {FIELDS.map((field) => {
+        {visibleFields.map((field) => {
           const value = metadata[field.id];
           const charCount = value.length;
           const isOver = charCount > field.maxLength;
@@ -187,46 +199,6 @@ export function MetadataPanel({
                   <span style={{ fontSize: 14, fontWeight: 600, color: T.fg }}>
                     {field.label}
                   </span>
-                  <span
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 600,
-                      padding: "2px 8px",
-                      borderRadius: 4,
-                      background:
-                        field.platform === "Apple"
-                          ? "rgba(59,130,246,0.12)"
-                          : field.platform === "Google"
-                          ? "rgba(52,211,153,0.12)"
-                          : "rgba(168,85,247,0.12)",
-                      color:
-                        field.platform === "Apple"
-                          ? "#60A5FA"
-                          : field.platform === "Google"
-                          ? "#6EE7B7"
-                          : "#C084FC",
-                      letterSpacing: "0.04em",
-                    }}
-                  >
-                    {field.platform}
-                  </span>
-                  {/* Locale badge */}
-                  {showLocaleTabs && (
-                    <span
-                      style={{
-                        fontSize: 10,
-                        fontWeight: 600,
-                        padding: "2px 6px",
-                        borderRadius: 4,
-                        background: "rgba(255,255,255,0.05)",
-                        color: T.fgMuted,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.06em",
-                      }}
-                    >
-                      {activeLocale}
-                    </span>
-                  )}
                 </div>
 
                 {/* Copy button */}

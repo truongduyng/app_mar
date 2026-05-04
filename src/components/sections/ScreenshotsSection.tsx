@@ -7,26 +7,25 @@ import {
 } from "@/lib/constants";
 import { exportAllToZip } from "@/lib/export";
 import { ScreenshotPreview } from "@/components/ui";
-import type { ProductConfig, ThemeTokens } from "@/lib/types";
+import type { AppPlatform, ProductConfig, ThemeTokens } from "@/lib/types";
 
 type Props = {
   product: ProductConfig;
   locale: string;
   multiProduct: boolean;
+  platform: AppPlatform;
 };
 
-export function ScreenshotsSection({ product, locale, multiProduct }: Props) {
+export function ScreenshotsSection({ product, locale, multiProduct, platform }: Props) {
   const T: ThemeTokens = product.theme;
   const offscreenRef = useRef<HTMLDivElement>(null);
 
-  const [device, setDevice]           = useState<"iphone" | "android">("iphone");
   const [selectedSize, setSelectedSize] = useState(0);
   const [exporting, setExporting]       = useState(false);
   const [progress, setProgress]         = useState<{ done: number; total: number } | null>(null);
 
   const activeSlides = product.slidesByLocale?.[locale] ?? product.slides;
-  const hasAndroid   = Boolean(activeSlides.android?.length);
-  const activeDevice = hasAndroid ? device : "iphone";
+  const activeDevice = platform === "android" && activeSlides.android?.length ? "android" : "iphone";
   const slides       = (activeDevice === "android" ? activeSlides.android : activeSlides.iphone) ?? [];
   const sizes        = activeDevice === "android" ? ANDROID_SIZES : IPHONE_SIZES;
   const canvasW      = activeDevice === "android" ? ANDROID_W : IPHONE_W;
@@ -58,21 +57,6 @@ export function ScreenshotsSection({ product, locale, multiProduct }: Props) {
     <div style={{ padding: "24px 24px 32px", maxWidth: 1600, margin: "0 auto" }}>
       {/* Toolbar row */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
-        {hasAndroid && (
-          <div style={{ display: "flex", gap: 4, background: "rgba(255,255,255,0.04)", padding: 3, borderRadius: 7 }}>
-            {(["iphone", "android"] as const).map((d) => (
-              <button key={d} onClick={() => setDevice(d)}
-                style={{
-                  background: device === d ? T.accent : "rgba(255,255,255,0.06)",
-                  color: device === d ? "#fff" : T.fgMuted,
-                  border: "none", borderRadius: 5, padding: "5px 12px",
-                  fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all 0.15s",
-                  boxShadow: device === d ? `0 2px 10px ${T.accentGlow}` : "none",
-                }}
-              >{d === "iphone" ? "iPhone" : "Android"}</button>
-            ))}
-          </div>
-        )}
         <select value={selectedSize} onChange={(e) => setSelectedSize(Number(e.target.value))} disabled={exporting}
           style={{ background: "rgba(255,255,255,0.06)", color: T.fg, border: "1px solid rgba(255,255,255,0.1)", borderRadius: 7, padding: "7px 10px", fontSize: 12, fontWeight: 500, cursor: exporting ? "wait" : "pointer", outline: "none", opacity: exporting ? 0.5 : 1 }}>
           {sizes.map((s, i) => (
@@ -97,12 +81,9 @@ export function ScreenshotsSection({ product, locale, multiProduct }: Props) {
             }} />
           )}
           <span style={{ position: "relative", zIndex: 1 }}>
-            {progress ? `${progress.done}/${progress.total}…` : "Export ZIP"}
+            {progress ? `${progress.done}/${progress.total}…` : "Export All"}
           </span>
         </button>
-        <span style={{ fontSize: 12, color: T.fgMuted, marginLeft: 4 }}>
-          {slides.length} slides
-        </span>
       </div>
 
       {/* Grid */}

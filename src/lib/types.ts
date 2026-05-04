@@ -75,6 +75,8 @@ export type LocaleDef = {
   flag?: string;              // e.g. "🇺🇸", "🇻🇳"
 };
 
+export type AppPlatform = "iphone" | "android";
+
 export type ProductConfig = {
   id: string;
   name: string;
