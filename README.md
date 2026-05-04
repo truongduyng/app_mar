@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# App Store Screenshot Generator
+
+A Next.js app that generates App Store / Google Play screenshots, feature graphics, and social OG images for multiple mobile apps.
+
+## How It Works
+
+Renders React components into the DOM, captures them as PNGs via `html-to-image`, resizes them to platform-correct dimensions, and bundles them into a ZIP.
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+bun dev      # Start dev server on port 3000
+bun run build
+bun start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Architecture
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Product Registry
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+`src/products/index.ts` exports a `PRODUCTS` array. Each entry is a `ProductConfig` (defined in `src/lib/types.ts`) with:
+- `theme` — brand colors, gradients, foreground/background
+- `locales` — supported language codes (e.g. `["en", "vi"]`)
+- `slides.iphone` / `slides.android` — array of `SlideDef`, each with a React `Component` and per-locale `copyByLocale`
+- `featureGraphic`, `socialOg` — content for Google Play banner and social preview
+- `metadata` / `metadataByLocale` — App Store listing text per locale
 
-## Learn More
+### Slide Components
 
-To learn more about Next.js, take a look at the following resources:
+Each product lives in `src/products/<product-id>/`:
+- `index.tsx` — the `ProductConfig` object
+- `slides.tsx` — slide React components
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Slide components receive `{ theme, base, copy }` props. `base` is the screenshot dimensions (width/height), `copy` is locale-resolved text. Common layout primitives are in `src/components/slide-layouts.tsx`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Export Pipeline
 
-## Deploy on Vercel
+`src/lib/export.ts` drives all exports:
+1. `exportSingle` — captures one DOM element → PNG, resizes to target canvas dimensions
+2. `exportAllToZip` — iterates all slides across all locales, renders each offscreen, batches into a ZIP via jszip
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Canvas dimensions for all asset types are in `src/lib/constants.ts` (iPhone, Android, feature graphic, social OG).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Image assets are preloaded as data URLs via `src/lib/images.ts` before rendering to avoid cross-origin/timing issues during DOM capture.
+
+### Main Page
+
+`src/app/page.tsx` is a single large client component managing all state: selected product, active device tab, active locale, metadata edits, and export progress. It renders `ScreenshotPreview` cards and delegates export to the functions above.
+
+## Adding a New Product
+
+1. Create `src/products/<id>/index.tsx` and `slides.tsx`
+2. Define a `ProductConfig` — copy an existing product as a template (e.g. `tinysteps`)
+3. Add slide components in `slides.tsx` accepting `{ theme, base, copy }`
+4. Place image assets in `public/products/<id>/`
+5. Register in `src/products/index.ts` by adding to the `PRODUCTS` array
