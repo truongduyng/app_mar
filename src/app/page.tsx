@@ -431,7 +431,8 @@ export default function ScreenshotsPage() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 220px))",
+          justifyContent: "center",
           gap: 24, padding: "0 24px 40px",
           maxWidth: 1600, margin: "0 auto",
         }}
@@ -506,7 +507,7 @@ export default function ScreenshotsPage() {
           }
         />
       </div>
-      <div style={{ padding: "0 24px 40px", maxWidth: 1200, margin: "0 auto" }}>
+      <div style={{ padding: "0 24px 40px", maxWidth: 900, margin: "0 auto" }}>
         <div style={{
           borderRadius: 12, overflow: "hidden",
           border: "1px solid rgba(255,255,255,0.08)",
@@ -570,7 +571,7 @@ export default function ScreenshotsPage() {
           }
         />
       </div>
-      <div style={{ padding: "0 24px 40px", maxWidth: 1200, margin: "0 auto" }}>
+      <div style={{ padding: "0 24px 40px", maxWidth: 900, margin: "0 auto" }}>
         <div style={{
           borderRadius: 12, overflow: "hidden",
           border: "1px solid rgba(255,255,255,0.08)",
@@ -692,7 +693,7 @@ export default function ScreenshotsPage() {
           }
         />
       </div>
-      <div style={{ padding: "0 24px 40px", maxWidth: 600, margin: "0 auto" }}>
+      <div style={{ padding: "0 24px 40px", maxWidth: 420, margin: "0 auto" }}>
         <div style={{
           borderRadius: 12, overflow: "hidden",
           border: "1px solid rgba(255,255,255,0.08)",

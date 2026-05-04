@@ -111,7 +111,7 @@ export const FITFO: ProductConfig = {
     ],
   },
   ctaImage: {
-    headline: "train. track. transform",
+    headline: "Your fitness, scored, tracked and coached — all in one place.",
     sc1: "sc1.png",
     sc2: "sc2.png",
     ctaLabel: "↑ link in bio",
