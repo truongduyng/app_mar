@@ -32,6 +32,18 @@ export type SlideDef = {
   Component: React.FC<{ theme: ThemeTokens; base: string; copy: SlideCopy }>;
 };
 
+/**
+ * Structured locale copy for a product's slides.
+ * Key is slide id, value is a map of locale → SlideCopy.
+ * Used in copy.ts files to separate content from component wiring.
+ *
+ * Example:
+ *   export const COPY: SlideCopyMap = {
+ *     hero: { en: { label: "HERO", headline: "...", subtitle: "..." }, vi: { ... } },
+ *   }
+ */
+export type SlideCopyMap = Record<string, Record<string, SlideCopy>>;
+
 /** Asset categories the generator produces */
 export type AssetCategory = "screenshots" | "feature-graphic" | "social-og" | "metadata";
 

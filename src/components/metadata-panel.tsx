@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useMemo } from "react";
+import { useState, useCallback } from "react";
 import type { ThemeTokens, MetadataConfig, LocaleDef } from "@/lib/types";
 
 type FieldDef = {
@@ -21,18 +21,10 @@ const FIELDS: FieldDef[] = [
   { id: "description",      label: "Full Description",               platform: "Both",   maxLength: 4000, multiline: true,  placeholder: "Full app description for store listing..." },
 ];
 
-/** Default primary locale when none configured */
-const DEFAULT_PRIMARY: LocaleDef = { code: "en", label: "English", flag: "🇺🇸" };
-
-/**
- * Metadata editor panel with locale selector.
- * Supports multiple languages per product via tabs.
- */
 export function MetadataPanel({
   theme: T,
   locales,
   activeLocale,
-  onLocaleChange,
   metadata,
   onUpdate,
   allLocaleData,
@@ -40,7 +32,6 @@ export function MetadataPanel({
   theme: ThemeTokens;
   locales: LocaleDef[];
   activeLocale: string;
-  onLocaleChange: (code: string) => void;
   metadata: MetadataConfig;
   onUpdate: (updated: MetadataConfig) => void;
   /** All locale data for JSON export - { [locale]: MetadataConfig } */
@@ -163,59 +154,6 @@ export function MetadataPanel({
           </button>
         </div>
       </div>
-
-      {/* Locale tabs */}
-      {showLocaleTabs && (
-        <div
-          style={{
-            display: "flex",
-            gap: 4,
-            marginBottom: 24,
-            padding: 4,
-            background: "rgba(255,255,255,0.03)",
-            borderRadius: 10,
-            border: "1px solid rgba(255,255,255,0.06)",
-            flexWrap: "wrap",
-          }}
-        >
-          {locales.map((loc) => {
-            const isActive = loc.code === activeLocale;
-            return (
-              <button
-                key={loc.code}
-                onClick={() => onLocaleChange(loc.code)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  background: isActive ? T.accentSoft : "transparent",
-                  border: isActive ? `1px solid ${T.accent}44` : "1px solid transparent",
-                  borderRadius: 7,
-                  padding: "7px 14px",
-                  fontSize: 13,
-                  fontWeight: isActive ? 700 : 500,
-                  color: isActive ? T.fg : T.fgMuted,
-                  cursor: "pointer",
-                  transition: "all 0.15s",
-                  whiteSpace: "nowrap",
-                }}
-                onMouseEnter={(e) => {
-                  if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.05)";
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-                }}
-              >
-                {loc.flag && <span style={{ fontSize: 15 }}>{loc.flag}</span>}
-                <span>{loc.label}</span>
-                <span style={{ fontSize: 11, color: T.fgMuted, fontWeight: 400, textTransform: "uppercase" }}>
-                  {loc.code}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      )}
 
       {/* Field cards */}
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>

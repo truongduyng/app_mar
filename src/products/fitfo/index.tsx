@@ -1,36 +1,18 @@
 import React from "react";
-import type { ProductConfig, ThemeTokens } from "@/lib/types";
+import type { ProductConfig } from "@/lib/types";
 import {
   FitFoSlide1, FitFoSlide2, FitFoSlide3, FitFoSlide4,
   FitFoSlide5, FitFoSlide6, FitFoSlide7, FitFoSlide8,
 } from "./slides";
-
-export const FITFO_THEME: ThemeTokens = {
-  bg: "#0A0A0B",
-  bgAlt: "#0F0F10",
-  fg: "#F8F8F6",
-  fgMuted: "#8A8A90",
-  accent: "#F97316",
-  accentGlow: "rgba(249,115,22,0.35)",
-  accentSoft: "rgba(249,115,22,0.12)",
-  surface: "rgba(249,115,22,0.06)",
-  gradients: {
-    dark: "linear-gradient(180deg, #0A0A0B 0%, #0F0F10 50%, #0A0A0B 100%)",
-    warm: "linear-gradient(180deg, #0C0A08 0%, #181008 40%, #0C0A08 100%)",
-    accent: "linear-gradient(135deg, #0A0A0B 0%, #140D06 50%, #0A0A0B 100%)",
-    deep: "linear-gradient(180deg, #080808 0%, #0E0B07 50%, #080808 100%)",
-    hero: "linear-gradient(180deg, #0C0B09 0%, #16100A 35%, #0A0A0B 100%)",
-  },
-};
-
-const T = FITFO_THEME;
+import { FITFO_THEME as T } from "./theme";
+import { FITFO_METADATA } from "./metadata";
 
 export const FITFO: ProductConfig = {
   id: "fitfo",
   name: "FitFo: Workout Plan & Log Pal",
   iconPath: "/products/fitfo/icon.png",
   screenshotBase: "/products/fitfo/screenshots",
-  theme: FITFO_THEME,
+  theme: T,
   locales: [
     { code: "en", label: "English", flag: "🇺🇸" },
   ],
@@ -124,36 +106,5 @@ export const FITFO: ProductConfig = {
     tagline: "FitFo Workout AI Planner & Log",
     subtitle: "AI workout plans, macro tracking, progress photos, and a personal Fit Score.",
   },
-  metadata: {
-    name: "FitFo Workout AI Planner & Log",
-    subtitle: "Workout Plan & Nutrition with AI coach",
-    promoText: "AI-generated workout plans and macro tracking built around your body type and goals.",
-    shortDescription: "AI fitness tracker with workouts, nutrition, progress photos, and Fit Score.",
-    keywords: "fitness tracker,workout planner,macro tracker,AI workout,calorie tracker,strength training",
-    description: `Your fitness, scored. FitFo is the all-in-one AI fitness companion that builds a plan around your body type, goals, and schedule — then tracks every rep, meal, and milestone.
-
-AI WORKOUT PLAN
-
-FitFo generates a personalized daily workout plan based on your somatotype, training frequency, and goals. Push Day, Pull Day, rest — it's all mapped out for you.
-
-NUTRITION TRACKING
-
-Log meals and track macros with smart calorie targets adjusted for training and rest days. See protein, carbs, and fat broken down for every meal.
-
-PERSONAL FIT SCORE
-
-Your Fit Score maps your fitness across five dimensions: Strength, Stamina, Physique, Discipline, and Mobility. Know exactly where you're strong and what to improve next.
-
-30-DAY FORECAST
-
-See what you can achieve in 30 days — estimated muscle gain, calories burned, sessions completed, and Fit Score increase — all based on your actual plan.
-
-VISUAL PROGRESS TRACKING
-
-Upload progress photos and watch your transformation over time. Your profile captures where you started and how far you've come.
-
-PERSONALIZED ONBOARDING
-
-FitFo starts by learning your body type (ectomorph, mesomorph, endomorph), fitness level, and goals — then builds everything around you.`,
-  },
+  metadata: FITFO_METADATA,
 };
