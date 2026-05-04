@@ -75,6 +75,39 @@ export type LocaleDef = {
   flag?: string;              // e.g. "🇺🇸", "🇻🇳"
 };
 
+// ─── Serializable versions (DB ↔ API, no React nodes) ─────────────────────
+
+import type { RichTextSegment } from "./rich-text";
+
+export type SerializableSlideCopy = {
+  label: string;
+  headline: RichTextSegment[];
+  subtitle: RichTextSegment[];
+};
+
+export type SerializableSlideDef = {
+  id: string;
+  componentKey: string;
+  copy: SerializableSlideCopy;
+  copyByLocale?: Record<string, SerializableSlideCopy>;
+};
+
+export type SerializableProductConfig = Omit<
+  ProductConfig,
+  "slides" | "slidesByLocale"
+> & {
+  slides: {
+    iphone: SerializableSlideDef[];
+    android?: SerializableSlideDef[];
+  };
+  slidesByLocale?: Record<string, {
+    iphone: SerializableSlideDef[];
+    android?: SerializableSlideDef[];
+  }>;
+};
+
+// ───────────────────────────────────────────────────────────────────────────
+
 export type ProductConfig = {
   id: string;
   name: string;
