@@ -116,18 +116,21 @@ export default function ScreenshotsPage() {
     );
   }
 
+  const SIDEBAR_W = 200;
+  const TOPBAR_H  = 57;
+
   return (
     <div style={{ minHeight: "100vh", background: "#09090B", color: T.fg, fontFamily: "inherit" }}>
 
-      {/* ── Toolbar ── */}
+      {/* ── Top bar: product picker + lang picker ── */}
       <div style={{
-        position: "sticky", top: 0, zIndex: 100,
-        background: "rgba(9,9,11,0.85)", backdropFilter: "blur(16px)",
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
+        height: TOPBAR_H,
+        background: "rgba(9,9,11,0.92)", backdropFilter: "blur(16px)",
         borderBottom: "1px solid rgba(255,255,255,0.06)",
-        padding: "12px 24px",
-        display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
+        padding: "0 16px",
+        display: "flex", alignItems: "center", gap: 12,
       }}>
-
         {/* Product picker */}
         <div ref={productMenuRef} style={{ position: "relative" }}>
           <button
@@ -141,10 +144,10 @@ export default function ScreenshotsPage() {
             }}
           >
             <img src={img(product.iconPath)} alt={product.name}
-              style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0 }}
+              style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0 }}
               onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-            <span style={{ fontWeight: 700, fontSize: 16, color: T.fg, whiteSpace: "nowrap" }}>{product.name}</span>
-            <svg width={14} height={14} viewBox="0 0 14 14" fill="none"
+            <span style={{ fontWeight: 700, fontSize: 15, color: T.fg, whiteSpace: "nowrap" }}>{product.name}</span>
+            <svg width={13} height={13} viewBox="0 0 14 14" fill="none"
               style={{ marginLeft: 2, opacity: 0.5, flexShrink: 0, transform: productMenuOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
               <path d="M3 5l4 4 4-4" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
             </svg>
@@ -187,24 +190,9 @@ export default function ScreenshotsPage() {
           )}
         </div>
 
-        {/* Section tabs */}
-        <div style={{ display: "flex", gap: 2, background: "rgba(255,255,255,0.04)", padding: 3, borderRadius: 8, flexWrap: "wrap" }}>
-          {SECTIONS.map((s) => (
-            <button key={s.id} onClick={() => setSection(s.id)}
-              style={{
-                background: section === s.id ? "rgba(255,255,255,0.1)" : "transparent",
-                color: section === s.id ? T.fg : T.fgMuted,
-                border: section === s.id ? "1px solid rgba(255,255,255,0.12)" : "1px solid transparent",
-                borderRadius: 6, padding: "5px 12px",
-                fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all 0.15s", whiteSpace: "nowrap",
-              }}
-            >{s.label}</button>
-          ))}
-        </div>
-
         {/* Language picker */}
         {productLocales.length > 1 && (
-          <div style={{ display: "flex", gap: 3, background: "rgba(255,255,255,0.04)", padding: 3, borderRadius: 8 }}>
+          <div style={{ display: "flex", gap: 3, background: "rgba(255,255,255,0.04)", padding: 3, borderRadius: 8, marginLeft: "auto" }}>
             {productLocales.map((loc) => (
               <button key={loc.code} onClick={() => setLocale(loc.code)}
                 style={{
@@ -224,42 +212,98 @@ export default function ScreenshotsPage() {
         )}
       </div>
 
-      {/* ── Sections ── */}
-      {section === "screenshots" && (
-        <ScreenshotsSection product={product} locale={locale} multiProduct={PRODUCTS.length > 1} />
-      )}
-      {section === "feature-graphic" && (
-        <FeatureGraphicSection product={product} multiProduct={PRODUCTS.length > 1} />
-      )}
-      {section === "social-og" && (
-        <SocialOgSection product={product} multiProduct={PRODUCTS.length > 1} />
-      )}
-      {section === "cta" && (
-        <CtaSection
-          product={product}
-          locale={locale}
-          ctaSc1={ctaSc1}
-          ctaSc2={ctaSc2}
-          onSc1Change={setCtaSc1}
-          onSc2Change={setCtaSc2}
-        />
-      )}
-      {section === "metadata" && (
-        <MetadataPanel
-          theme={T}
-          locales={productLocales}
-          activeLocale={locale}
-          metadata={
-            metadataMap[product.id]?.[locale] ??
-            metadataMap[product.id]?.[productLocales[0].code] ??
-            { name: product.name, subtitle: "", promoText: "", shortDescription: "", description: "", keywords: "" }
-          }
-          onUpdate={(updated) =>
-            setMetadataMap((prev) => ({ ...prev, [product.id]: { ...prev[product.id], [locale]: updated } }))
-          }
-          allLocaleData={metadataMap[product.id] ?? {}}
-        />
-      )}
+      {/* ── Body: sidebar + main ── */}
+      <div style={{ display: "flex", paddingTop: TOPBAR_H }}>
+
+        {/* Left sidebar */}
+        <aside style={{
+          position: "fixed", top: TOPBAR_H, left: 0, bottom: 0,
+          width: SIDEBAR_W, zIndex: 90,
+          background: "rgba(13,13,15,0.95)", backdropFilter: "blur(12px)",
+          borderRight: "1px solid rgba(255,255,255,0.06)",
+          display: "flex", flexDirection: "column",
+          padding: "16px 10px",
+          gap: 2,
+          overflowY: "auto",
+        }}>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: T.fgMuted, textTransform: "uppercase", padding: "2px 8px 8px" }}>
+            Assets
+          </div>
+          {SECTIONS.map((s) => {
+            const active = section === s.id;
+            return (
+              <button key={s.id} onClick={() => setSection(s.id)}
+                style={{
+                  display: "flex", alignItems: "center", gap: 9,
+                  background: active ? T.accentSoft : "transparent",
+                  border: active ? `1px solid ${T.accent}33` : "1px solid transparent",
+                  borderRadius: 8, padding: "8px 10px",
+                  fontSize: 13, fontWeight: active ? 600 : 400,
+                  color: active ? T.fg : T.fgMuted,
+                  cursor: "pointer", transition: "all 0.15s", textAlign: "left", width: "100%",
+                }}
+                onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.04)"; }}
+                onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+              >
+                <SectionIcon id={s.id} active={active} color={active ? T.accent : T.fgMuted} />
+                {s.label}
+              </button>
+            );
+          })}
+        </aside>
+
+        {/* Main content */}
+        <main style={{ marginLeft: SIDEBAR_W, flex: 1, minWidth: 0 }}>
+          {section === "screenshots" && (
+            <ScreenshotsSection product={product} locale={locale} multiProduct={PRODUCTS.length > 1} />
+          )}
+          {section === "feature-graphic" && (
+            <FeatureGraphicSection product={product} multiProduct={PRODUCTS.length > 1} />
+          )}
+          {section === "social-og" && (
+            <SocialOgSection product={product} multiProduct={PRODUCTS.length > 1} />
+          )}
+          {section === "cta" && (
+            <CtaSection
+              product={product}
+              locale={locale}
+              ctaSc1={ctaSc1}
+              ctaSc2={ctaSc2}
+              onSc1Change={setCtaSc1}
+              onSc2Change={setCtaSc2}
+            />
+          )}
+          {section === "metadata" && (
+            <MetadataPanel
+              theme={T}
+              locales={productLocales}
+              activeLocale={locale}
+              metadata={
+                metadataMap[product.id]?.[locale] ??
+                metadataMap[product.id]?.[productLocales[0].code] ??
+                { name: product.name, subtitle: "", promoText: "", shortDescription: "", description: "", keywords: "" }
+              }
+              onUpdate={(updated) =>
+                setMetadataMap((prev) => ({ ...prev, [product.id]: { ...prev[product.id], [locale]: updated } }))
+              }
+              allLocaleData={metadataMap[product.id] ?? {}}
+            />
+          )}
+        </main>
+      </div>
     </div>
   );
+}
+
+function SectionIcon({ id, color }: { id: string; active: boolean; color: string }) {
+  const s = { stroke: color, strokeWidth: 1.5, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, fill: "none" };
+  const size = 15;
+  switch (id) {
+    case "screenshots":     return <svg width={size} height={size} viewBox="0 0 16 16"><rect x="2" y="1" width="8" height="14" rx="1.5" {...s}/><line x1="4" y1="13.5" x2="8" y2="13.5" {...s}/></svg>;
+    case "feature-graphic": return <svg width={size} height={size} viewBox="0 0 16 16"><rect x="1" y="4" width="14" height="8" rx="1.5" {...s}/><circle cx="5" cy="8" r="1.5" {...s}/><path d="M8 10l2-2 3 2" {...s}/></svg>;
+    case "social-og":       return <svg width={size} height={size} viewBox="0 0 16 16"><rect x="1" y="3" width="14" height="10" rx="1.5" {...s}/><circle cx="5.5" cy="7" r="1.5" {...s}/><path d="M9 10l2-3 3 3" {...s}/></svg>;
+    case "cta":             return <svg width={size} height={size} viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="12" rx="1.5" {...s}/><path d="M5 8h6M8 5v6" {...s}/></svg>;
+    case "metadata":        return <svg width={size} height={size} viewBox="0 0 16 16"><path d="M3 4h10M3 8h7M3 12h5" {...s}/></svg>;
+    default:                return null;
+  }
 }
