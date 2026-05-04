@@ -27,7 +27,7 @@ const T = FITFO_THEME;
 
 export const FITFO: ProductConfig = {
   id: "fitfo",
-  name: "FitFo AI: Workout Planner & Tracker",
+  name: "FitFo: Workout Plan & Log Pal",
   iconPath: "/products/fitfo/icon.png",
   screenshotBase: "/products/fitfo/screenshots",
   theme: FITFO_THEME,
