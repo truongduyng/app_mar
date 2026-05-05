@@ -1,13 +1,12 @@
-import { pgTable, text, integer, boolean, jsonb, serial, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, jsonb, serial, timestamp, primaryKey, unique } from "drizzle-orm/pg-core";
 
 export const products = pgTable("products", {
-  id:                      text("id").primaryKey(),
-  name:                    text("name").notNull(),
-  iconPath:                text("icon_path").notNull(),
-  screenshotBase:          text("screenshot_base").notNull(),
-  screenshotBaseByLocale:  jsonb("screenshot_base_by_locale").$type<Record<string, string>>().default({}),
-  mockupPath:              text("mockup_path"),
-  createdAt:               timestamp("created_at").defaultNow(),
+  id:             text("id").primaryKey(),
+  name:           text("name").notNull(),
+  iconPath:       text("icon_path").notNull(),
+  screenshotBase: text("screenshot_base").notNull(),
+  mockupPath:     text("mockup_path"),
+  createdAt:      timestamp("created_at").defaultNow(),
 });
 
 export const productThemes = pgTable("product_themes", {
@@ -15,55 +14,80 @@ export const productThemes = pgTable("product_themes", {
   tokens:    jsonb("tokens").notNull(),
 });
 
+/**
+ * Explicit locale list for a product. If empty, product is implicitly English-only.
+ * sort_order=0 is the primary locale (maps to SlideDef.copy and ProductConfig.metadata).
+ * screenshot_base_override: when set, overrides products.screenshot_base for this locale.
+ */
 export const productLocales = pgTable("product_locales", {
+  id:                     serial("id").primaryKey(),
+  productId:              text("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+  code:                   text("code").notNull(),
+  label:                  text("label").notNull(),
+  flag:                   text("flag"),
+  sortOrder:              integer("sort_order").notNull().default(0),
+  screenshotBaseOverride: text("screenshot_base_override"),
+}, (t) => ({
+  productCodeUniq: unique().on(t.productId, t.code),
+}));
+
+/**
+ * Logical grouping of slides for a product.
+ * name='default'      → product.slides  (shown unless a locale-specific group applies)
+ * name=<locale-code>  → product.slidesByLocale[name]  (replaces default when that locale is active)
+ */
+export const slideGroups = pgTable("slide_groups", {
   id:        serial("id").primaryKey(),
   productId: text("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
-  code:      text("code").notNull(),
-  label:     text("label").notNull(),
-  flag:      text("flag"),
+  name:      text("name").notNull(),   // 'default' | locale code e.g. 'vi'
   sortOrder: integer("sort_order").notNull().default(0),
-});
+}, (t) => ({
+  productNameUniq: unique().on(t.productId, t.name),
+}));
 
 /**
- * One row per slide slot.
- * slideVariant = 'default' → belongs to product.slides (shown for all locales unless overridden)
- * slideVariant = 'vi'      → belongs to product.slidesByLocale.vi (replaces default when locale is 'vi')
- * The variant name for locale-overrides is the locale code by convention.
+ * Which locales activate a non-default slide group.
+ * Presence of (group_id, locale) means: use this group when active locale = locale.
+ */
+export const slideGroupLocales = pgTable("slide_group_locales", {
+  groupId: integer("group_id").notNull().references(() => slideGroups.id, { onDelete: "cascade" }),
+  locale:  text("locale").notNull(),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.groupId, t.locale] }),
+}));
+
+/**
+ * Individual slide slots within a group.
+ * group_id links to slide_groups; device is 'iphone' | 'android'.
  */
 export const productSlides = pgTable("product_slides", {
-  id:            serial("id").primaryKey(),
-  productId:     text("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
-  device:        text("device").notNull(),          // 'iphone' | 'android'
-  slideVariant:  text("slide_variant").notNull(),   // 'default' | 'vi' | 'en' …
-  slideKey:      text("slide_key").notNull(),
-  componentKey:  text("component_key").notNull(),
-  sortOrder:     integer("sort_order").notNull().default(0),
-});
+  id:           serial("id").primaryKey(),
+  groupId:      integer("group_id").notNull().references(() => slideGroups.id, { onDelete: "cascade" }),
+  device:       text("device").notNull(),         // 'iphone' | 'android'
+  slideKey:     text("slide_key").notNull(),
+  componentKey: text("component_key").notNull(),
+  sortOrder:    integer("sort_order").notNull().default(0),
+}, (t) => ({
+  groupDeviceKeyUniq: unique().on(t.groupId, t.device, t.slideKey),
+}));
 
 /**
- * Text content for one slide × locale combination.
- * slideVariant links to productSlides.slideVariant.
- * locale     is the language of this copy row.
- * sortOrder  0 = primary copy (SlideDef.copy), 1+ = copyByLocale overrides (SlideDef.copyByLocale[locale]).
- *
- * Example for tinysteps default hero:
- *   slideVariant='default', locale='en', sortOrder=0  → primary copy
- *   slideVariant='default', locale='vi', sortOrder=1  → copyByLocale.vi
- *
- * Example for tinysteps vi-variant hero (slidesByLocale.vi):
- *   slideVariant='vi', locale='vi', sortOrder=0       → primary copy (only one)
+ * Text content for one (product, slide, locale) combination.
+ * For the default slide group: the primary locale row becomes SlideDef.copy,
+ * other locales become SlideDef.copyByLocale entries.
+ * For locale-specific groups: the matching locale row is SlideDef.copy.
  */
 export const slideCopy = pgTable("slide_copy", {
-  id:           serial("id").primaryKey(),
-  productId:    text("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
-  slideVariant: text("slide_variant").notNull(),
-  slideKey:     text("slide_key").notNull(),
-  locale:       text("locale").notNull(),
-  sortOrder:    integer("sort_order").notNull().default(0),
-  label:        text("label").notNull(),
-  headline:     jsonb("headline").notNull(),   // RichTextSegment[]
-  subtitle:     jsonb("subtitle").notNull(),   // RichTextSegment[]
-});
+  id:        serial("id").primaryKey(),
+  productId: text("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+  slideKey:  text("slide_key").notNull(),
+  locale:    text("locale").notNull(),
+  label:     text("label").notNull(),
+  headline:  jsonb("headline").notNull(),  // RichTextSegment[]
+  subtitle:  jsonb("subtitle").notNull(),  // RichTextSegment[]
+}, (t) => ({
+  productSlideLocaleUniq: unique().on(t.productId, t.slideKey, t.locale),
+}));
 
 export const productMetadata = pgTable("product_metadata", {
   id:               serial("id").primaryKey(),
@@ -75,26 +99,44 @@ export const productMetadata = pgTable("product_metadata", {
   shortDescription: text("short_description").notNull().default(""),
   description:      text("description").notNull().default(""),
   keywords:         text("keywords").notNull().default(""),
-});
+}, (t) => ({
+  productLocaleUniq: unique().on(t.productId, t.locale),
+}));
 
 export const productFeatureGraphics = pgTable("product_feature_graphics", {
-  productId: text("product_id").primaryKey().references(() => products.id, { onDelete: "cascade" }),
+  id:        serial("id").primaryKey(),
+  productId: text("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+  locale:    text("locale").notNull(),
   tagline:   text("tagline").notNull(),
   subtitle:  text("subtitle"),
-});
+}, (t) => ({
+  productLocaleUniq: unique().on(t.productId, t.locale),
+}));
 
 export const productSocialOgs = pgTable("product_social_ogs", {
-  productId: text("product_id").primaryKey().references(() => products.id, { onDelete: "cascade" }),
+  id:        serial("id").primaryKey(),
+  productId: text("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+  locale:    text("locale").notNull(),
   tagline:   text("tagline").notNull(),
   subtitle:  text("subtitle"),
-});
+}, (t) => ({
+  productLocaleUniq: unique().on(t.productId, t.locale),
+}));
 
+/**
+ * CTA image config per locale. Each locale gets its own headline/cta_label.
+ * sc1/sc2 are screenshot filenames within the product's screenshot_base.
+ * For products with locale-specific screenshotBaseOverride, the same filename
+ * resolves to different images automatically.
+ */
 export const productCtaImages = pgTable("product_cta_images", {
-  productId:         text("product_id").primaryKey().references(() => products.id, { onDelete: "cascade" }),
-  headline:          text("headline").notNull(),
-  headlineByLocale:  jsonb("headline_by_locale").$type<Record<string, string>>().default({}),
-  sc1:               text("sc1").notNull(),
-  sc2:               text("sc2").notNull(),
-  ctaLabel:          text("cta_label"),
-  ctaLabelByLocale:  jsonb("cta_label_by_locale").$type<Record<string, string>>().default({}),
-});
+  id:        serial("id").primaryKey(),
+  productId: text("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+  locale:    text("locale").notNull(),
+  headline:  text("headline").notNull(),
+  sc1:       text("sc1").notNull(),
+  sc2:       text("sc2").notNull(),
+  ctaLabel:  text("cta_label"),
+}, (t) => ({
+  productLocaleUniq: unique().on(t.productId, t.locale),
+}));
