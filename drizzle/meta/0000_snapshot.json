@@ -1,5 +1,5 @@
 {
-  "id": "3d490874-5d07-4661-b494-8cd6ead2a7e3",
+  "id": "df8a94b0-036f-4679-8ac4-5f1bf953ccc4",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -292,8 +292,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "slide_set": {
-          "name": "slide_set",
+        "slide_variant": {
+          "name": "slide_variant",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -497,8 +497,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "slide_set": {
-          "name": "slide_set",
+        "slide_variant": {
+          "name": "slide_variant",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -514,6 +514,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "sort_order": {
+          "name": "sort_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
         },
         "label": {
           "name": "label",

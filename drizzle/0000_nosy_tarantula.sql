@@ -39,7 +39,7 @@ CREATE TABLE "product_slides" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"product_id" text NOT NULL,
 	"device" text NOT NULL,
-	"slide_set" text NOT NULL,
+	"slide_variant" text NOT NULL,
 	"slide_key" text NOT NULL,
 	"component_key" text NOT NULL,
 	"sort_order" integer DEFAULT 0 NOT NULL
@@ -69,9 +69,10 @@ CREATE TABLE "products" (
 CREATE TABLE "slide_copy" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"product_id" text NOT NULL,
-	"slide_set" text NOT NULL,
+	"slide_variant" text NOT NULL,
 	"slide_key" text NOT NULL,
 	"locale" text NOT NULL,
+	"sort_order" integer DEFAULT 0 NOT NULL,
 	"label" text NOT NULL,
 	"headline" jsonb NOT NULL,
 	"subtitle" jsonb NOT NULL

@@ -13,9 +13,10 @@ const db = drizzle(sql, { schema });
 
 type SlideCopyRow = {
   productId: string;
-  slideSet: string;
+  slideVariant: string;
   slideKey: string;
   locale: string;
+  sortOrder: number;   // 0 = primary (SlideDef.copy), 1+ = copyByLocale overrides
   label: string;
   headline: RichTextSegment[];
   subtitle: RichTextSegment[];
@@ -24,7 +25,7 @@ type SlideCopyRow = {
 type SlideRow = {
   productId: string;
   device: string;
-  slideSet: string;
+  slideVariant: string;
   slideKey: string;
   componentKey: string;
   sortOrder: number;
@@ -33,153 +34,153 @@ type SlideRow = {
 // ─── HONE ─────────────────────────────────────────────────────────────────
 
 const honeSlides: SlideRow[] = [
-  { productId: "hone", device: "iphone", slideSet: "default", slideKey: "hero",     componentKey: "HoneSlide1", sortOrder: 0 },
-  { productId: "hone", device: "iphone", slideSet: "default", slideKey: "journal",  componentKey: "HoneSlide2", sortOrder: 1 },
-  { productId: "hone", device: "iphone", slideSet: "default", slideKey: "protocol", componentKey: "HoneSlide3", sortOrder: 2 },
-  { productId: "hone", device: "iphone", slideSet: "default", slideKey: "reward",   componentKey: "HoneSlide7", sortOrder: 3 },
-  { productId: "hone", device: "iphone", slideSet: "default", slideKey: "progress", componentKey: "HoneSlide4", sortOrder: 4 },
-  { productId: "hone", device: "iphone", slideSet: "default", slideKey: "goals",    componentKey: "HoneSlide5", sortOrder: 5 },
-  { productId: "hone", device: "iphone", slideSet: "default", slideKey: "proof",    componentKey: "HoneSlide6", sortOrder: 6 },
+  { productId: "hone", device: "iphone", slideVariant: "default", slideKey: "hero",     componentKey: "HoneSlide1", sortOrder: 0 },
+  { productId: "hone", device: "iphone", slideVariant: "default", slideKey: "journal",  componentKey: "HoneSlide2", sortOrder: 1 },
+  { productId: "hone", device: "iphone", slideVariant: "default", slideKey: "protocol", componentKey: "HoneSlide3", sortOrder: 2 },
+  { productId: "hone", device: "iphone", slideVariant: "default", slideKey: "reward",   componentKey: "HoneSlide7", sortOrder: 3 },
+  { productId: "hone", device: "iphone", slideVariant: "default", slideKey: "progress", componentKey: "HoneSlide4", sortOrder: 4 },
+  { productId: "hone", device: "iphone", slideVariant: "default", slideKey: "goals",    componentKey: "HoneSlide5", sortOrder: 5 },
+  { productId: "hone", device: "iphone", slideVariant: "default", slideKey: "proof",    componentKey: "HoneSlide6", sortOrder: 6 },
 ];
 
 const honeCopy: SlideCopyRow[] = [
-  { productId: "hone", slideSet: "default", slideKey: "hero",     locale: "en", label: "THE POWER OF SMALL HABITS", headline: [txt("Lasting Change."), br(), acc("Starts Today.")],     subtitle: [txt("Focus on daily, sustainable actions for a better you.")] },
-  { productId: "hone", slideSet: "default", slideKey: "journal",  locale: "en", label: "MINDFUL REFLECTION",        headline: [txt("Reflect. Align."), br(), acc("Thrive.")],            subtitle: [txt("Journal your daily thoughts. Let AI guide your emotional well-being and mental clarity.")] },
-  { productId: "hone", slideSet: "default", slideKey: "protocol", locale: "en", label: "DAILY WELL-BEING",          headline: [txt("Micro-Habits."), br(), acc("Macro Growth.")],         subtitle: [txt("Focus on sustainable actions that improve your life over time.")] },
-  { productId: "hone", slideSet: "default", slideKey: "reward",   locale: "en", label: "STAY CONSISTENT",           headline: [txt("Celebrate"), br(), acc("Every Win")],                 subtitle: [txt("Every small step counts. Build the momentum that makes change inevitable.")] },
-  { productId: "hone", slideSet: "default", slideKey: "progress", locale: "en", label: "HOLISTIC PROGRESS",         headline: [txt("Visualize"), br(), acc("Your Evolution")],            subtitle: [txt("Track mood patterns, energy levels, and habit consistency in one unified view.")] },
-  { productId: "hone", slideSet: "default", slideKey: "goals",    locale: "en", label: "SYSTEMS FOR LIFE",          headline: [txt("Daily Actions"), br(), acc("Not Overhauls")],         subtitle: [txt("Ditch the overnight pressure. Build systems that integrate into your lifestyle.")] },
-  { productId: "hone", slideSet: "default", slideKey: "proof",    locale: "en", label: "YOUR JOURNEY",              headline: [txt("Document"), br(), acc("The Best You")],               subtitle: [txt("Share your path to well-being and celebrate the compounding power of daily habits.")] },
+  { productId: "hone", slideVariant: "default", slideKey: "hero",     locale: "en", sortOrder: 0, label: "THE POWER OF SMALL HABITS", headline: [txt("Lasting Change."), br(), acc("Starts Today.")],     subtitle: [txt("Focus on daily, sustainable actions for a better you.")] },
+  { productId: "hone", slideVariant: "default", slideKey: "journal",  locale: "en", sortOrder: 0, label: "MINDFUL REFLECTION",        headline: [txt("Reflect. Align."), br(), acc("Thrive.")],            subtitle: [txt("Journal your daily thoughts. Let AI guide your emotional well-being and mental clarity.")] },
+  { productId: "hone", slideVariant: "default", slideKey: "protocol", locale: "en", sortOrder: 0, label: "DAILY WELL-BEING",          headline: [txt("Micro-Habits."), br(), acc("Macro Growth.")],         subtitle: [txt("Focus on sustainable actions that improve your life over time.")] },
+  { productId: "hone", slideVariant: "default", slideKey: "reward",   locale: "en", sortOrder: 0, label: "STAY CONSISTENT",           headline: [txt("Celebrate"), br(), acc("Every Win")],                 subtitle: [txt("Every small step counts. Build the momentum that makes change inevitable.")] },
+  { productId: "hone", slideVariant: "default", slideKey: "progress", locale: "en", sortOrder: 0, label: "HOLISTIC PROGRESS",         headline: [txt("Visualize"), br(), acc("Your Evolution")],            subtitle: [txt("Track mood patterns, energy levels, and habit consistency in one unified view.")] },
+  { productId: "hone", slideVariant: "default", slideKey: "goals",    locale: "en", sortOrder: 0, label: "SYSTEMS FOR LIFE",          headline: [txt("Daily Actions"), br(), acc("Not Overhauls")],         subtitle: [txt("Ditch the overnight pressure. Build systems that integrate into your lifestyle.")] },
+  { productId: "hone", slideVariant: "default", slideKey: "proof",    locale: "en", sortOrder: 0, label: "YOUR JOURNEY",              headline: [txt("Document"), br(), acc("The Best You")],               subtitle: [txt("Share your path to well-being and celebrate the compounding power of daily habits.")] },
 ];
 
 // ─── AMFO ─────────────────────────────────────────────────────────────────
 
 const amfoSlides: SlideRow[] = [
-  { productId: "amfo", device: "iphone", slideSet: "default", slideKey: "calm",     componentKey: "AmfoSlide1", sortOrder: 0 },
-  { productId: "amfo", device: "iphone", slideSet: "default", slideKey: "mix",      componentKey: "AmfoSlide2", sortOrder: 1 },
-  { productId: "amfo", device: "iphone", slideSet: "default", slideKey: "timer",    componentKey: "AmfoSlide3", sortOrder: 2 },
-  { productId: "amfo", device: "iphone", slideSet: "default", slideKey: "focus",    componentKey: "AmfoSlide4", sortOrder: 3 },
-  { productId: "amfo", device: "iphone", slideSet: "default", slideKey: "settings", componentKey: "AmfoSlide5", sortOrder: 4 },
+  { productId: "amfo", device: "iphone", slideVariant: "default", slideKey: "calm",     componentKey: "AmfoSlide1", sortOrder: 0 },
+  { productId: "amfo", device: "iphone", slideVariant: "default", slideKey: "mix",      componentKey: "AmfoSlide2", sortOrder: 1 },
+  { productId: "amfo", device: "iphone", slideVariant: "default", slideKey: "timer",    componentKey: "AmfoSlide3", sortOrder: 2 },
+  { productId: "amfo", device: "iphone", slideVariant: "default", slideKey: "focus",    componentKey: "AmfoSlide4", sortOrder: 3 },
+  { productId: "amfo", device: "iphone", slideVariant: "default", slideKey: "settings", componentKey: "AmfoSlide5", sortOrder: 4 },
 ];
 
 const amfoCopy: SlideCopyRow[] = [
-  { productId: "amfo", slideSet: "default", slideKey: "calm",     locale: "en", label: "AMBIENT SOUNDS", headline: [txt("Find"),          br(), acc("your calm.")],      subtitle: [txt("50+ curated ambient sounds"), br(), txt("for focus, sleep, and flow.")] },
-  { productId: "amfo", slideSet: "default", slideKey: "mix",      locale: "en", label: "SOUND MIXER",    headline: [txt("Layer sounds."), br(), acc("Save presets.")],   subtitle: [txt("Mix rain, café, and nature."), br(), txt("Save your perfect combinations.")] },
-  { productId: "amfo", slideSet: "default", slideKey: "timer",    locale: "en", label: "FOCUS TIMER",    headline: [txt("Set a timer."), br(), acc("Disappear.")],        subtitle: [txt("Custom durations to perfectly"), br(), txt("match your workflow or sleep.")] },
-  { productId: "amfo", slideSet: "default", slideKey: "focus",    locale: "en", label: "DEEP FOCUS",     headline: [txt("Silence"),       br(), acc("the noise.")],       subtitle: [txt("A beautiful, distraction-free"), br(), txt("timer keeps you locked in.")] },
-  { productId: "amfo", slideSet: "default", slideKey: "settings", locale: "en", label: "CUSTOMIZE",      headline: [txt("Your perfect"),  br(), acc("environment")],     subtitle: [txt("Auto-hide controls. Sleep fade out."), br(), txt("Make the app work for you.")] },
+  { productId: "amfo", slideVariant: "default", slideKey: "calm",     locale: "en", sortOrder: 0, label: "AMBIENT SOUNDS", headline: [txt("Find"),          br(), acc("your calm.")],      subtitle: [txt("50+ curated ambient sounds"), br(), txt("for focus, sleep, and flow.")] },
+  { productId: "amfo", slideVariant: "default", slideKey: "mix",      locale: "en", sortOrder: 0, label: "SOUND MIXER",    headline: [txt("Layer sounds."), br(), acc("Save presets.")],   subtitle: [txt("Mix rain, café, and nature."), br(), txt("Save your perfect combinations.")] },
+  { productId: "amfo", slideVariant: "default", slideKey: "timer",    locale: "en", sortOrder: 0, label: "FOCUS TIMER",    headline: [txt("Set a timer."), br(), acc("Disappear.")],        subtitle: [txt("Custom durations to perfectly"), br(), txt("match your workflow or sleep.")] },
+  { productId: "amfo", slideVariant: "default", slideKey: "focus",    locale: "en", sortOrder: 0, label: "DEEP FOCUS",     headline: [txt("Silence"),       br(), acc("the noise.")],       subtitle: [txt("A beautiful, distraction-free"), br(), txt("timer keeps you locked in.")] },
+  { productId: "amfo", slideVariant: "default", slideKey: "settings", locale: "en", sortOrder: 0, label: "CUSTOMIZE",      headline: [txt("Your perfect"),  br(), acc("environment")],     subtitle: [txt("Auto-hide controls. Sleep fade out."), br(), txt("Make the app work for you.")] },
 ];
 
 // ─── LICHTA ───────────────────────────────────────────────────────────────
 
 const lichtaSlides: SlideRow[] = [
-  { productId: "lichta", device: "iphone",  slideSet: "default", slideKey: "hero",     componentKey: "LichtaSlide1",   sortOrder: 0 },
-  { productId: "lichta", device: "iphone",  slideSet: "default", slideKey: "events",   componentKey: "LichtaSlide2",   sortOrder: 1 },
-  { productId: "lichta", device: "iphone",  slideSet: "default", slideKey: "calendar", componentKey: "LichtaSlide3",   sortOrder: 2 },
-  { productId: "lichta", device: "iphone",  slideSet: "default", slideKey: "ai",       componentKey: "LichtaSlide4",   sortOrder: 3 },
-  { productId: "lichta", device: "iphone",  slideSet: "default", slideKey: "themes",   componentKey: "LichtaSlide5",   sortOrder: 4 },
-  { productId: "lichta", device: "iphone",  slideSet: "default", slideKey: "wisdom",   componentKey: "LichtaSlide6",   sortOrder: 5 },
-  { productId: "lichta", device: "iphone",  slideSet: "default", slideKey: "widgets",  componentKey: "LichtaSlide7",   sortOrder: 6 },
-  { productId: "lichta", device: "android", slideSet: "default", slideKey: "hero",     componentKey: "LichtaAndroid1", sortOrder: 0 },
-  { productId: "lichta", device: "android", slideSet: "default", slideKey: "events",   componentKey: "LichtaAndroid2", sortOrder: 1 },
-  { productId: "lichta", device: "android", slideSet: "default", slideKey: "calendar", componentKey: "LichtaAndroid3", sortOrder: 2 },
-  { productId: "lichta", device: "android", slideSet: "default", slideKey: "ai",       componentKey: "LichtaAndroid4", sortOrder: 3 },
-  { productId: "lichta", device: "android", slideSet: "default", slideKey: "themes",   componentKey: "LichtaAndroid5", sortOrder: 4 },
-  { productId: "lichta", device: "android", slideSet: "default", slideKey: "wisdom",   componentKey: "LichtaAndroid6", sortOrder: 5 },
-  { productId: "lichta", device: "android", slideSet: "default", slideKey: "widgets",  componentKey: "LichtaAndroid7", sortOrder: 6 },
+  { productId: "lichta", device: "iphone",  slideVariant: "default", slideKey: "hero",     componentKey: "LichtaSlide1",   sortOrder: 0 },
+  { productId: "lichta", device: "iphone",  slideVariant: "default", slideKey: "events",   componentKey: "LichtaSlide2",   sortOrder: 1 },
+  { productId: "lichta", device: "iphone",  slideVariant: "default", slideKey: "calendar", componentKey: "LichtaSlide3",   sortOrder: 2 },
+  { productId: "lichta", device: "iphone",  slideVariant: "default", slideKey: "ai",       componentKey: "LichtaSlide4",   sortOrder: 3 },
+  { productId: "lichta", device: "iphone",  slideVariant: "default", slideKey: "themes",   componentKey: "LichtaSlide5",   sortOrder: 4 },
+  { productId: "lichta", device: "iphone",  slideVariant: "default", slideKey: "wisdom",   componentKey: "LichtaSlide6",   sortOrder: 5 },
+  { productId: "lichta", device: "iphone",  slideVariant: "default", slideKey: "widgets",  componentKey: "LichtaSlide7",   sortOrder: 6 },
+  { productId: "lichta", device: "android", slideVariant: "default", slideKey: "hero",     componentKey: "LichtaAndroid1", sortOrder: 0 },
+  { productId: "lichta", device: "android", slideVariant: "default", slideKey: "events",   componentKey: "LichtaAndroid2", sortOrder: 1 },
+  { productId: "lichta", device: "android", slideVariant: "default", slideKey: "calendar", componentKey: "LichtaAndroid3", sortOrder: 2 },
+  { productId: "lichta", device: "android", slideVariant: "default", slideKey: "ai",       componentKey: "LichtaAndroid4", sortOrder: 3 },
+  { productId: "lichta", device: "android", slideVariant: "default", slideKey: "themes",   componentKey: "LichtaAndroid5", sortOrder: 4 },
+  { productId: "lichta", device: "android", slideVariant: "default", slideKey: "wisdom",   componentKey: "LichtaAndroid6", sortOrder: 5 },
+  { productId: "lichta", device: "android", slideVariant: "default", slideKey: "widgets",  componentKey: "LichtaAndroid7", sortOrder: 6 },
 ];
 
 const lichtaCopy: SlideCopyRow[] = [
-  // hero: vi (primary), en (secondary)
-  { productId: "lichta", slideSet: "default", slideKey: "hero",     locale: "vi", label: "LỊCH ÂM VIỆT NAM",     headline: [txt("Lịch Âm"),          br(), acc("trong tầm tay.")],         subtitle: [txt("Âm lịch, Can Chi, Tiết Khí,"), br(), txt("Hoàng Đạo - tất cả ở một chỗ.")] },
-  { productId: "lichta", slideSet: "default", slideKey: "hero",     locale: "en", label: "LUNAR CALENDAR",       headline: [txt("Today's date,"),     br(), acc("at a glance.")],           subtitle: [txt("Lunar date, Can Chi, Solar Terms,"), br(), txt("Auspicious Hours — all in one place.")] },
+  // hero: vi (sortOrder=0 primary), en (sortOrder=1 copyByLocale)
+  { productId: "lichta", slideVariant: "default", slideKey: "hero",     locale: "vi", sortOrder: 0, label: "LỊCH ÂM VIỆT NAM",     headline: [txt("Lịch Âm"),          br(), acc("trong tầm tay.")],         subtitle: [txt("Âm lịch, Can Chi, Tiết Khí,"), br(), txt("Hoàng Đạo - tất cả ở một chỗ.")] },
+  { productId: "lichta", slideVariant: "default", slideKey: "hero",     locale: "en", sortOrder: 1, label: "LUNAR CALENDAR",       headline: [txt("Today's date,"),     br(), acc("at a glance.")],           subtitle: [txt("Lunar date, Can Chi, Solar Terms,"), br(), txt("Auspicious Hours — all in one place.")] },
   // events
-  { productId: "lichta", slideSet: "default", slideKey: "events",   locale: "vi", label: "SỰ KIỆN ÂM LỊCH",     headline: [txt("Không bao giờ"),     br(), acc("quên ngày giỗ.")],         subtitle: [txt("Giỗ chạp, sinh nhật, ngày cưới"), br(), txt("theo âm lịch - nhắc tự động.")] },
-  { productId: "lichta", slideSet: "default", slideKey: "events",   locale: "en", label: "LUNAR EVENTS",         headline: [txt("Never miss"),        br(), acc("an anniversary.")],         subtitle: [txt("Death anniversaries, birthdays,"), br(), txt("weddings by lunar date — auto-reminded.")] },
+  { productId: "lichta", slideVariant: "default", slideKey: "events",   locale: "vi", sortOrder: 0, label: "SỰ KIỆN ÂM LỊCH",     headline: [txt("Không bao giờ"),     br(), acc("quên ngày giỗ.")],         subtitle: [txt("Giỗ chạp, sinh nhật, ngày cưới"), br(), txt("theo âm lịch - nhắc tự động.")] },
+  { productId: "lichta", slideVariant: "default", slideKey: "events",   locale: "en", sortOrder: 1, label: "LUNAR EVENTS",         headline: [txt("Never miss"),        br(), acc("an anniversary.")],         subtitle: [txt("Death anniversaries, birthdays,"), br(), txt("weddings by lunar date — auto-reminded.")] },
   // calendar
-  { productId: "lichta", slideSet: "default", slideKey: "calendar", locale: "vi", label: "LỊCH ÂM CHI TIẾT",    headline: [txt("Can Chi,"),          br(), acc("Hoàng Đạo.")],               subtitle: [txt("Tiết khí, Thần Sát, giờ Hoàng Đạo"), br(), txt("hiển thị ngay khi chọn ngày.")] },
-  { productId: "lichta", slideSet: "default", slideKey: "calendar", locale: "en", label: "DETAILED LUNAR",       headline: [txt("Can Chi &"),         br(), acc("Auspicious Hours.")],        subtitle: [txt("Solar terms, Lucky Gods, Auspicious Hours"), br(), txt("shown the moment you pick a date.")] },
+  { productId: "lichta", slideVariant: "default", slideKey: "calendar", locale: "vi", sortOrder: 0, label: "LỊCH ÂM CHI TIẾT",    headline: [txt("Can Chi,"),          br(), acc("Hoàng Đạo.")],               subtitle: [txt("Tiết khí, Thần Sát, giờ Hoàng Đạo"), br(), txt("hiển thị ngay khi chọn ngày.")] },
+  { productId: "lichta", slideVariant: "default", slideKey: "calendar", locale: "en", sortOrder: 1, label: "DETAILED LUNAR",       headline: [txt("Can Chi &"),         br(), acc("Auspicious Hours.")],        subtitle: [txt("Solar terms, Lucky Gods, Auspicious Hours"), br(), txt("shown the moment you pick a date.")] },
   // ai
-  { productId: "lichta", slideSet: "default", slideKey: "ai",       locale: "vi", label: "XEM TỬ VI AI",         headline: [txt("Tử Vi AI"),          br(), acc("bất cứ lúc nào.")],         subtitle: [txt("Tử vi, vận mệnh, phong thủy"), br(), txt("AI trả lời ngay.")] },
-  { productId: "lichta", slideSet: "default", slideKey: "ai",       locale: "en", label: "LICH TA AI MASTER",    headline: [txt("Your AI Astrologer,"),br(), acc("anytime.")],                 subtitle: [txt("Horoscopes, feng shui, Vietnamese"), br(), txt("customs — AI answers instantly.")] },
+  { productId: "lichta", slideVariant: "default", slideKey: "ai",       locale: "vi", sortOrder: 0, label: "XEM TỬ VI AI",         headline: [txt("Tử Vi AI"),          br(), acc("bất cứ lúc nào.")],         subtitle: [txt("Tử vi, vận mệnh, phong thủy"), br(), txt("AI trả lời ngay.")] },
+  { productId: "lichta", slideVariant: "default", slideKey: "ai",       locale: "en", sortOrder: 1, label: "LICH TA AI MASTER",    headline: [txt("Your AI Astrologer,"),br(), acc("anytime.")],                 subtitle: [txt("Horoscopes, feng shui, Vietnamese"), br(), txt("customs — AI answers instantly.")] },
   // themes
-  { productId: "lichta", slideSet: "default", slideKey: "themes",   locale: "vi", label: "GIAO DIỆN CÁ NHÂN",   headline: [txt("Màu sắc"),           br(), acc("theo ý bạn.")],              subtitle: [txt("Hình nền thành phố Việt Nam,"), br(), txt("màu chủ đạo tùy chỉnh thoải mái.")] },
-  { productId: "lichta", slideSet: "default", slideKey: "themes",   locale: "en", label: "PERSONAL THEMES",      headline: [txt("Colors"),            br(), acc("your way.")],                subtitle: [txt("Vietnamese city wallpapers,"), br(), txt("custom accent colors to your taste.")] },
+  { productId: "lichta", slideVariant: "default", slideKey: "themes",   locale: "vi", sortOrder: 0, label: "GIAO DIỆN CÁ NHÂN",   headline: [txt("Màu sắc"),           br(), acc("theo ý bạn.")],              subtitle: [txt("Hình nền thành phố Việt Nam,"), br(), txt("màu chủ đạo tùy chỉnh thoải mái.")] },
+  { productId: "lichta", slideVariant: "default", slideKey: "themes",   locale: "en", sortOrder: 1, label: "PERSONAL THEMES",      headline: [txt("Colors"),            br(), acc("your way.")],                subtitle: [txt("Vietnamese city wallpapers,"), br(), txt("custom accent colors to your taste.")] },
   // wisdom
-  { productId: "lichta", slideSet: "default", slideKey: "wisdom",   locale: "vi", label: "TỬ VI - PHONG THỦY",  headline: [txt("Vận mệnh."),         br(), acc("Rõ từng ngày.")],            subtitle: [txt("Chat với AI về tình duyên, công việc,"), br(), txt("sức khỏe - theo lá số của bạn.")] },
-  { productId: "lichta", slideSet: "default", slideKey: "wisdom",   locale: "en", label: "ASTROLOGY & FENG SHUI",headline: [txt("Your destiny."),     br(), acc("Day by day.")],              subtitle: [txt("Chat with AI about love, career,"), br(), txt("health — based on your birth chart.")] },
+  { productId: "lichta", slideVariant: "default", slideKey: "wisdom",   locale: "vi", sortOrder: 0, label: "TỬ VI - PHONG THỦY",  headline: [txt("Vận mệnh."),         br(), acc("Rõ từng ngày.")],            subtitle: [txt("Chat với AI về tình duyên, công việc,"), br(), txt("sức khỏe - theo lá số của bạn.")] },
+  { productId: "lichta", slideVariant: "default", slideKey: "wisdom",   locale: "en", sortOrder: 1, label: "ASTROLOGY & FENG SHUI",headline: [txt("Your destiny."),     br(), acc("Day by day.")],              subtitle: [txt("Chat with AI about love, career,"), br(), txt("health — based on your birth chart.")] },
   // widgets
-  { productId: "lichta", slideSet: "default", slideKey: "widgets",  locale: "vi", label: "",                     headline: [txt("Widget đẹp"),        br(), acc("mỗi ngày.")],               subtitle: [txt("Thêm widget vào màn hình chính,"), br(), txt("xem lịch âm ngay không cần mở app.")] },
-  { productId: "lichta", slideSet: "default", slideKey: "widgets",  locale: "en", label: "",                     headline: [txt("Beautiful widgets"), br(), acc("every day.")],              subtitle: [txt("Add a widget to your home screen,"), br(), txt("check the lunar date without opening the app.")] },
+  { productId: "lichta", slideVariant: "default", slideKey: "widgets",  locale: "vi", sortOrder: 0, label: "",                     headline: [txt("Widget đẹp"),        br(), acc("mỗi ngày.")],               subtitle: [txt("Thêm widget vào màn hình chính,"), br(), txt("xem lịch âm ngay không cần mở app.")] },
+  { productId: "lichta", slideVariant: "default", slideKey: "widgets",  locale: "en", sortOrder: 1, label: "",                     headline: [txt("Beautiful widgets"), br(), acc("every day.")],              subtitle: [txt("Add a widget to your home screen,"), br(), txt("check the lunar date without opening the app.")] },
 ];
 
 // ─── TINYSTEPS ────────────────────────────────────────────────────────────
 
 const tinystepsSlides: SlideRow[] = [
   // default set (en + vi copy overrides)
-  { productId: "tinysteps", device: "iphone", slideSet: "default", slideKey: "hero",         componentKey: "TinyStepsSlide1", sortOrder: 0 },
-  { productId: "tinysteps", device: "iphone", slideSet: "default", slideKey: "milestones",   componentKey: "TinyStepsSlide2", sortOrder: 1 },
-  { productId: "tinysteps", device: "iphone", slideSet: "default", slideKey: "vaccinations", componentKey: "TinyStepsSlide3", sortOrder: 2 },
-  { productId: "tinysteps", device: "iphone", slideSet: "default", slideKey: "journal",      componentKey: "TinyStepsSlide4", sortOrder: 3 },
-  { productId: "tinysteps", device: "iphone", slideSet: "default", slideKey: "ai-chat",      componentKey: "TinyStepsSlide5", sortOrder: 4 },
-  { productId: "tinysteps", device: "iphone", slideSet: "default", slideKey: "family",       componentKey: "TinyStepsSlide6", sortOrder: 5 },
-  { productId: "tinysteps", device: "iphone", slideSet: "default", slideKey: "growth",       componentKey: "TinyStepsSlide7", sortOrder: 6 },
+  { productId: "tinysteps", device: "iphone", slideVariant: "default", slideKey: "hero",         componentKey: "TinyStepsSlide1", sortOrder: 0 },
+  { productId: "tinysteps", device: "iphone", slideVariant: "default", slideKey: "milestones",   componentKey: "TinyStepsSlide2", sortOrder: 1 },
+  { productId: "tinysteps", device: "iphone", slideVariant: "default", slideKey: "vaccinations", componentKey: "TinyStepsSlide3", sortOrder: 2 },
+  { productId: "tinysteps", device: "iphone", slideVariant: "default", slideKey: "journal",      componentKey: "TinyStepsSlide4", sortOrder: 3 },
+  { productId: "tinysteps", device: "iphone", slideVariant: "default", slideKey: "ai-chat",      componentKey: "TinyStepsSlide5", sortOrder: 4 },
+  { productId: "tinysteps", device: "iphone", slideVariant: "default", slideKey: "family",       componentKey: "TinyStepsSlide6", sortOrder: 5 },
+  { productId: "tinysteps", device: "iphone", slideVariant: "default", slideKey: "growth",       componentKey: "TinyStepsSlide7", sortOrder: 6 },
   // vi-specific set (different screenshots/components)
-  { productId: "tinysteps", device: "iphone", slideSet: "vi", slideKey: "hero",         componentKey: "TinyStepsViSlide1", sortOrder: 0 },
-  { productId: "tinysteps", device: "iphone", slideSet: "vi", slideKey: "journal",      componentKey: "TinyStepsViSlide2", sortOrder: 1 },
-  { productId: "tinysteps", device: "iphone", slideSet: "vi", slideKey: "ai-chat",      componentKey: "TinyStepsViSlide3", sortOrder: 2 },
-  { productId: "tinysteps", device: "iphone", slideSet: "vi", slideKey: "settings",     componentKey: "TinyStepsViSlide4", sortOrder: 3 },
-  { productId: "tinysteps", device: "iphone", slideSet: "vi", slideKey: "milestones",   componentKey: "TinyStepsViSlide5", sortOrder: 4 },
-  { productId: "tinysteps", device: "iphone", slideSet: "vi", slideKey: "vaccinations", componentKey: "TinyStepsViSlide6", sortOrder: 5 },
+  { productId: "tinysteps", device: "iphone", slideVariant: "vi", slideKey: "hero",         componentKey: "TinyStepsViSlide1", sortOrder: 0 },
+  { productId: "tinysteps", device: "iphone", slideVariant: "vi", slideKey: "journal",      componentKey: "TinyStepsViSlide2", sortOrder: 1 },
+  { productId: "tinysteps", device: "iphone", slideVariant: "vi", slideKey: "ai-chat",      componentKey: "TinyStepsViSlide3", sortOrder: 2 },
+  { productId: "tinysteps", device: "iphone", slideVariant: "vi", slideKey: "settings",     componentKey: "TinyStepsViSlide4", sortOrder: 3 },
+  { productId: "tinysteps", device: "iphone", slideVariant: "vi", slideKey: "milestones",   componentKey: "TinyStepsViSlide5", sortOrder: 4 },
+  { productId: "tinysteps", device: "iphone", slideVariant: "vi", slideKey: "vaccinations", componentKey: "TinyStepsViSlide6", sortOrder: 5 },
 ];
 
 const tinystepsCopy: SlideCopyRow[] = [
-  // default set — en (primary) + vi (copyByLocale)
-  { productId: "tinysteps", slideSet: "default", slideKey: "hero",         locale: "en", label: "BABY GROWTH TRACKER",      headline: [txt("Every milestone."), br(), acc("Captured.")],                   subtitle: [txt("Track weight, height, and head size"), br(), txt("with beautiful growth charts.")] },
-  { productId: "tinysteps", slideSet: "default", slideKey: "hero",         locale: "vi", label: "THEO DÕI BÉ LỚN",          headline: [txt("Từng bước nhỏ."), br(), acc("Đều đáng nhớ.")],                subtitle: [txt("Theo dõi cân nặng, chiều cao,"), br(), txt("và vòng đầu với biểu đồ trực quan.")] },
-  { productId: "tinysteps", slideSet: "default", slideKey: "milestones",   locale: "en", label: "DEVELOPMENTAL MILESTONES", headline: [txt("Never miss"), br(), acc("a first.")],                          subtitle: [txt("Track 42+ milestones from"), br(), txt("0–12 months, guided by age.")] },
-  { productId: "tinysteps", slideSet: "default", slideKey: "milestones",   locale: "vi", label: "CỘT MỐC PHÁT TRIỂN",       headline: [txt("Đừng bỏ lỡ"), br(), acc("khoảnh khắc nào.")],                subtitle: [txt("Theo dõi 42+ cột mốc từ"), br(), txt("0–12 tháng, theo từng giai đoạn.")] },
-  { productId: "tinysteps", slideSet: "default", slideKey: "vaccinations", locale: "en", label: "VACCINATION TRACKER",      headline: [txt("Stay on"), br(), acc("schedule.")],                            subtitle: [txt("Track every dose, see what's due,"), br(), txt("never miss a vaccination.")] },
-  { productId: "tinysteps", slideSet: "default", slideKey: "vaccinations", locale: "vi", label: "LỊCH TIÊM CHỦNG",          headline: [txt("Đúng lịch."), br(), acc("An tâm.")],                          subtitle: [txt("Theo dõi từng mũi tiêm,"), br(), txt("không bao giờ quên lịch hẹn.")] },
-  { productId: "tinysteps", slideSet: "default", slideKey: "journal",      locale: "en", label: "BABY JOURNAL",             headline: [txt("Memories"), br(), acc("worth keeping.")],                      subtitle: [txt("A beautiful timeline of your"), br(), txt("baby's most precious moments.")] },
-  { productId: "tinysteps", slideSet: "default", slideKey: "journal",      locale: "vi", label: "NHẬT KÝ BÉ YÊU",           headline: [txt("Kỷ niệm"), br(), acc("đáng giữ.")],                           subtitle: [txt("Dòng thời gian xinh đẹp ghi lại"), br(), txt("những khoảnh khắc quý giá nhất.")] },
-  { productId: "tinysteps", slideSet: "default", slideKey: "ai-chat",      locale: "en", label: "AI PARENTING GUIDE",       headline: [txt("Ask anything."), br(), acc("Get answers.")],                   subtitle: [txt("AI-powered insights about your"), br(), txt("baby's growth and development.")] },
-  { productId: "tinysteps", slideSet: "default", slideKey: "ai-chat",      locale: "vi", label: "TRỢ LÝ AI CHO BỐ MẸ",     headline: [txt("Hỏi gì"), br(), acc("cũng được.")],                           subtitle: [txt("AI phân tích sự phát triển và"), br(), txt("tăng trưởng của bé cho bạn.")] },
-  { productId: "tinysteps", slideSet: "default", slideKey: "family",       locale: "en", label: "FAMILY SHARING",           headline: [txt("Track"), br(), acc("together.")],                               subtitle: [txt("Invite your partner or family"), br(), txt("to share the journey.")] },
-  { productId: "tinysteps", slideSet: "default", slideKey: "family",       locale: "vi", label: "CHIA SẺ GIA ĐÌNH",         headline: [txt("Cùng nhau"), br(), acc("theo dõi.")],                          subtitle: [txt("Mời bạn đời hoặc gia đình"), br(), txt("cùng chăm sóc bé yêu.")] },
-  { productId: "tinysteps", slideSet: "default", slideKey: "growth",       locale: "en", label: "COMPLETE PICTURE",         headline: [txt("Watch them"), br(), acc("grow.")],                             subtitle: [txt("Milestones, vaccinations, and growth"), br(), txt("tracking — all in one place.")] },
-  { productId: "tinysteps", slideSet: "default", slideKey: "growth",       locale: "vi", label: "BỨC TRANH TOÀN DIỆN",      headline: [txt("Nhìn bé"), br(), acc("lớn lên.")],                            subtitle: [txt("Cột mốc, tiêm chủng, và biểu đồ"), br(), txt("tăng trưởng — tất cả ở một chỗ.")] },
-  // vi-specific set
-  { productId: "tinysteps", slideSet: "vi", slideKey: "hero",         locale: "vi", label: "THEO DÕI BÉ LỚN",      headline: [txt("Từng bước nhỏ."), br(), acc("Đều đáng nhớ.")],    subtitle: [txt("Theo dõi cân nặng, chiều cao,"), br(), txt("và vòng đầu với biểu đồ trực quan.")] },
-  { productId: "tinysteps", slideSet: "vi", slideKey: "journal",      locale: "vi", label: "NHẬT KÝ BÉ YÊU",       headline: [txt("Kỷ niệm"), br(), acc("đáng giữ.")],               subtitle: [txt("Dòng thời gian xinh đẹp ghi lại"), br(), txt("những khoảnh khắc quý giá nhất.")] },
-  { productId: "tinysteps", slideSet: "vi", slideKey: "ai-chat",      locale: "vi", label: "TRỢ LÝ AI CHO BỐ MẸ", headline: [txt("Hỏi gì"), br(), acc("cũng được.")],                subtitle: [txt("AI phân tích sự phát triển và"), br(), txt("tăng trưởng của bé cho bạn.")] },
-  { productId: "tinysteps", slideSet: "vi", slideKey: "settings",     locale: "vi", label: "TUỲ CHỈNH THEO Ý BẠN",headline: [txt("Cài đặt"), br(), acc("theo sở thích.")],           subtitle: [txt("Chọn ngôn ngữ, đơn vị đo lường,"), br(), txt("và thông báo phù hợp với gia đình bạn.")] },
-  { productId: "tinysteps", slideSet: "vi", slideKey: "milestones",   locale: "vi", label: "CỘT MỐC PHÁT TRIỂN",  headline: [txt("Đừng bỏ lỡ"), br(), acc("khoảnh khắc nào.")],     subtitle: [txt("Theo dõi 42+ cột mốc từ"), br(), txt("0–24 tháng, theo từng giai đoạn.")] },
-  { productId: "tinysteps", slideSet: "vi", slideKey: "vaccinations", locale: "vi", label: "LỊCH TIÊM CHỦNG",     headline: [txt("Đúng lịch."), br(), acc("An tâm.")],               subtitle: [txt("Theo dõi từng mũi tiêm,"), br(), txt("không bao giờ quên lịch hẹn.")] },
+  // default variant — en (sortOrder=0 primary) + vi (sortOrder=1 copyByLocale)
+  { productId: "tinysteps", slideVariant: "default", slideKey: "hero",         locale: "en", sortOrder: 0, label: "BABY GROWTH TRACKER",      headline: [txt("Every milestone."), br(), acc("Captured.")],                   subtitle: [txt("Track weight, height, and head size"), br(), txt("with beautiful growth charts.")] },
+  { productId: "tinysteps", slideVariant: "default", slideKey: "hero",         locale: "vi", sortOrder: 1, label: "THEO DÕI BÉ LỚN",          headline: [txt("Từng bước nhỏ."), br(), acc("Đều đáng nhớ.")],                subtitle: [txt("Theo dõi cân nặng, chiều cao,"), br(), txt("và vòng đầu với biểu đồ trực quan.")] },
+  { productId: "tinysteps", slideVariant: "default", slideKey: "milestones",   locale: "en", sortOrder: 0, label: "DEVELOPMENTAL MILESTONES", headline: [txt("Never miss"), br(), acc("a first.")],                          subtitle: [txt("Track 42+ milestones from"), br(), txt("0–12 months, guided by age.")] },
+  { productId: "tinysteps", slideVariant: "default", slideKey: "milestones",   locale: "vi", sortOrder: 1, label: "CỘT MỐC PHÁT TRIỂN",       headline: [txt("Đừng bỏ lỡ"), br(), acc("khoảnh khắc nào.")],                subtitle: [txt("Theo dõi 42+ cột mốc từ"), br(), txt("0–12 tháng, theo từng giai đoạn.")] },
+  { productId: "tinysteps", slideVariant: "default", slideKey: "vaccinations", locale: "en", sortOrder: 0, label: "VACCINATION TRACKER",      headline: [txt("Stay on"), br(), acc("schedule.")],                            subtitle: [txt("Track every dose, see what's due,"), br(), txt("never miss a vaccination.")] },
+  { productId: "tinysteps", slideVariant: "default", slideKey: "vaccinations", locale: "vi", sortOrder: 1, label: "LỊCH TIÊM CHỦNG",          headline: [txt("Đúng lịch."), br(), acc("An tâm.")],                          subtitle: [txt("Theo dõi từng mũi tiêm,"), br(), txt("không bao giờ quên lịch hẹn.")] },
+  { productId: "tinysteps", slideVariant: "default", slideKey: "journal",      locale: "en", sortOrder: 0, label: "BABY JOURNAL",             headline: [txt("Memories"), br(), acc("worth keeping.")],                      subtitle: [txt("A beautiful timeline of your"), br(), txt("baby's most precious moments.")] },
+  { productId: "tinysteps", slideVariant: "default", slideKey: "journal",      locale: "vi", sortOrder: 1, label: "NHẬT KÝ BÉ YÊU",           headline: [txt("Kỷ niệm"), br(), acc("đáng giữ.")],                           subtitle: [txt("Dòng thời gian xinh đẹp ghi lại"), br(), txt("những khoảnh khắc quý giá nhất.")] },
+  { productId: "tinysteps", slideVariant: "default", slideKey: "ai-chat",      locale: "en", sortOrder: 0, label: "AI PARENTING GUIDE",       headline: [txt("Ask anything."), br(), acc("Get answers.")],                   subtitle: [txt("AI-powered insights about your"), br(), txt("baby's growth and development.")] },
+  { productId: "tinysteps", slideVariant: "default", slideKey: "ai-chat",      locale: "vi", sortOrder: 1, label: "TRỢ LÝ AI CHO BỐ MẸ",     headline: [txt("Hỏi gì"), br(), acc("cũng được.")],                           subtitle: [txt("AI phân tích sự phát triển và"), br(), txt("tăng trưởng của bé cho bạn.")] },
+  { productId: "tinysteps", slideVariant: "default", slideKey: "family",       locale: "en", sortOrder: 0, label: "FAMILY SHARING",           headline: [txt("Track"), br(), acc("together.")],                               subtitle: [txt("Invite your partner or family"), br(), txt("to share the journey.")] },
+  { productId: "tinysteps", slideVariant: "default", slideKey: "family",       locale: "vi", sortOrder: 1, label: "CHIA SẺ GIA ĐÌNH",         headline: [txt("Cùng nhau"), br(), acc("theo dõi.")],                          subtitle: [txt("Mời bạn đời hoặc gia đình"), br(), txt("cùng chăm sóc bé yêu.")] },
+  { productId: "tinysteps", slideVariant: "default", slideKey: "growth",       locale: "en", sortOrder: 0, label: "COMPLETE PICTURE",         headline: [txt("Watch them"), br(), acc("grow.")],                             subtitle: [txt("Milestones, vaccinations, and growth"), br(), txt("tracking — all in one place.")] },
+  { productId: "tinysteps", slideVariant: "default", slideKey: "growth",       locale: "vi", sortOrder: 1, label: "BỨC TRANH TOÀN DIỆN",      headline: [txt("Nhìn bé"), br(), acc("lớn lên.")],                            subtitle: [txt("Cột mốc, tiêm chủng, và biểu đồ"), br(), txt("tăng trưởng — tất cả ở một chỗ.")] },
+  // vi variant — each slide has exactly one copy (sortOrder=0)
+  { productId: "tinysteps", slideVariant: "vi", slideKey: "hero",         locale: "vi", sortOrder: 0, label: "THEO DÕI BÉ LỚN",      headline: [txt("Từng bước nhỏ."), br(), acc("Đều đáng nhớ.")],    subtitle: [txt("Theo dõi cân nặng, chiều cao,"), br(), txt("và vòng đầu với biểu đồ trực quan.")] },
+  { productId: "tinysteps", slideVariant: "vi", slideKey: "journal",      locale: "vi", sortOrder: 0, label: "NHẬT KÝ BÉ YÊU",       headline: [txt("Kỷ niệm"), br(), acc("đáng giữ.")],               subtitle: [txt("Dòng thời gian xinh đẹp ghi lại"), br(), txt("những khoảnh khắc quý giá nhất.")] },
+  { productId: "tinysteps", slideVariant: "vi", slideKey: "ai-chat",      locale: "vi", sortOrder: 0, label: "TRỢ LÝ AI CHO BỐ MẸ", headline: [txt("Hỏi gì"), br(), acc("cũng được.")],                subtitle: [txt("AI phân tích sự phát triển và"), br(), txt("tăng trưởng của bé cho bạn.")] },
+  { productId: "tinysteps", slideVariant: "vi", slideKey: "settings",     locale: "vi", sortOrder: 0, label: "TUỲ CHỈNH THEO Ý BẠN",headline: [txt("Cài đặt"), br(), acc("theo sở thích.")],           subtitle: [txt("Chọn ngôn ngữ, đơn vị đo lường,"), br(), txt("và thông báo phù hợp với gia đình bạn.")] },
+  { productId: "tinysteps", slideVariant: "vi", slideKey: "milestones",   locale: "vi", sortOrder: 0, label: "CỘT MỐC PHÁT TRIỂN",  headline: [txt("Đừng bỏ lỡ"), br(), acc("khoảnh khắc nào.")],     subtitle: [txt("Theo dõi 42+ cột mốc từ"), br(), txt("0–24 tháng, theo từng giai đoạn.")] },
+  { productId: "tinysteps", slideVariant: "vi", slideKey: "vaccinations", locale: "vi", sortOrder: 0, label: "LỊCH TIÊM CHỦNG",     headline: [txt("Đúng lịch."), br(), acc("An tâm.")],               subtitle: [txt("Theo dõi từng mũi tiêm,"), br(), txt("không bao giờ quên lịch hẹn.")] },
 ];
 
 // ─── FITFO ────────────────────────────────────────────────────────────────
 
 const fitfoSlides: SlideRow[] = [
-  { productId: "fitfo", device: "iphone", slideSet: "default", slideKey: "hero",      componentKey: "FitFoSlide1", sortOrder: 0 },
-  { productId: "fitfo", device: "iphone", slideSet: "default", slideKey: "workout",   componentKey: "FitFoSlide2", sortOrder: 1 },
-  { productId: "fitfo", device: "iphone", slideSet: "default", slideKey: "nutrition", componentKey: "FitFoSlide3", sortOrder: 2 },
-  { productId: "fitfo", device: "iphone", slideSet: "default", slideKey: "fit-score", componentKey: "FitFoSlide4", sortOrder: 3 },
-  { productId: "fitfo", device: "iphone", slideSet: "default", slideKey: "forecast",  componentKey: "FitFoSlide5", sortOrder: 4 },
-  { productId: "fitfo", device: "iphone", slideSet: "default", slideKey: "body-type", componentKey: "FitFoSlide6", sortOrder: 5 },
-  { productId: "fitfo", device: "iphone", slideSet: "default", slideKey: "progress",  componentKey: "FitFoSlide7", sortOrder: 6 },
-  { productId: "fitfo", device: "iphone", slideSet: "default", slideKey: "more",      componentKey: "FitFoSlide8", sortOrder: 7 },
+  { productId: "fitfo", device: "iphone", slideVariant: "default", slideKey: "hero",      componentKey: "FitFoSlide1", sortOrder: 0 },
+  { productId: "fitfo", device: "iphone", slideVariant: "default", slideKey: "workout",   componentKey: "FitFoSlide2", sortOrder: 1 },
+  { productId: "fitfo", device: "iphone", slideVariant: "default", slideKey: "nutrition", componentKey: "FitFoSlide3", sortOrder: 2 },
+  { productId: "fitfo", device: "iphone", slideVariant: "default", slideKey: "fit-score", componentKey: "FitFoSlide4", sortOrder: 3 },
+  { productId: "fitfo", device: "iphone", slideVariant: "default", slideKey: "forecast",  componentKey: "FitFoSlide5", sortOrder: 4 },
+  { productId: "fitfo", device: "iphone", slideVariant: "default", slideKey: "body-type", componentKey: "FitFoSlide6", sortOrder: 5 },
+  { productId: "fitfo", device: "iphone", slideVariant: "default", slideKey: "progress",  componentKey: "FitFoSlide7", sortOrder: 6 },
+  { productId: "fitfo", device: "iphone", slideVariant: "default", slideKey: "more",      componentKey: "FitFoSlide8", sortOrder: 7 },
 ];
 
 const fitfoCopy: SlideCopyRow[] = [
-  { productId: "fitfo", slideSet: "default", slideKey: "hero",      locale: "en", label: "FITNESS TRACKER",         headline: [txt("Your fitness."),    br(), acc("Scored.")],       subtitle: [txt("Track workouts, calories, and progress"), br(), txt("with a personal AI-generated plan.")] },
-  { productId: "fitfo", slideSet: "default", slideKey: "workout",   locale: "en", label: "AI WORKOUT PLAN",         headline: [txt("Train smarter."),   br(), acc("Every day.")],    subtitle: [txt("A daily workout built around"), br(), txt("your goals, schedule, and body type.")] },
-  { productId: "fitfo", slideSet: "default", slideKey: "nutrition", locale: "en", label: "NUTRITION TRACKING",      headline: [txt("Fuel the"),         br(), acc("right way.")],    subtitle: [txt("Track macros and calories for every meal."), br(), txt("Adjust for training and rest days.")] },
-  { productId: "fitfo", slideSet: "default", slideKey: "fit-score", locale: "en", label: "PERSONAL FIT SCORE",      headline: [txt("Know where"),       br(), acc("you stand.")],   subtitle: [txt("Your fitness mapped across strength,"), br(), txt("stamina, discipline, and more.")] },
-  { productId: "fitfo", slideSet: "default", slideKey: "forecast",  locale: "en", label: "30-DAY FORECAST",         headline: [txt("See what's"),       br(), acc("possible.")],    subtitle: [txt("Your AI plan predicts muscle gained,"), br(), txt("calories burned, and score growth.")] },
-  { productId: "fitfo", slideSet: "default", slideKey: "body-type", locale: "en", label: "PERSONALIZED ONBOARDING", headline: [txt("Built for"),        br(), acc("your body.")],   subtitle: [txt("FitFo learns your somatotype and builds"), br(), txt("a plan that actually fits you.")] },
-  { productId: "fitfo", slideSet: "default", slideKey: "progress",  locale: "en", label: "VISUAL PROGRESS",         headline: [txt("Watch the"),        br(), acc("change.")],      subtitle: [txt("Log progress photos and your profile"), br(), txt("side by side — see your transformation.")] },
-  { productId: "fitfo", slideSet: "default", slideKey: "more",      locale: "en", label: "EVERYTHING YOU NEED",     headline: [txt("And so"),           br(), acc("much more.")],   subtitle: [txt("Every tool to hit your goal, in one app.")] },
+  { productId: "fitfo", slideVariant: "default", slideKey: "hero",      locale: "en", sortOrder: 0, label: "FITNESS TRACKER",         headline: [txt("Your fitness."),    br(), acc("Scored.")],       subtitle: [txt("Track workouts, calories, and progress"), br(), txt("with a personal AI-generated plan.")] },
+  { productId: "fitfo", slideVariant: "default", slideKey: "workout",   locale: "en", sortOrder: 0, label: "AI WORKOUT PLAN",         headline: [txt("Train smarter."),   br(), acc("Every day.")],    subtitle: [txt("A daily workout built around"), br(), txt("your goals, schedule, and body type.")] },
+  { productId: "fitfo", slideVariant: "default", slideKey: "nutrition", locale: "en", sortOrder: 0, label: "NUTRITION TRACKING",      headline: [txt("Fuel the"),         br(), acc("right way.")],    subtitle: [txt("Track macros and calories for every meal."), br(), txt("Adjust for training and rest days.")] },
+  { productId: "fitfo", slideVariant: "default", slideKey: "fit-score", locale: "en", sortOrder: 0, label: "PERSONAL FIT SCORE",      headline: [txt("Know where"),       br(), acc("you stand.")],   subtitle: [txt("Your fitness mapped across strength,"), br(), txt("stamina, discipline, and more.")] },
+  { productId: "fitfo", slideVariant: "default", slideKey: "forecast",  locale: "en", sortOrder: 0, label: "30-DAY FORECAST",         headline: [txt("See what's"),       br(), acc("possible.")],    subtitle: [txt("Your AI plan predicts muscle gained,"), br(), txt("calories burned, and score growth.")] },
+  { productId: "fitfo", slideVariant: "default", slideKey: "body-type", locale: "en", sortOrder: 0, label: "PERSONALIZED ONBOARDING", headline: [txt("Built for"),        br(), acc("your body.")],   subtitle: [txt("FitFo learns your somatotype and builds"), br(), txt("a plan that actually fits you.")] },
+  { productId: "fitfo", slideVariant: "default", slideKey: "progress",  locale: "en", sortOrder: 0, label: "VISUAL PROGRESS",         headline: [txt("Watch the"),        br(), acc("change.")],      subtitle: [txt("Log progress photos and your profile"), br(), txt("side by side — see your transformation.")] },
+  { productId: "fitfo", slideVariant: "default", slideKey: "more",      locale: "en", sortOrder: 0, label: "EVERYTHING YOU NEED",     headline: [txt("And so"),           br(), acc("much more.")],   subtitle: [txt("Every tool to hit your goal, in one app.")] },
 ];
 
 // ─── SEED ─────────────────────────────────────────────────────────────────

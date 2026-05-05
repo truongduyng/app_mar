@@ -24,27 +24,45 @@ export const productLocales = pgTable("product_locales", {
   sortOrder: integer("sort_order").notNull().default(0),
 });
 
-/** One row per slide slot. slide_set='default' for product.slides, locale code for slidesByLocale entries. */
+/**
+ * One row per slide slot.
+ * slideVariant = 'default' → belongs to product.slides (shown for all locales unless overridden)
+ * slideVariant = 'vi'      → belongs to product.slidesByLocale.vi (replaces default when locale is 'vi')
+ * The variant name for locale-overrides is the locale code by convention.
+ */
 export const productSlides = pgTable("product_slides", {
-  id:           serial("id").primaryKey(),
-  productId:    text("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
-  device:       text("device").notNull(),       // 'iphone' | 'android'
-  slideSet:     text("slide_set").notNull(),     // 'default' | 'vi' | 'en' …
-  slideKey:     text("slide_key").notNull(),
-  componentKey: text("component_key").notNull(),
-  sortOrder:    integer("sort_order").notNull().default(0),
+  id:            serial("id").primaryKey(),
+  productId:     text("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+  device:        text("device").notNull(),          // 'iphone' | 'android'
+  slideVariant:  text("slide_variant").notNull(),   // 'default' | 'vi' | 'en' …
+  slideKey:      text("slide_key").notNull(),
+  componentKey:  text("component_key").notNull(),
+  sortOrder:     integer("sort_order").notNull().default(0),
 });
 
-/** Text content for each slide × locale combination. */
+/**
+ * Text content for one slide × locale combination.
+ * slideVariant links to productSlides.slideVariant.
+ * locale     is the language of this copy row.
+ * sortOrder  0 = primary copy (SlideDef.copy), 1+ = copyByLocale overrides (SlideDef.copyByLocale[locale]).
+ *
+ * Example for tinysteps default hero:
+ *   slideVariant='default', locale='en', sortOrder=0  → primary copy
+ *   slideVariant='default', locale='vi', sortOrder=1  → copyByLocale.vi
+ *
+ * Example for tinysteps vi-variant hero (slidesByLocale.vi):
+ *   slideVariant='vi', locale='vi', sortOrder=0       → primary copy (only one)
+ */
 export const slideCopy = pgTable("slide_copy", {
-  id:        serial("id").primaryKey(),
-  productId: text("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
-  slideSet:  text("slide_set").notNull(),   // 'default' | 'vi' | …
-  slideKey:  text("slide_key").notNull(),
-  locale:    text("locale").notNull(),
-  label:     text("label").notNull(),
-  headline:  jsonb("headline").notNull(),   // RichTextSegment[]
-  subtitle:  jsonb("subtitle").notNull(),   // RichTextSegment[]
+  id:           serial("id").primaryKey(),
+  productId:    text("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+  slideVariant: text("slide_variant").notNull(),
+  slideKey:     text("slide_key").notNull(),
+  locale:       text("locale").notNull(),
+  sortOrder:    integer("sort_order").notNull().default(0),
+  label:        text("label").notNull(),
+  headline:     jsonb("headline").notNull(),   // RichTextSegment[]
+  subtitle:     jsonb("subtitle").notNull(),   // RichTextSegment[]
 });
 
 export const productMetadata = pgTable("product_metadata", {
