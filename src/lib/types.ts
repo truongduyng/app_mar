@@ -44,6 +44,8 @@ export type SlideDef = {
  */
 export type SlideCopyMap = Record<string, Record<string, SlideCopy>>;
 
+export type AppPlatform = "iphone" | "android";
+
 /** Asset categories the generator produces */
 export type AssetCategory = "screenshots" | "feature-graphic" | "social-og" | "metadata";
 
@@ -74,8 +76,6 @@ export type LocaleDef = {
   label: string;              // e.g. "English", "Tiếng Việt"
   flag?: string;              // e.g. "🇺🇸", "🇻🇳"
 };
-
-export type AppPlatform = "iphone" | "android";
 
 export type ProductConfig = {
   id: string;
@@ -123,4 +123,35 @@ export type ProductConfig = {
   metadata?: MetadataConfig;
   /** Per-locale metadata overrides. Key is locale code (e.g. "vi", "de") */
   metadataByLocale?: Record<string, MetadataConfig>;
+};
+
+// ─── Serializable versions (DB ↔ API, no React nodes) ─────────────────────
+
+import type { RichTextSegment } from "./rich-text";
+
+export type SerializableSlideCopy = {
+  label: string;
+  headline: RichTextSegment[];
+  subtitle: RichTextSegment[];
+};
+
+export type SerializableSlideDef = {
+  id: string;
+  componentKey: string;
+  copy: SerializableSlideCopy;
+  copyByLocale?: Record<string, SerializableSlideCopy>;
+};
+
+export type SerializableProductConfig = Omit<
+  ProductConfig,
+  "slides" | "slidesByLocale"
+> & {
+  slides: {
+    iphone: SerializableSlideDef[];
+    android?: SerializableSlideDef[];
+  };
+  slidesByLocale?: Record<string, {
+    iphone: SerializableSlideDef[];
+    android?: SerializableSlideDef[];
+  }>;
 };
