@@ -31,13 +31,25 @@ export function ScreenshotsPage({ rawProducts }: { rawProducts: SerializableProd
     [rawProducts],
   );
 
-  const [section, setSection]   = useState<Section>("screenshots");
+  const [section, setSection]   = useState<Section>(() => {
+    if (typeof window === "undefined") return "screenshots";
+    const p = new URLSearchParams(window.location.hash.slice(1));
+    const s = p.get("section");
+    return (["screenshots","feature-graphic","social-og","cta","metadata"] as Section[]).includes(s as Section) ? s as Section : "screenshots";
+  });
   const [productId, setProductId] = useState(() => {
     if (typeof window === "undefined") return PRODUCTS[0].id;
+    const p = new URLSearchParams(window.location.hash.slice(1));
+    const fromHash = p.get("product");
+    if (fromHash && PRODUCTS.find((p) => p.id === fromHash)) return fromHash;
     const saved = localStorage.getItem("selectedProductId");
     return PRODUCTS.find((p) => p.id === saved) ? saved! : PRODUCTS[0].id;
   });
-  const [locale, setLocale]     = useState<string>(() => getProductLocales(PRODUCTS[0])[0].code);
+  const [locale, setLocale]     = useState<string>(() => {
+    if (typeof window === "undefined") return getProductLocales(PRODUCTS[0])[0].code;
+    const p = new URLSearchParams(window.location.hash.slice(1));
+    return p.get("locale") ?? getProductLocales(PRODUCTS[0])[0].code;
+  });
   const [platform, setPlatform] = useState<AppPlatform>("iphone");
   const [ready, setReady]       = useState(false);
   const [productMenuOpen, setProductMenuOpen] = useState(false);
@@ -91,6 +103,11 @@ export function ScreenshotsPage({ rawProducts }: { rawProducts: SerializableProd
     localStorage.setItem("ctaScMap", JSON.stringify(next));
     return next;
   });
+
+  useEffect(() => {
+    const params = new URLSearchParams({ section, product: productId, locale });
+    window.history.replaceState(null, "", `#${params}`);
+  }, [section, productId, locale]);
 
   useEffect(() => {
     setReady(false);
@@ -284,6 +301,7 @@ export function ScreenshotsPage({ rawProducts }: { rawProducts: SerializableProd
               platform={platform}
               locales={productLocales}
               activeLocale={locale}
+              productId={product.id}
               metadata={
                 metadataMap[product.id]?.[locale] ??
                 metadataMap[product.id]?.[productLocales[0].code] ??

@@ -21,12 +21,15 @@ const FIELDS: FieldDef[] = [
   { id: "description",      label: "Full Description",               platform: "Both",   maxLength: 4000, multiline: true,  placeholder: "Full app description for store listing..." },
 ];
 
+type SaveState = "idle" | "saving" | "saved" | "error";
+
 export function MetadataPanel({
   theme: T,
   platform,
   locales,
   activeLocale,
   metadata,
+  productId,
   onUpdate,
   allLocaleData,
 }: {
@@ -35,11 +38,13 @@ export function MetadataPanel({
   locales: LocaleDef[];
   activeLocale: string;
   metadata: MetadataConfig;
+  productId: string;
   onUpdate: (updated: MetadataConfig) => void;
   /** All locale data for JSON export - { [locale]: MetadataConfig } */
   allLocaleData: Record<string, MetadataConfig>;
 }) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [saveState, setSaveState] = useState<SaveState>("idle");
   const isFieldVisible = useCallback(
     (field: FieldDef) => (
       field.platform === "Both" ||
@@ -69,6 +74,21 @@ export function MetadataPanel({
     setCopiedId("__all__");
     setTimeout(() => setCopiedId(null), 1500);
   }, [metadata, visibleFields]);
+
+  const handleSave = useCallback(async () => {
+    setSaveState("saving");
+    try {
+      const res = await fetch("/api/metadata", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId, locale: activeLocale, metadata }),
+      });
+      setSaveState(res.ok ? "saved" : "error");
+    } catch {
+      setSaveState("error");
+    }
+    setTimeout(() => setSaveState("idle"), 2000);
+  }, [productId, activeLocale, metadata]);
 
   const handleExportJson = useCallback(async () => {
     const pickVisibleFields = (entry: MetadataConfig) =>
@@ -150,19 +170,39 @@ export function MetadataPanel({
           <button
             onClick={handleExportJson}
             style={{
-              background: `linear-gradient(135deg, ${T.accent}, ${T.accent}dd)`,
+              background: "rgba(255,255,255,0.06)",
+              color: T.fgMuted,
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: 8,
+              padding: "8px 16px",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+              transition: "all 0.15s",
+            }}
+          >
+            Export JSON
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saveState === "saving"}
+            style={{
+              background: saveState === "error"
+                ? "#EF4444"
+                : `linear-gradient(135deg, ${T.accent}, ${T.accent}dd)`,
               color: "#fff",
               border: "none",
               borderRadius: 8,
               padding: "8px 18px",
               fontSize: 13,
               fontWeight: 600,
-              cursor: "pointer",
+              cursor: saveState === "saving" ? "not-allowed" : "pointer",
               boxShadow: `0 4px 16px ${T.accentGlow}`,
+              opacity: saveState === "saving" ? 0.7 : 1,
               transition: "all 0.15s",
             }}
           >
-            Export JSON
+            {saveState === "saving" ? "Saving…" : saveState === "saved" ? "Saved" : saveState === "error" ? "Error" : "Save"}
           </button>
         </div>
       </div>
