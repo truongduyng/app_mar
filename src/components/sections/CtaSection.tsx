@@ -46,7 +46,7 @@ export function CtaSection({ product, locale, platform, ctaSc1, ctaSc2, onSc1Cha
   };
 
   return (
-    <div style={{ padding: "24px 24px 32px", maxWidth: 520, margin: "0 auto" }}>
+    <div style={{ padding: "24px 24px 32px", maxWidth: 620, margin: "0 auto" }}>
       {/* Controls */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
         <select value={ctaSc1} onChange={(e) => onSc1Change(e.target.value)} style={selectStyle}>
@@ -82,7 +82,7 @@ export function CtaSection({ product, locale, platform, ctaSc1, ctaSc2, onSc1Cha
       </div>
 
       {/* Offscreen */}
-      <div ref={offscreenRef} style={{ position: "absolute", top: 0, fontFamily: "inherit", pointerEvents: "none" }}>
+      <div ref={offscreenRef} style={{ position: "fixed", top: 0, fontFamily: "inherit", pointerEvents: "none" }}>
         <div style={{ width: CTA_W, height: ctaH, position: "absolute", left: -9999, fontFamily: "inherit" }}>
           <CtaImage theme={T} iconPath={product.iconPath} screenshotBase={screenshotBase}
             sc1={ctaSc1} sc2={ctaSc2} headline={headline} productName={product.name}
