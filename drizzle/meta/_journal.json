@@ -8,6 +8,13 @@
       "when": 1777992689554,
       "tag": "0000_unique_the_anarchist",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1778420946159,
+      "tag": "0001_faulty_stephen_strange",
+      "breakpoints": true
     }
   ]
 }

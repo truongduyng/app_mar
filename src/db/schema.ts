@@ -6,6 +6,8 @@ export const products = pgTable("products", {
   iconPath:       text("icon_path").notNull(),
   screenshotBase: text("screenshot_base").notNull(),
   mockupPath:     text("mockup_path"),
+  bundleId:       text("bundle_id"),
+  packageName:    text("package_name"),
   createdAt:      timestamp("created_at").defaultNow(),
 });
 

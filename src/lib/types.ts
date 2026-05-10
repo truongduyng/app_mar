@@ -123,6 +123,10 @@ export type ProductConfig = {
   metadata?: MetadataConfig;
   /** Per-locale metadata overrides. Key is locale code (e.g. "vi", "de") */
   metadataByLocale?: Record<string, MetadataConfig>;
+  /** Apple App Store bundle ID, e.g. "com.example.myapp" */
+  bundleId?: string;
+  /** Google Play package name, e.g. "com.example.myapp" */
+  packageName?: string;
 };
 
 // ─── Serializable versions (DB ↔ API, no React nodes) ─────────────────────

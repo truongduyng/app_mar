@@ -1,0 +1,146 @@
+import { NextRequest, NextResponse } from "next/server";
+import { generateAppleJWT } from "@/lib/apple-jwt";
+import { toAppleLocale } from "@/lib/store-locales";
+import { db } from "@/db/client";
+import { products, productMetadata } from "@/db/schema";
+import { eq } from "drizzle-orm";
+
+const BASE = "https://api.appstoreconnect.apple.com/v1";
+
+type AscHeaders = { Authorization: string; "Content-Type": string };
+
+async function asc(url: string, headers: AscHeaders, options?: RequestInit) {
+  return fetch(url, { ...options, headers });
+}
+
+const EDITABLE_STATES = [
+  "PREPARE_FOR_SUBMISSION",
+  "DEVELOPER_REJECTED",
+  "REJECTED",
+  "METADATA_REJECTED",
+  "WAITING_FOR_REVIEW",
+  "IN_REVIEW",
+];
+
+export async function POST(req: NextRequest) {
+  const { productId } = await req.json();
+
+  const [product] = await db.select().from(products).where(eq(products.id, productId));
+  if (!product?.bundleId) {
+    return NextResponse.json({ error: "Product not configured for Apple publishing (missing bundleId)" }, { status: 400 });
+  }
+
+  const keyId      = process.env.ASC_KEY_ID;
+  const issuerId   = process.env.ASC_ISSUER_ID;
+  const privateKey = (process.env.ASC_PRIVATE_KEY ?? "").replace(/\\n/g, "\n");
+  if (!keyId || !issuerId || !privateKey) {
+    return NextResponse.json({ error: "Apple credentials not configured (ASC_KEY_ID, ASC_ISSUER_ID, ASC_PRIVATE_KEY)" }, { status: 500 });
+  }
+
+  const token = generateAppleJWT(keyId, issuerId, privateKey);
+  const headers: AscHeaders = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+
+  const metaRows = await db.select().from(productMetadata).where(eq(productMetadata.productId, productId));
+  if (!metaRows.length) {
+    return NextResponse.json({ error: "No metadata found in DB — save metadata first" }, { status: 404 });
+  }
+
+  // Resolve app ID
+  const appsRes = await asc(`${BASE}/apps?filter[bundleId]=${product.bundleId}`, headers);
+  if (!appsRes.ok) {
+    return NextResponse.json({ error: `Failed to look up app: ${await appsRes.text()}` }, { status: 502 });
+  }
+  const appId = (await appsRes.json()).data?.[0]?.id as string | undefined;
+  if (!appId) {
+    return NextResponse.json({ error: `App "${product.bundleId}" not found in App Store Connect` }, { status: 404 });
+  }
+
+  // Fetch all iOS versions once — reuse for both AppInfo and VersionLocalizations
+  const versionsRes = await asc(
+    `${BASE}/apps/${appId}/appStoreVersions?filter[platform]=IOS&limit=10`,
+    headers
+  );
+  if (!versionsRes.ok) {
+    return NextResponse.json({ error: `Failed to fetch versions: ${await versionsRes.text()}` }, { status: 502 });
+  }
+  const allVersions: Array<{ id: string; attributes: { appStoreState: string } }> =
+    (await versionsRes.json()).data ?? [];
+
+  const editableVersion = allVersions.find((v) => EDITABLE_STATES.includes(v.attributes.appStoreState));
+  const versionForLocs = editableVersion ?? allVersions[0];
+
+  const errors: string[] = [];
+
+  // ── AppInfoLocalizations: name + subtitle ─────────────────────────────────
+  if (editableVersion) {
+    const appInfosRes = await asc(`${BASE}/apps/${appId}/appInfos`, headers);
+    const appInfosJson = appInfosRes.ok ? await appInfosRes.json() : { data: [] };
+    const editableAppInfo = (appInfosJson.data ?? []).find(
+      (a: { attributes: { appStoreState: string } }) =>
+        EDITABLE_STATES.includes(a.attributes.appStoreState)
+    ) ?? appInfosJson.data?.[0];
+    const appInfoId = editableAppInfo?.id as string | undefined;
+
+    if (appInfoId) {
+      const infoLocsRes = await asc(`${BASE}/appInfos/${appInfoId}/appInfoLocalizations`, headers);
+      const infoLocs: Array<{ id: string; attributes: { locale: string } }> =
+        infoLocsRes.ok ? (await infoLocsRes.json()).data ?? [] : [];
+
+      for (const row of metaRows) {
+        const appleLocale = toAppleLocale(row.locale);
+        const existing = infoLocs.find((l) => l.attributes.locale === appleLocale);
+
+        const body = existing
+          ? { data: { type: "appInfoLocalizations", id: existing.id, attributes: { name: row.name, subtitle: row.subtitle } } }
+          : { data: { type: "appInfoLocalizations", attributes: { locale: appleLocale, name: row.name, subtitle: row.subtitle }, relationships: { appInfo: { data: { type: "appInfos", id: appInfoId } } } } };
+
+        const r = await asc(
+          existing ? `${BASE}/appInfoLocalizations/${existing.id}` : `${BASE}/appInfoLocalizations`,
+          headers,
+          { method: existing ? "PATCH" : "POST", body: JSON.stringify(body) }
+        );
+        if (!r.ok) {
+          errors.push(`AppInfo [${appleLocale}]: ${await r.text()}`);
+        }
+      }
+    }
+  } else {
+    errors.push(`AppInfo (warning): no editable version found — name and subtitle were not updated`);
+  }
+
+  // ── AppStoreVersionLocalizations: description + keywords + promoText ───────
+  if (versionForLocs) {
+    const versionLocsRes = await asc(
+      `${BASE}/appStoreVersions/${versionForLocs.id}/appStoreVersionLocalizations`,
+      headers
+    );
+    const versionLocs: Array<{ id: string; attributes: { locale: string } }> =
+      versionLocsRes.ok ? (await versionLocsRes.json()).data ?? [] : [];
+
+    for (const row of metaRows) {
+      const appleLocale = toAppleLocale(row.locale);
+      const existing = versionLocs.find((l) => l.attributes.locale === appleLocale);
+
+      const body = existing
+        ? { data: { type: "appStoreVersionLocalizations", id: existing.id, attributes: { description: row.description, keywords: row.keywords, promotionalText: row.promoText } } }
+        : { data: { type: "appStoreVersionLocalizations", attributes: { locale: appleLocale, description: row.description, keywords: row.keywords, promotionalText: row.promoText }, relationships: { appStoreVersion: { data: { type: "appStoreVersions", id: versionForLocs.id } } } } };
+
+      const r = await asc(
+        existing ? `${BASE}/appStoreVersionLocalizations/${existing.id}` : `${BASE}/appStoreVersionLocalizations`,
+        headers,
+        { method: existing ? "PATCH" : "POST", body: JSON.stringify(body) }
+      );
+      if (!r.ok) {
+        errors.push(`VersionLoc [${appleLocale}]: ${await r.text()}`);
+      }
+    }
+  }
+
+  const warnings = errors.filter((e) => e.includes("(warning)"));
+  const hardErrors = errors.filter((e) => !e.includes("(warning)"));
+
+  if (hardErrors.length) {
+    return NextResponse.json({ ok: false, errors: hardErrors, warnings }, { status: 207 });
+  }
+  return NextResponse.json({ ok: true, warnings });
+}

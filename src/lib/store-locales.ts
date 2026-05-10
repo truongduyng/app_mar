@@ -1,0 +1,81 @@
+// Maps app locale codes to store-specific locale identifiers
+
+export const APPLE_LOCALE_MAP: Record<string, string> = {
+  en:      "en-US",
+  vi:      "vi",
+  fr:      "fr-FR",
+  de:      "de-DE",
+  ja:      "ja",
+  ko:      "ko",
+  es:      "es-ES",
+  "es-MX": "es-MX",
+  pt:      "pt-BR",
+  "pt-PT": "pt-PT",
+  zh:      "zh-Hans",
+  "zh-TW": "zh-Hant",
+  ar:      "ar-SA",
+  ru:      "ru",
+  it:      "it",
+  nl:      "nl-NL",
+  tr:      "tr",
+  pl:      "pl",
+  sv:      "sv",
+  da:      "da",
+  fi:      "fi",
+  nb:      "no",
+  cs:      "cs",
+  hu:      "hu",
+  ro:      "ro",
+  th:      "th",
+  id:      "id",
+  ms:      "ms",
+  uk:      "uk",
+  hr:      "hr",
+  sk:      "sk",
+  he:      "he",
+  el:      "el",
+};
+
+export const GOOGLE_LOCALE_MAP: Record<string, string> = {
+  en:      "en-US",
+  vi:      "vi",
+  fr:      "fr-FR",
+  de:      "de-DE",
+  ja:      "ja-JP",
+  ko:      "ko-KR",
+  es:      "es-ES",
+  "es-MX": "es-419",
+  pt:      "pt-BR",
+  "pt-PT": "pt-PT",
+  zh:      "zh-CN",
+  "zh-TW": "zh-TW",
+  ar:      "ar",
+  ru:      "ru-RU",
+  it:      "it-IT",
+  nl:      "nl-NL",
+  tr:      "tr-TR",
+  pl:      "pl-PL",
+  sv:      "sv-SE",
+  da:      "da-DK",
+  fi:      "fi-FI",
+  nb:      "no-NO",
+  cs:      "cs-CZ",
+  hu:      "hu-HU",
+  ro:      "ro",
+  th:      "th",
+  id:      "id",
+  ms:      "ms",
+  uk:      "uk",
+  hr:      "hr",
+  sk:      "sk",
+  he:      "iw-IL",
+  el:      "el-GR",
+};
+
+export function toAppleLocale(appLocale: string): string {
+  return APPLE_LOCALE_MAP[appLocale] ?? appLocale;
+}
+
+export function toGoogleLocale(appLocale: string): string {
+  return GOOGLE_LOCALE_MAP[appLocale] ?? appLocale;
+}

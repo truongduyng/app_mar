@@ -22,6 +22,7 @@ const FIELDS: FieldDef[] = [
 ];
 
 type SaveState = "idle" | "saving" | "saved" | "error";
+type PublishState = "idle" | "publishing" | "published" | "error";
 
 export function MetadataPanel({
   theme: T,
@@ -30,6 +31,8 @@ export function MetadataPanel({
   activeLocale,
   metadata,
   productId,
+  bundleId,
+  packageName,
   onUpdate,
   allLocaleData,
 }: {
@@ -39,12 +42,21 @@ export function MetadataPanel({
   activeLocale: string;
   metadata: MetadataConfig;
   productId: string;
+  bundleId?: string;
+  packageName?: string;
   onUpdate: (updated: MetadataConfig) => void;
   /** All locale data for JSON export - { [locale]: MetadataConfig } */
   allLocaleData: Record<string, MetadataConfig>;
 }) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [appleState, setAppleState] = useState<PublishState>("idle");
+  const [googleState, setGoogleState] = useState<PublishState>("idle");
+  const [publishErrors, setPublishErrors] = useState<string[]>([]);
+  const [publishWarnings, setPublishWarnings] = useState<string[]>([]);
+  const [localBundleId, setLocalBundleId] = useState(bundleId ?? "");
+  const [localPackageName, setLocalPackageName] = useState(packageName ?? "");
+  const [storeIdSaveState, setStoreIdSaveState] = useState<SaveState>("idle");
   const isFieldVisible = useCallback(
     (field: FieldDef) => (
       field.platform === "Both" ||
@@ -89,6 +101,47 @@ export function MetadataPanel({
     }
     setTimeout(() => setSaveState("idle"), 2000);
   }, [productId, activeLocale, metadata]);
+
+  const handleSaveStoreIds = useCallback(async () => {
+    setStoreIdSaveState("saving");
+    try {
+      const res = await fetch("/api/product-settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId, bundleId: localBundleId, packageName: localPackageName }),
+      });
+      setStoreIdSaveState(res.ok ? "saved" : "error");
+    } catch {
+      setStoreIdSaveState("error");
+    }
+    setTimeout(() => setStoreIdSaveState("idle"), 2000);
+  }, [productId, localBundleId, localPackageName]);
+
+  const handlePublish = useCallback(async (store: "apple" | "google") => {
+    const setState = store === "apple" ? setAppleState : setGoogleState;
+    setState("publishing");
+    setPublishErrors([]);
+    setPublishWarnings([]);
+    try {
+      const res = await fetch(`/api/publish/${store}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId }),
+      });
+      const data = await res.json();
+      if (data.warnings?.length) setPublishWarnings(data.warnings);
+      if (res.ok && data.ok) {
+        setState("published");
+      } else {
+        setPublishErrors(data.errors ?? [data.error ?? "Unknown error"]);
+        setState("error");
+      }
+    } catch (e: unknown) {
+      setPublishErrors([e instanceof Error ? e.message : String(e)]);
+      setState("error");
+    }
+    setTimeout(() => setState("idle"), 4000);
+  }, [productId]);
 
   const handleExportJson = useCallback(async () => {
     const pickVisibleFields = (entry: MetadataConfig) =>
@@ -204,7 +257,196 @@ export function MetadataPanel({
           >
             {saveState === "saving" ? "Saving…" : saveState === "saved" ? "Saved" : saveState === "error" ? "Error" : "Save"}
           </button>
+
+          {localBundleId && (
+            <button
+              onClick={() => handlePublish("apple")}
+              disabled={appleState === "publishing"}
+              title="Publish all locales to App Store Connect"
+              style={{
+                background: appleState === "error" ? "#EF4444" : appleState === "published" ? "#22C55E" : "rgba(255,255,255,0.07)",
+                color: appleState === "idle" ? T.fgMuted : "#fff",
+                border: "1px solid rgba(255,255,255,0.12)",
+                borderRadius: 8,
+                padding: "8px 14px",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: appleState === "publishing" ? "not-allowed" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                opacity: appleState === "publishing" ? 0.7 : 1,
+                transition: "all 0.15s",
+              }}
+            >
+              {/* Apple logo */}
+              <svg width={13} height={13} viewBox="0 0 814 1000" fill="currentColor">
+                <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105.6-57.8-155.5-127.4C46 790.7 0 663 0 541.8c0-207.8 133.4-317.7 264.8-317.7 60.5 0 110.8 39.7 148.2 39.7 35.5 0 91.7-42.1 160.9-42.1 28.7 0 108.2 2.6 168.7 100.5zm-234.5-191.1c31.1-36.9 53.1-88.1 53.1-139.3 0-7.1-.6-14.3-1.9-20.1-50.6 1.9-110.8 33.7-147.1 75.8-28.5 32.4-55.1 83.6-55.1 135.5 0 7.8 1.3 15.6 1.9 18.1 3.2.6 8.4 1.3 13.6 1.3 45.4 0 102.5-30.4 135.5-71.3z"/>
+              </svg>
+              {appleState === "publishing" ? "Publishing…" : appleState === "published" ? "Published!" : appleState === "error" ? "Failed" : "Publish Apple"}
+            </button>
+          )}
+
+          {localPackageName && (
+            <button
+              onClick={() => handlePublish("google")}
+              disabled={googleState === "publishing"}
+              title="Publish all locales to Google Play"
+              style={{
+                background: googleState === "error" ? "#EF4444" : googleState === "published" ? "#22C55E" : "rgba(255,255,255,0.07)",
+                color: googleState === "idle" ? T.fgMuted : "#fff",
+                border: "1px solid rgba(255,255,255,0.12)",
+                borderRadius: 8,
+                padding: "8px 14px",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: googleState === "publishing" ? "not-allowed" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                opacity: googleState === "publishing" ? 0.7 : 1,
+                transition: "all 0.15s",
+              }}
+            >
+              {/* Google Play triangle */}
+              <svg width={13} height={13} viewBox="0 0 24 24" fill="currentColor">
+                <path d="M3 20.5v-17c0-.83 1-.83 1.5-.5l14 8.5c.5.3.5 1.2 0 1.5l-14 8.5c-.5.3-1.5.3-1.5-.5z"/>
+              </svg>
+              {googleState === "publishing" ? "Publishing…" : googleState === "published" ? "Published!" : googleState === "error" ? "Failed" : "Publish Google"}
+            </button>
+          )}
         </div>
+      </div>
+
+      {/* Publish error details */}
+      {publishErrors.length > 0 && (
+        <div
+          style={{
+            background: "rgba(239,68,68,0.08)",
+            border: "1px solid rgba(239,68,68,0.3)",
+            borderRadius: 10,
+            padding: "12px 16px",
+            marginBottom: 20,
+          }}
+        >
+          <div style={{ fontSize: 13, fontWeight: 600, color: "#EF4444", marginBottom: 6 }}>
+            Publishing errors:
+          </div>
+          {publishErrors.map((e, i) => (
+            <div key={i} style={{ fontSize: 12, color: "#FCA5A5", fontFamily: "monospace", lineHeight: 1.6 }}>
+              {e}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Publish warnings */}
+      {publishWarnings.length > 0 && (
+        <div
+          style={{
+            background: "rgba(245,158,11,0.08)",
+            border: "1px solid rgba(245,158,11,0.3)",
+            borderRadius: 10,
+            padding: "12px 16px",
+            marginBottom: 20,
+          }}
+        >
+          <div style={{ fontSize: 13, fontWeight: 600, color: "#F59E0B", marginBottom: 6 }}>
+            Published with warnings:
+          </div>
+          {publishWarnings.map((w, i) => (
+            <div key={i} style={{ fontSize: 12, color: "#FCD34D", lineHeight: 1.6 }}>
+              {w}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Store ID config */}
+      <div
+        style={{
+          background: "rgba(255,255,255,0.03)",
+          border: "1px solid rgba(255,255,255,0.07)",
+          borderRadius: 14,
+          padding: "18px 22px",
+          marginBottom: 24,
+        }}
+      >
+        <div style={{ fontSize: 13, fontWeight: 600, color: T.fgMuted, marginBottom: 14, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+          Store Identifiers
+        </div>
+        <div style={{ display: "flex", gap: 12, alignItems: "flex-end", flexWrap: "wrap" }}>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <div style={{ fontSize: 12, color: T.fgMuted, marginBottom: 6 }}>
+              Apple Bundle ID
+            </div>
+            <input
+              type="text"
+              value={localBundleId}
+              onChange={(e) => setLocalBundleId(e.target.value)}
+              placeholder="com.example.myapp"
+              style={{
+                width: "100%",
+                background: "rgba(0,0,0,0.25)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                borderRadius: 8,
+                padding: "8px 12px",
+                fontSize: 13,
+                color: T.fg,
+                fontFamily: "monospace",
+                outline: "none",
+                boxSizing: "border-box",
+              }}
+            />
+          </div>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <div style={{ fontSize: 12, color: T.fgMuted, marginBottom: 6 }}>
+              Google Play Package Name
+            </div>
+            <input
+              type="text"
+              value={localPackageName}
+              onChange={(e) => setLocalPackageName(e.target.value)}
+              placeholder="com.example.myapp"
+              style={{
+                width: "100%",
+                background: "rgba(0,0,0,0.25)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                borderRadius: 8,
+                padding: "8px 12px",
+                fontSize: 13,
+                color: T.fg,
+                fontFamily: "monospace",
+                outline: "none",
+                boxSizing: "border-box",
+              }}
+            />
+          </div>
+          <button
+            onClick={handleSaveStoreIds}
+            disabled={storeIdSaveState === "saving"}
+            style={{
+              background: storeIdSaveState === "error" ? "#EF4444" : storeIdSaveState === "saved" ? "#22C55E" : "rgba(255,255,255,0.08)",
+              color: storeIdSaveState === "idle" ? T.fgMuted : "#fff",
+              border: "1px solid rgba(255,255,255,0.12)",
+              borderRadius: 8,
+              padding: "8px 16px",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: storeIdSaveState === "saving" ? "not-allowed" : "pointer",
+              whiteSpace: "nowrap",
+              transition: "all 0.15s",
+              opacity: storeIdSaveState === "saving" ? 0.7 : 1,
+            }}
+          >
+            {storeIdSaveState === "saving" ? "Saving…" : storeIdSaveState === "saved" ? "Saved!" : storeIdSaveState === "error" ? "Error" : "Save IDs"}
+          </button>
+        </div>
+        {(localBundleId || localPackageName) && (
+          <div style={{ fontSize: 12, color: T.fgMuted, marginTop: 10 }}>
+            Save IDs first, then use the Publish buttons above to push metadata to the stores.
+          </div>
+        )}
       </div>
 
       {/* Field cards */}

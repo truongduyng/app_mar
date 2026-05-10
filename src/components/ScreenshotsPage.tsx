@@ -302,6 +302,8 @@ export function ScreenshotsPage({ rawProducts }: { rawProducts: SerializableProd
               locales={productLocales}
               activeLocale={locale}
               productId={product.id}
+              bundleId={product.bundleId}
+              packageName={product.packageName}
               metadata={
                 metadataMap[product.id]?.[locale] ??
                 metadataMap[product.id]?.[productLocales[0].code] ??
