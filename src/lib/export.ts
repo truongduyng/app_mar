@@ -170,6 +170,40 @@ export async function exportAllToZip({
   downloadDataUrl(URL.createObjectURL(blob), zipName);
 }
 
+/* ── Capture all slides as base64 PNGs (for server upload) ── */
+export async function captureAllAsBase64(
+  container: HTMLElement,
+  slides: { label: string }[],
+  device: DeviceType = "iphone",
+  onProgress?: (done: number, total: number) => void,
+): Promise<Array<{ index: number; label: string; dataUrl: string }>> {
+  const { w: canvasW, h: canvasH } = getCanvasDims(device);
+  const results = [];
+
+  for (let i = 0; i < slides.length; i++) {
+    const el = container.children[i] as HTMLElement;
+    if (!el) continue;
+
+    el.style.left = "0px";
+    el.style.opacity = "1";
+    el.style.zIndex = "-1";
+
+    const opts = { width: canvasW, height: canvasH, pixelRatio: 1, cacheBust: true };
+    await toPng(el, opts);
+    const dataUrl = await toPng(el, opts);
+
+    el.style.left = "-9999px";
+    el.style.opacity = "";
+    el.style.zIndex = "";
+
+    results.push({ index: i + 1, label: slides[i].label, dataUrl });
+    onProgress?.(i + 1, slides.length);
+    await tick();
+  }
+
+  return results;
+}
+
 /* ── Helpers ───────────────────────────────────────────────── */
 function pad(n: number) {
   return String(n).padStart(2, "0");
