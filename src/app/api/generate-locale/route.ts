@@ -6,7 +6,7 @@ import { eq, and } from "drizzle-orm";
 import type { RichTextSegment } from "@/lib/rich-text";
 import type { MetadataConfig } from "@/lib/types";
 
-const TOGETHER_MODEL = "openai/gpt-oss-120b";
+const TOGETHER_MODEL = "zai-org/GLM-5.1";
 const together = new Together();
 
 // Map locale code → country/market context for ASO optimisation
@@ -127,10 +127,13 @@ const SLIDES_SCHEMA: JsonSchema = {
   }),
 };
 
+
 /** Convert plain markup text to RichTextSegment[]. Replicates markupToSegments logic. */
 function markupToSegments(markup: string): RichTextSegment[] {
   const segments: RichTextSegment[] = [];
-  const parts = markup.split(/(\*\*[^*]*\*\*|\\n)/g);
+  // Normalize real newlines to the \n token the parser expects
+  const normalised = markup.replace(/\n/g, "\\n");
+  const parts = normalised.split(/(\*\*[^*]*\*\*|\\n)/g);
   for (const part of parts) {
     if (!part) continue;
     if (part === "\\n") {
@@ -155,12 +158,13 @@ export async function POST(req: NextRequest) {
   const ctx = getLocaleContext(targetLocale);
 
   // ── 1. Generate metadata ───────────────────────────────────────────────────
-  const metaPrompt = `You are an App Store Optimisation (ASO) expert specialising in the ${ctx.country} market.
+  const metaPrompt = `You are a senior App Store Optimisation (ASO) copywriter for the ${ctx.country} market. You write compelling, conversion-focused app store listings that feel native to the language and culture — not translated.
 
-Translate and optimise the following app store metadata from ${sourceLocale.toUpperCase()} to ${ctx.language}.
-Market notes: ${ctx.marketNotes}
+Your task: study the source app store listing below to deeply understand what this app does and what value it delivers. Then write entirely new, high-quality ${ctx.language} copy for the ${ctx.country} App Store. You are free to restructure sentences, choose different angles, or reorder benefits — as long as the meaning and feature set remain accurate.
 
-STRICT CHARACTER LIMITS (never exceed):
+Market context: ${ctx.marketNotes}
+
+STRICT CHARACTER LIMITS (never exceed — count carefully):
 - name: 30 characters
 - subtitle: 30 characters
 - promoText: 170 characters
@@ -168,13 +172,23 @@ STRICT CHARACTER LIMITS (never exceed):
 - description: 4000 characters
 - keywords: 100 characters (comma-separated, no spaces after commas)
 
-SOURCE METADATA (${sourceLocale.toUpperCase()}):
+SOURCE LISTING (${sourceLocale.toUpperCase()}) — use this to understand the app, not to translate word-for-word:
 name: ${sourceMetadata.name}
 subtitle: ${sourceMetadata.subtitle}
 promoText: ${sourceMetadata.promoText}
 shortDescription: ${sourceMetadata.shortDescription}
 description: ${sourceMetadata.description}
 keywords: ${sourceMetadata.keywords}
+
+IMPORTANT: Do not use any emoji in any field — the App Store will reject them.
+
+Guidelines for each field:
+- name: Keep the app name, translate any tagline portion naturally
+- subtitle: Lead with the strongest benefit; feel free to rewrite for maximum impact
+- promoText: Write a compelling hook for the ${ctx.language}-speaking audience; adapt tone to local expectations
+- shortDescription: One punchy sentence covering the top 2-3 features
+- description: Rewrite to sound natural in ${ctx.language}. CRITICAL FORMATTING — each section heading must be ALL CAPS on its own line, with a blank line before it and a blank line after it. Example: "...end of paragraph.\n\nSECTION HEADING\n\nStart of next paragraph..." — the blank lines are mandatory. Plain text only, no markdown, no bullet symbols, no emoji.
+- keywords: Comma-separated search terms, no space after each comma (e.g. "baby,tracker,growth"). Each term should be a single word or a natural short phrase in ${ctx.language} — spaces within a term are fine if the language requires it (e.g. "âm thanh,tiếng mưa" or "赤ちゃん,成長記録"). No emoji. Max 100 characters total.
 
 Return a JSON object with exactly these keys: name, subtitle, promoText, shortDescription, description, keywords.`;
 
@@ -186,18 +200,19 @@ Return a JSON object with exactly these keys: name, subtitle, promoText, shortDe
   subtitle: ${s.subtitle}`
   ).join("\n\n");
 
-  const slidesPrompt = `You are an app marketing copywriter optimising screenshot copy for the ${ctx.country} market.
+  const slidesPrompt = `You are a senior mobile app marketing copywriter creating screenshot copy for the ${ctx.country} market. Your copy should feel like it was written by a native ${ctx.language} speaker who understands the app deeply — not translated.
 
-Translate and adapt the following app screenshot copy from ${sourceLocale.toUpperCase()} to ${ctx.language}.
-Market notes: ${ctx.marketNotes}
+Your task: study the source slide copy below to understand the message and intent of each slide. Then write fresh, compelling ${ctx.language} copy that resonates with the ${ctx.country} audience. You may rewrite headlines and subtitles with a different angle, stronger hook, or better cultural fit — as long as the core message is preserved.
+
+Market context: ${ctx.marketNotes}
 
 FORMAT RULES:
-- label: ALL CAPS, short category label (max ~30 chars)
-- headline: The main benefit statement. You may use **bold** to wrap the key accent phrase (e.g. "Track **every milestone**"). Use \\n for a line break if needed.
-- subtitle: Supporting sentence. Can use \\n for line breaks.
-- Keep copy punchy and benefit-driven, not feature-listing.
+- label: Short ALL-CAPS category label (max ~30 chars). Adapt to sound natural in ${ctx.language}, not a literal translation.
+- headline: The main benefit statement. Write it to grab attention and speak to a real pain point or desire. You may use **bold** to wrap the key accent word/phrase (e.g. "Track **every milestone**"). Use a real newline character for a natural line break if the text is long.
+- subtitle: 1–2 supporting sentences that expand on the headline. Conversational and benefit-driven. Use real newline characters for line breaks if needed.
+- Overall: write punchy, emotional copy that sells the benefit — not a dry list of features.
 
-SOURCE SLIDES (${sourceLocale.toUpperCase()}):
+SOURCE SLIDES (${sourceLocale.toUpperCase()}) — understand the intent, then rewrite for ${ctx.language}:
 ${slidesInput}
 
 Return a JSON object with a single key "slides" whose value is an array. Each element has: slideKey, label, headline, subtitle.`;
@@ -253,28 +268,25 @@ Return a JSON object with a single key "slides" whose value is an array. Each el
   }
 
   // 3b. Upsert metadata
+  const cleanMeta = {
+    name:             generatedMetadata.name ?? "",
+    subtitle:         generatedMetadata.subtitle ?? "",
+    promoText:        generatedMetadata.promoText ?? "",
+    shortDescription: generatedMetadata.shortDescription ?? "",
+    description:      (generatedMetadata.description ?? "")
+                        // Ensure blank line before every ALL-CAPS heading
+                        .replace(/([^\n])\n([A-ZÀ-ɏ][A-ZÀ-ɏ\s]{3,})\n/g, "$1\n\n$2\n\n")
+                        .replace(/\n{3,}/g, "\n\n")
+                        .trim(),
+    keywords:         generatedMetadata.keywords ?? "",
+  };
+
   await db
     .insert(productMetadata)
-    .values({
-      productId,
-      locale:           targetLocale,
-      name:             generatedMetadata.name ?? "",
-      subtitle:         generatedMetadata.subtitle ?? "",
-      promoText:        generatedMetadata.promoText ?? "",
-      shortDescription: generatedMetadata.shortDescription ?? "",
-      description:      generatedMetadata.description ?? "",
-      keywords:         generatedMetadata.keywords ?? "",
-    })
+    .values({ productId, locale: targetLocale, ...cleanMeta })
     .onConflictDoUpdate({
       target: [productMetadata.productId, productMetadata.locale],
-      set: {
-        name:             generatedMetadata.name ?? "",
-        subtitle:         generatedMetadata.subtitle ?? "",
-        promoText:        generatedMetadata.promoText ?? "",
-        shortDescription: generatedMetadata.shortDescription ?? "",
-        description:      generatedMetadata.description ?? "",
-        keywords:         generatedMetadata.keywords ?? "",
-      },
+      set: cleanMeta,
     });
 
   // 3c. Upsert slide copy
@@ -309,6 +321,6 @@ Return a JSON object with a single key "slides" whose value is an array. Each el
   return NextResponse.json({
     ok: true,
     locale: { code: targetLocale, label: targetLabel, flag: targetFlag },
-    metadata: generatedMetadata,
+    metadata: cleanMeta,
   });
 }

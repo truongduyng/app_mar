@@ -100,6 +100,7 @@ export function ScreenshotsPage({ rawProducts }: { rawProducts: SerializableProd
   // Extra locales added at runtime via AI generation (keyed by productId)
   const [extraLocales, setExtraLocales] = useState<Record<string, LocaleDef[]>>({});
   const [addLocaleOpen, setAddLocaleOpen] = useState(false);
+  const [regenLocaleCode, setRegenLocaleCode] = useState<string | null>(null);
 
   const [metadataMap, setMetadataMap] = useState<Record<string, Record<string, MetadataConfig>>>(() => {
     const empty: MetadataConfig = { name: "", subtitle: "", promoText: "", shortDescription: "", description: "", keywords: "" };
@@ -175,6 +176,50 @@ export function ScreenshotsPage({ rawProducts }: { rawProducts: SerializableProd
       setLocale(productLocales[0].code);
     }
   }, [productId, productLocales]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function handleRegenLocale(locCode: string) {
+    const locDef = productLocales.find((l) => l.code === locCode);
+    if (!locDef) return;
+    const sourceLoc = productLocales[0];
+    const rawProduct = rawProducts.find((p) => p.id === productId)!;
+    const sourceMetadata =
+      metadataMap[productId]?.[sourceLoc.code] ??
+      { name: product.name, subtitle: "", promoText: "", shortDescription: "", description: "", keywords: "" };
+    const slides = rawProduct.slides.iphone.map((s) => ({
+      slideKey: s.id,
+      label:    s.copy.label,
+      headline: segmentsToPlain(s.copy.headline as RichTextSegment[]),
+      subtitle: segmentsToPlain(s.copy.subtitle as RichTextSegment[]),
+    }));
+
+    setRegenLocaleCode(locCode);
+    try {
+      const res = await fetch("/api/generate-locale", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId,
+          targetLocale: locDef.code,
+          targetLabel:  locDef.label,
+          targetFlag:   locDef.flag,
+          sourceLocale: sourceLoc.code,
+          sourceLabel:  sourceLoc.label,
+          sourceFlag:   sourceLoc.flag,
+          sourceMetadata,
+          sourceSlides: slides,
+        }),
+      });
+      const data = await res.json() as { ok?: boolean; error?: string; metadata?: MetadataConfig };
+      if (res.ok && data.ok && data.metadata) {
+        setMetadataMap((prev) => ({
+          ...prev,
+          [productId]: { ...prev[productId], [locCode]: data.metadata! },
+        }));
+      }
+    } finally {
+      setRegenLocaleCode(null);
+    }
+  }
 
   useEffect(() => {
     if (!productMenuOpen) return;
@@ -271,21 +316,47 @@ export function ScreenshotsPage({ rawProducts }: { rawProducts: SerializableProd
         {/* Language picker */}
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: "auto" }}>
           <div style={{ display: "flex", gap: 3, background: "rgba(255,255,255,0.04)", padding: 3, borderRadius: 8 }}>
-            {productLocales.map((loc) => (
-              <button key={loc.code} onClick={() => setLocale(loc.code)}
-                style={{
-                  background: locale === loc.code ? T.accent : "rgba(255,255,255,0.06)",
-                  color: locale === loc.code ? "#fff" : T.fgMuted,
-                  border: "none", borderRadius: 6, padding: "5px 10px",
-                  fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all 0.15s",
-                  display: "flex", alignItems: "center", gap: 4,
-                  boxShadow: locale === loc.code ? `0 2px 10px ${T.accentGlow}` : "none",
-                }}
-              >
-                {loc.flag && <span style={{ fontSize: 13 }}>{loc.flag}</span>}
-                {loc.code.toUpperCase()}
-              </button>
-            ))}
+            {productLocales.map((loc) => {
+              const isActive = locale === loc.code;
+              const isRegen  = regenLocaleCode === loc.code;
+              return (
+                <div key={loc.code} style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                  <button onClick={() => setLocale(loc.code)}
+                    style={{
+                      background: isActive ? T.accent : "rgba(255,255,255,0.06)",
+                      color: isActive ? "#fff" : T.fgMuted,
+                      border: "none", borderRadius: 6, padding: isActive ? "5px 26px 5px 10px" : "5px 10px",
+                      fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all 0.15s",
+                      display: "flex", alignItems: "center", gap: 4,
+                      boxShadow: isActive ? `0 2px 10px ${T.accentGlow}` : "none",
+                    }}
+                  >
+                    {loc.flag && <span style={{ fontSize: 13 }}>{loc.flag}</span>}
+                    {loc.code.toUpperCase()}
+                  </button>
+                  {isActive && (
+                    <button
+                      onClick={() => handleRegenLocale(loc.code)}
+                      disabled={isRegen}
+                      title="Re-generate with AI"
+                      className={isRegen ? "animate-spin" : ""}
+                      style={{
+                        position: "absolute", right: 5,
+                        background: "none", border: "none", padding: "2px",
+                        cursor: isRegen ? "not-allowed" : "pointer",
+                        color: isRegen ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.7)",
+                        display: "flex", alignItems: "center",
+                      }}
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
+                        <path d="M21 3v5h-5"/>
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
           <button
             onClick={() => setAddLocaleOpen(true)}
