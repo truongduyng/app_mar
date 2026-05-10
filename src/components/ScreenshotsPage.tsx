@@ -574,9 +574,7 @@ function AddLocaleModal({ theme: T, productId, existingCodes, sourceLoc, sourceM
   const [error, setError] = useState<string | null>(null);
 
   const filtered = COMMON_LOCALES.filter(
-    (l) =>
-      !existingCodes.includes(l.code) &&
-      (l.label.toLowerCase().includes(search.toLowerCase()) || l.code.toLowerCase().includes(search.toLowerCase())),
+    (l) => l.label.toLowerCase().includes(search.toLowerCase()) || l.code.toLowerCase().includes(search.toLowerCase()),
   );
 
   function toggleLocale(loc: LocaleDef) {
@@ -683,23 +681,29 @@ function AddLocaleModal({ theme: T, productId, existingCodes, sourceLoc, sourceM
             <div style={{ color: "#555", fontSize: 13, textAlign: "center", padding: "20px 0" }}>No languages found</div>
           )}
           {filtered.map((loc) => {
-            const active = selected.has(loc.code);
+            const exists  = existingCodes.includes(loc.code);
+            const active  = selected.has(loc.code);
+            const blocked = generating || exists;
             return (
-              <button key={loc.code} onClick={() => toggleLocale(loc)} disabled={generating}
+              <button key={loc.code} onClick={() => !exists && toggleLocale(loc)} disabled={blocked}
                 style={{
                   display: "flex", alignItems: "center", gap: 10,
-                  width: "100%", background: active ? T.accentSoft : "transparent",
+                  width: "100%",
+                  background: active ? T.accentSoft : "transparent",
                   border: active ? `1px solid ${T.accent}44` : "1px solid transparent",
-                  borderRadius: 8, padding: "8px 12px", cursor: generating ? "not-allowed" : "pointer", transition: "all 0.12s",
-                  textAlign: "left",
+                  borderRadius: 8, padding: "8px 12px",
+                  cursor: blocked ? "default" : "pointer",
+                  opacity: exists ? 0.4 : 1,
+                  transition: "all 0.12s", textAlign: "left",
                 }}
-                onMouseEnter={(e) => { if (!active && !generating) (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.04)"; }}
+                onMouseEnter={(e) => { if (!active && !blocked) (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.04)"; }}
                 onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
               >
                 <span style={{ fontSize: 18, lineHeight: 1 }}>{loc.flag}</span>
                 <span style={{ fontSize: 13, color: active ? "#fff" : "#ccc", fontWeight: active ? 600 : 400 }}>{loc.label}</span>
                 <span style={{ fontSize: 11, color: "#555", marginLeft: "auto" }}>{loc.code}</span>
-                {active && (
+                {exists && <span style={{ fontSize: 10, color: "#555", background: "rgba(255,255,255,0.06)", borderRadius: 4, padding: "2px 6px" }}>Added</span>}
+                {active && !exists && (
                   <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke={T.accent} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M3 8l3.5 3.5L13 4.5"/>
                   </svg>
