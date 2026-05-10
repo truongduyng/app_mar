@@ -165,8 +165,8 @@ Your task: study the source app store listing below to deeply understand what th
 Market context: ${ctx.marketNotes}
 
 STRICT CHARACTER LIMITS (never exceed — count carefully):
-- name: 30 characters
-- subtitle: 30 characters
+- name: 27 characters
+- subtitle: 27 characters
 - promoText: 170 characters
 - shortDescription: 80 characters
 - description: 4000 characters
@@ -183,7 +183,7 @@ keywords: ${sourceMetadata.keywords}
 IMPORTANT: Do not use any emoji in any field — the App Store will reject them.
 
 Guidelines for each field:
-- name: Keep the app name, translate any tagline portion naturally
+- name: Keep the app name
 - subtitle: Lead with the strongest benefit; feel free to rewrite for maximum impact
 - promoText: Write a compelling hook for the ${ctx.language}-speaking audience; adapt tone to local expectations
 - shortDescription: One punchy sentence covering the top 2-3 features
