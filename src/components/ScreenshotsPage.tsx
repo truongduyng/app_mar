@@ -9,7 +9,49 @@ import { SocialOgSection } from "@/components/sections/SocialOgSection";
 import { CtaSection } from "@/components/sections/CtaSection";
 import { COMPONENT_REGISTRY } from "@/components/component-registry";
 import { hydrateProducts } from "@/lib/product-hydration";
+import { segmentsToMarkup } from "@/lib/rich-text";
 import type { SerializableProductConfig, MetadataConfig, LocaleDef, AppPlatform } from "@/lib/types";
+import type { RichTextSegment } from "@/lib/rich-text";
+
+// Common App Store / Play Store locales for the picker
+const COMMON_LOCALES: LocaleDef[] = [
+  { code: "ar",      label: "Arabic",                   flag: "🇸🇦" },
+  { code: "cs",      label: "Czech",                    flag: "🇨🇿" },
+  { code: "da",      label: "Danish",                   flag: "🇩🇰" },
+  { code: "en",      label: "English",                  flag: "🇬🇧" },
+  { code: "de",      label: "German",                   flag: "🇩🇪" },
+  { code: "el",      label: "Greek",                    flag: "🇬🇷" },
+  { code: "es",      label: "Spanish",                  flag: "🇪🇸" },
+  { code: "fi",      label: "Finnish",                  flag: "🇫🇮" },
+  { code: "fil",     label: "Filipino",                 flag: "🇵🇭" },
+  { code: "fr",      label: "French",                   flag: "🇫🇷" },
+  { code: "he",      label: "Hebrew",                   flag: "🇮🇱" },
+  { code: "hr",      label: "Croatian",                 flag: "🇭🇷" },
+  { code: "hu",      label: "Hungarian",                flag: "🇭🇺" },
+  { code: "id",      label: "Indonesian",               flag: "🇮🇩" },
+  { code: "it",      label: "Italian",                  flag: "🇮🇹" },
+  { code: "ja",      label: "Japanese",                 flag: "🇯🇵" },
+  { code: "ko",      label: "Korean",                   flag: "🇰🇷" },
+  { code: "ms",      label: "Malay",                    flag: "🇲🇾" },
+  { code: "nl",      label: "Dutch",                    flag: "🇳🇱" },
+  { code: "no",      label: "Norwegian",                flag: "🇳🇴" },
+  { code: "pl",      label: "Polish",                   flag: "🇵🇱" },
+  { code: "pt",      label: "Portuguese",               flag: "🇵🇹" },
+  { code: "ro",      label: "Romanian",                 flag: "🇷🇴" },
+  { code: "ru",      label: "Russian",                  flag: "🇷🇺" },
+  { code: "sk",      label: "Slovak",                   flag: "🇸🇰" },
+  { code: "sv",      label: "Swedish",                  flag: "🇸🇪" },
+  { code: "th",      label: "Thai",                     flag: "🇹🇭" },
+  { code: "tr",      label: "Turkish",                  flag: "🇹🇷" },
+  { code: "uk",      label: "Ukrainian",                flag: "🇺🇦" },
+  { code: "vi",      label: "Vietnamese",               flag: "🇻🇳" },
+  { code: "zh-Hans", label: "Simplified Chinese",       flag: "🇨🇳" },
+  { code: "zh-Hant", label: "Traditional Chinese",      flag: "🇹🇼" },
+];
+
+function segmentsToPlain(segments: RichTextSegment[]): string {
+  return segmentsToMarkup(segments);
+}
 
 type Section = "screenshots" | "feature-graphic" | "social-og" | "cta" | "metadata";
 
@@ -55,6 +97,10 @@ export function ScreenshotsPage({ rawProducts }: { rawProducts: SerializableProd
   const [productMenuOpen, setProductMenuOpen] = useState(false);
   const productMenuRef = useRef<HTMLDivElement>(null);
 
+  // Extra locales added at runtime via AI generation (keyed by productId)
+  const [extraLocales, setExtraLocales] = useState<Record<string, LocaleDef[]>>({});
+  const [addLocaleOpen, setAddLocaleOpen] = useState(false);
+
   const [metadataMap, setMetadataMap] = useState<Record<string, Record<string, MetadataConfig>>>(() => {
     const empty: MetadataConfig = { name: "", subtitle: "", promoText: "", shortDescription: "", description: "", keywords: "" };
     const map: Record<string, Record<string, MetadataConfig>> = {};
@@ -89,7 +135,12 @@ export function ScreenshotsPage({ rawProducts }: { rawProducts: SerializableProd
 
   const product        = PRODUCTS.find((p) => p.id === productId)!;
   const T              = product.theme;
-  const productLocales = getProductLocales(product);
+  const productLocales = useMemo(() => {
+    const base  = getProductLocales(product);
+    const extra = extraLocales[product.id] ?? [];
+    const seen  = new Set(base.map((l) => l.code));
+    return [...base, ...extra.filter((l) => !seen.has(l.code))];
+  }, [product, extraLocales]);
   const ctaSc1         = ctaScMap[product.id]?.sc1 ?? product.ctaImage?.sc1 ?? "sc1.png";
   const ctaSc2         = ctaScMap[product.id]?.sc2 ?? product.ctaImage?.sc2 ?? "sc2.png";
 
@@ -116,8 +167,14 @@ export function ScreenshotsPage({ rawProducts }: { rawProducts: SerializableProd
       ? [`${ctaBase}/${product.ctaImage.sc1}`, `${ctaBase}/${product.ctaImage.sc2}`]
       : [];
     preloadImages([...getImagePathsForProduct(product), ...extraPaths]).then(() => setReady(true));
-    if (!productLocales.find((l) => l.code === locale)) setLocale(productLocales[0].code);
   }, [productId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Reset locale to first when switching products (but never when adding a new locale)
+  useEffect(() => {
+    if (!productLocales.find((l) => l.code === locale)) {
+      setLocale(productLocales[0].code);
+    }
+  }, [productId, productLocales]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!productMenuOpen) return;
@@ -212,8 +269,8 @@ export function ScreenshotsPage({ rawProducts }: { rawProducts: SerializableProd
         </div>
 
         {/* Language picker */}
-        {productLocales.length > 1 && (
-          <div style={{ display: "flex", gap: 3, background: "rgba(255,255,255,0.04)", padding: 3, borderRadius: 8, marginLeft: "auto" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: "auto" }}>
+          <div style={{ display: "flex", gap: 3, background: "rgba(255,255,255,0.04)", padding: 3, borderRadius: 8 }}>
             {productLocales.map((loc) => (
               <button key={loc.code} onClick={() => setLocale(loc.code)}
                 style={{
@@ -230,7 +287,21 @@ export function ScreenshotsPage({ rawProducts }: { rawProducts: SerializableProd
               </button>
             ))}
           </div>
-        )}
+          <button
+            onClick={() => setAddLocaleOpen(true)}
+            title="Add language with AI"
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              width: 28, height: 28, borderRadius: 7,
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              color: T.fgMuted, cursor: "pointer", fontSize: 16, lineHeight: 1,
+              transition: "all 0.15s", flexShrink: 0,
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.12)"; (e.currentTarget as HTMLButtonElement).style.color = "#fff"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.06)"; (e.currentTarget as HTMLButtonElement).style.color = T.fgMuted; }}
+          >+</button>
+        </div>
       </div>
 
       {/* ── Body: sidebar + main ── */}
@@ -316,6 +387,195 @@ export function ScreenshotsPage({ rawProducts }: { rawProducts: SerializableProd
             />
           )}
         </main>
+      </div>
+
+      {addLocaleOpen && (
+        <AddLocaleModal
+          theme={T}
+          productId={product.id}
+          existingCodes={productLocales.map((l) => l.code)}
+          sourceLoc={productLocales[0]}
+          sourceMetadata={
+            metadataMap[product.id]?.[productLocales[0].code] ??
+            { name: product.name, subtitle: "", promoText: "", shortDescription: "", description: "", keywords: "" }
+          }
+          rawProduct={rawProducts.find((p) => p.id === product.id)!}
+          onClose={() => setAddLocaleOpen(false)}
+          onAdded={(newLoc, metadata) => {
+            setExtraLocales((prev) => ({
+              ...prev,
+              [product.id]: [...(prev[product.id] ?? []), newLoc],
+            }));
+            setMetadataMap((prev) => ({
+              ...prev,
+              [product.id]: { ...prev[product.id], [newLoc.code]: metadata },
+            }));
+            setLocale(newLoc.code);
+            setAddLocaleOpen(false);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Add Locale Modal ─────────────────────────────────────────────────────────
+
+type AddLocaleModalProps = {
+  theme: ReturnType<typeof hydrateProducts>[number]["theme"];
+  productId: string;
+  existingCodes: string[];
+  sourceLoc: LocaleDef;
+  sourceMetadata: MetadataConfig;
+  rawProduct: SerializableProductConfig;
+  onClose: () => void;
+  onAdded: (locale: LocaleDef, metadata: MetadataConfig) => void;
+};
+
+function AddLocaleModal({ theme: T, productId, existingCodes, sourceLoc, sourceMetadata, rawProduct, onClose, onAdded }: AddLocaleModalProps) {
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<LocaleDef | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const filtered = COMMON_LOCALES.filter(
+    (l) =>
+      !existingCodes.includes(l.code) &&
+      (l.label.toLowerCase().includes(search.toLowerCase()) || l.code.toLowerCase().includes(search.toLowerCase())),
+  );
+
+  async function handleGenerate() {
+    if (!selected) return;
+    setGenerating(true);
+    setError(null);
+
+    // Flatten slide copy to plain markup strings for the AI prompt
+    const slides = rawProduct.slides.iphone.map((s) => ({
+      slideKey: s.id,
+      label:    s.copy.label,
+      headline: segmentsToPlain(s.copy.headline as RichTextSegment[]),
+      subtitle: segmentsToPlain(s.copy.subtitle as RichTextSegment[]),
+    }));
+
+    try {
+      const res = await fetch("/api/generate-locale", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId,
+          targetLocale: selected.code,
+          targetLabel:  selected.label,
+          targetFlag:   selected.flag,
+          sourceLocale: sourceLoc.code,
+          sourceLabel:  sourceLoc.label,
+          sourceFlag:   sourceLoc.flag,
+          sourceMetadata,
+          sourceSlides: slides,
+        }),
+      });
+
+      const data = await res.json() as { ok?: boolean; error?: string; metadata?: MetadataConfig };
+
+      if (!res.ok || !data.ok) {
+        setError(data.error ?? "Generation failed");
+        setGenerating(false);
+        return;
+      }
+
+      onAdded(selected, data.metadata!);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Network error");
+      setGenerating(false);
+    }
+  }
+
+  return (
+    <div
+      style={{
+        position: "fixed", inset: 0, zIndex: 500,
+        background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div style={{
+        background: "#111114", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16,
+        width: 380, maxHeight: "80vh", display: "flex", flexDirection: "column",
+        boxShadow: "0 32px 80px rgba(0,0,0,0.8)",
+      }}>
+        {/* Header */}
+        <div style={{ padding: "18px 20px 14px", borderBottom: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 15, color: "#fff" }}>Add language</div>
+            <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>AI generates ASO-optimised copy</div>
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontSize: 20, lineHeight: 1, padding: 4 }}>×</button>
+        </div>
+
+        {/* Search */}
+        <div style={{ padding: "12px 16px 8px" }}>
+          <input
+            autoFocus
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search language…"
+            style={{
+              width: "100%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 8, padding: "7px 12px", fontSize: 13, color: "#fff",
+              outline: "none", boxSizing: "border-box",
+            }}
+          />
+        </div>
+
+        {/* List */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "4px 8px 8px" }}>
+          {filtered.length === 0 && (
+            <div style={{ color: "#555", fontSize: 13, textAlign: "center", padding: "20px 0" }}>No languages found</div>
+          )}
+          {filtered.map((loc) => {
+            const active = selected?.code === loc.code;
+            return (
+              <button key={loc.code} onClick={() => setSelected(loc)}
+                style={{
+                  display: "flex", alignItems: "center", gap: 10,
+                  width: "100%", background: active ? T.accentSoft : "transparent",
+                  border: active ? `1px solid ${T.accent}44` : "1px solid transparent",
+                  borderRadius: 8, padding: "8px 12px", cursor: "pointer", transition: "all 0.12s",
+                  textAlign: "left",
+                }}
+                onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.04)"; }}
+                onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+              >
+                <span style={{ fontSize: 18, lineHeight: 1 }}>{loc.flag}</span>
+                <span style={{ fontSize: 13, color: active ? "#fff" : "#ccc", fontWeight: active ? 600 : 400 }}>{loc.label}</span>
+                <span style={{ fontSize: 11, color: "#555", marginLeft: "auto" }}>{loc.code}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Footer */}
+        <div style={{ padding: "12px 16px", borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+          {error && <div style={{ fontSize: 12, color: "#f87171", marginBottom: 8 }}>{error}</div>}
+          <button
+            onClick={handleGenerate}
+            disabled={!selected || generating}
+            style={{
+              width: "100%", padding: "9px 16px", borderRadius: 9, border: "none",
+              background: selected && !generating ? T.accent : "rgba(255,255,255,0.08)",
+              color: selected && !generating ? "#fff" : "#555",
+              fontWeight: 700, fontSize: 13, cursor: selected && !generating ? "pointer" : "not-allowed",
+              transition: "all 0.15s",
+              boxShadow: selected && !generating ? `0 2px 14px ${T.accentGlow}` : "none",
+            }}
+          >
+            {generating
+              ? "Generating with AI…"
+              : selected
+              ? `Generate ${selected.flag ?? ""} ${selected.label}`
+              : "Select a language"}
+          </button>
+        </div>
       </div>
     </div>
   );
