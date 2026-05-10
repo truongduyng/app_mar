@@ -208,8 +208,8 @@ Market context: ${ctx.marketNotes}
 
 FORMAT RULES:
 - label: Short ALL-CAPS category label (max ~30 chars). Adapt to sound natural in ${ctx.language}, not a literal translation.
-- headline: The main benefit statement. Write it to grab attention and speak to a real pain point or desire. You may use **bold** to wrap the key accent word/phrase (e.g. "Track **every milestone**"). Use a real newline character for a natural line break if the text is long.
-- subtitle: 1–2 supporting sentences that expand on the headline. Conversational and benefit-driven. Use real newline characters for line breaks if needed.
+- headline: Max 40 characters (excluding markup). The main benefit statement. You may use **bold** to wrap the key accent word/phrase (e.g. "Track **every milestone**"). Use a newline only if needed.
+- subtitle: Max 60 characters. One short sentence only. Conversational, benefit-driven. Use a newline only if absolutely needed.
 - Overall: write punchy, emotional copy that sells the benefit — not a dry list of features.
 
 SOURCE SLIDES (${sourceLocale.toUpperCase()}) — understand the intent, then rewrite for ${ctx.language}:

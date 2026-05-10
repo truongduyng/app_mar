@@ -314,65 +314,15 @@ export function ScreenshotsPage({ rawProducts }: { rawProducts: SerializableProd
         </div>
 
         {/* Language picker */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: "auto" }}>
-          <div style={{ display: "flex", gap: 3, background: "rgba(255,255,255,0.04)", padding: 3, borderRadius: 8 }}>
-            {productLocales.map((loc) => {
-              const isActive = locale === loc.code;
-              const isRegen  = regenLocaleCode === loc.code;
-              return (
-                <div key={loc.code} style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                  <button onClick={() => setLocale(loc.code)}
-                    style={{
-                      background: isActive ? T.accent : "rgba(255,255,255,0.06)",
-                      color: isActive ? "#fff" : T.fgMuted,
-                      border: "none", borderRadius: 6, padding: isActive ? "5px 26px 5px 10px" : "5px 10px",
-                      fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all 0.15s",
-                      display: "flex", alignItems: "center", gap: 4,
-                      boxShadow: isActive ? `0 2px 10px ${T.accentGlow}` : "none",
-                    }}
-                  >
-                    {loc.flag && <span style={{ fontSize: 13 }}>{loc.flag}</span>}
-                    {loc.code.toUpperCase()}
-                  </button>
-                  {isActive && (
-                    <button
-                      onClick={() => handleRegenLocale(loc.code)}
-                      disabled={isRegen}
-                      title="Re-generate with AI"
-                      className={isRegen ? "animate-spin" : ""}
-                      style={{
-                        position: "absolute", right: 5,
-                        background: "none", border: "none", padding: "2px",
-                        cursor: isRegen ? "not-allowed" : "pointer",
-                        color: isRegen ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.7)",
-                        display: "flex", alignItems: "center",
-                      }}
-                    >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
-                        <path d="M21 3v5h-5"/>
-                      </svg>
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-          <button
-            onClick={() => setAddLocaleOpen(true)}
-            title="Add language with AI"
-            style={{
-              display: "flex", alignItems: "center", justifyContent: "center",
-              width: 28, height: 28, borderRadius: 7,
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              color: T.fgMuted, cursor: "pointer", fontSize: 16, lineHeight: 1,
-              transition: "all 0.15s", flexShrink: 0,
-            }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.12)"; (e.currentTarget as HTMLButtonElement).style.color = "#fff"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.06)"; (e.currentTarget as HTMLButtonElement).style.color = T.fgMuted; }}
-          >+</button>
-        </div>
+        <LocaleDropdown
+          locales={productLocales}
+          locale={locale}
+          regenLocaleCode={regenLocaleCode}
+          theme={T}
+          onSelect={setLocale}
+          onRegen={handleRegenLocale}
+          onAdd={() => setAddLocaleOpen(true)}
+        />
       </div>
 
       {/* ── Body: sidebar + main ── */}
@@ -482,9 +432,122 @@ export function ScreenshotsPage({ rawProducts }: { rawProducts: SerializableProd
               [product.id]: { ...prev[product.id], [newLoc.code]: metadata },
             }));
             setLocale(newLoc.code);
-            setAddLocaleOpen(false);
           }}
         />
+      )}
+    </div>
+  );
+}
+
+// ─── Locale Dropdown ─────────────────────────────────────────────────────────
+
+function LocaleDropdown({ locales, locale, regenLocaleCode, theme: T, onSelect, onRegen, onAdd }: {
+  locales: LocaleDef[];
+  locale: string;
+  regenLocaleCode: string | null;
+  theme: ReturnType<typeof hydrateProducts>[number]["theme"];
+  onSelect: (code: string) => void;
+  onRegen: (code: string) => void;
+  onAdd: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const active = locales.find((l) => l.code === locale) ?? locales[0];
+  const isRegen = regenLocaleCode === locale;
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  return (
+    <div ref={ref} style={{ position: "relative", display: "flex", alignItems: "center", gap: 6, marginLeft: "auto" }}>
+      {/* Trigger */}
+      <button
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          display: "flex", alignItems: "center", gap: 6,
+          background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+          borderRadius: 8, padding: "5px 10px", cursor: "pointer",
+          color: "#fff", fontSize: 13, fontWeight: 600, transition: "all 0.15s",
+        }}
+      >
+        {active.flag && <span style={{ fontSize: 15 }}>{active.flag}</span>}
+        <span>{active.label}</span>
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5, marginLeft: 2 }}>
+          <path d="M2 4l4 4 4-4"/>
+        </svg>
+      </button>
+
+      {/* Re-gen button for active locale */}
+      <button
+        onClick={() => onRegen(locale)}
+        disabled={!!regenLocaleCode}
+        title="Re-generate with AI"
+        className={isRegen ? "animate-spin" : ""}
+        style={{
+          display: "flex", alignItems: "center", justifyContent: "center",
+          width: 28, height: 28, borderRadius: 7,
+          background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+          color: isRegen ? "rgba(255,255,255,0.35)" : T.fgMuted,
+          cursor: regenLocaleCode ? "not-allowed" : "pointer", transition: "all 0.15s",
+        }}
+      >
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
+          <path d="M21 3v5h-5"/>
+        </svg>
+      </button>
+
+      {/* Add button */}
+      <button
+        onClick={onAdd}
+        title="Add language with AI"
+        style={{
+          display: "flex", alignItems: "center", justifyContent: "center",
+          width: 28, height: 28, borderRadius: 7,
+          background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+          color: T.fgMuted, cursor: "pointer", fontSize: 16, lineHeight: 1, transition: "all 0.15s",
+        }}
+      >+</button>
+
+      {/* Dropdown menu */}
+      {open && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 6px)", right: 0, zIndex: 300,
+          background: "#111114", border: "1px solid rgba(255,255,255,0.1)",
+          borderRadius: 10, padding: "4px", minWidth: 180,
+          boxShadow: "0 16px 48px rgba(0,0,0,0.7)",
+        }}>
+          {locales.map((loc) => {
+            const isCurrent = loc.code === locale;
+            return (
+              <button key={loc.code}
+                onClick={() => { onSelect(loc.code); setOpen(false); }}
+                style={{
+                  display: "flex", alignItems: "center", gap: 10,
+                  width: "100%", background: isCurrent ? T.accentSoft : "transparent",
+                  border: "none", borderRadius: 7, padding: "7px 10px",
+                  cursor: "pointer", textAlign: "left", transition: "background 0.1s",
+                }}
+                onMouseEnter={(e) => { if (!isCurrent) (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.05)"; }}
+                onMouseLeave={(e) => { if (!isCurrent) (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+              >
+                <span style={{ fontSize: 16 }}>{loc.flag}</span>
+                <span style={{ fontSize: 13, color: isCurrent ? "#fff" : "#ccc", fontWeight: isCurrent ? 600 : 400, flex: 1 }}>{loc.label}</span>
+                {isCurrent && (
+                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke={T.accent} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 8l3.5 3.5L13 4.5"/>
+                  </svg>
+                )}
+              </button>
+            );
+          })}
+        </div>
       )}
     </div>
   );
@@ -505,8 +568,9 @@ type AddLocaleModalProps = {
 
 function AddLocaleModal({ theme: T, productId, existingCodes, sourceLoc, sourceMetadata, rawProduct, onClose, onAdded }: AddLocaleModalProps) {
   const [search, setSearch] = useState("");
-  const [selected, setSelected] = useState<LocaleDef | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [generating, setGenerating] = useState(false);
+  const [progress, setProgress] = useState<{ done: number; total: number; current: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const filtered = COMMON_LOCALES.filter(
@@ -515,12 +579,19 @@ function AddLocaleModal({ theme: T, productId, existingCodes, sourceLoc, sourceM
       (l.label.toLowerCase().includes(search.toLowerCase()) || l.code.toLowerCase().includes(search.toLowerCase())),
   );
 
+  function toggleLocale(loc: LocaleDef) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(loc.code) ? next.delete(loc.code) : next.add(loc.code);
+      return next;
+    });
+  }
+
   async function handleGenerate() {
-    if (!selected) return;
+    if (selected.size === 0) return;
     setGenerating(true);
     setError(null);
 
-    // Flatten slide copy to plain markup strings for the AI prompt
     const slides = rawProduct.slides.iphone.map((s) => ({
       slideKey: s.id,
       label:    s.copy.label,
@@ -528,37 +599,45 @@ function AddLocaleModal({ theme: T, productId, existingCodes, sourceLoc, sourceM
       subtitle: segmentsToPlain(s.copy.subtitle as RichTextSegment[]),
     }));
 
-    try {
-      const res = await fetch("/api/generate-locale", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          productId,
-          targetLocale: selected.code,
-          targetLabel:  selected.label,
-          targetFlag:   selected.flag,
-          sourceLocale: sourceLoc.code,
-          sourceLabel:  sourceLoc.label,
-          sourceFlag:   sourceLoc.flag,
-          sourceMetadata,
-          sourceSlides: slides,
-        }),
-      });
+    const locales = COMMON_LOCALES.filter((l) => selected.has(l.code));
+    let done = 0;
 
-      const data = await res.json() as { ok?: boolean; error?: string; metadata?: MetadataConfig };
-
-      if (!res.ok || !data.ok) {
-        setError(data.error ?? "Generation failed");
-        setGenerating(false);
-        return;
+    for (const loc of locales) {
+      setProgress({ done, total: locales.length, current: `${loc.flag ?? ""} ${loc.label}` });
+      try {
+        const res = await fetch("/api/generate-locale", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            productId,
+            targetLocale: loc.code,
+            targetLabel:  loc.label,
+            targetFlag:   loc.flag,
+            sourceLocale: sourceLoc.code,
+            sourceLabel:  sourceLoc.label,
+            sourceFlag:   sourceLoc.flag,
+            sourceMetadata,
+            sourceSlides: slides,
+          }),
+        });
+        const data = await res.json() as { ok?: boolean; error?: string; metadata?: MetadataConfig };
+        if (res.ok && data.ok && data.metadata) {
+          onAdded(loc, data.metadata);
+        } else {
+          setError(`${loc.label}: ${data.error ?? "failed"}`);
+        }
+      } catch (e) {
+        setError(`${loc.label}: ${e instanceof Error ? e.message : "Network error"}`);
       }
-
-      onAdded(selected, data.metadata!);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Network error");
-      setGenerating(false);
+      done++;
     }
+
+    setProgress(null);
+    setGenerating(false);
+    onClose();
   }
+
+  const hasSelected = selected.size > 0;
 
   return (
     <div
@@ -567,7 +646,7 @@ function AddLocaleModal({ theme: T, productId, existingCodes, sourceLoc, sourceM
         background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)",
         display: "flex", alignItems: "center", justifyContent: "center",
       }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => { if (e.target === e.currentTarget && !generating) onClose(); }}
     >
       <div style={{
         background: "#111114", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16,
@@ -580,7 +659,7 @@ function AddLocaleModal({ theme: T, productId, existingCodes, sourceLoc, sourceM
             <div style={{ fontWeight: 700, fontSize: 15, color: "#fff" }}>Add language</div>
             <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>AI generates ASO-optimised copy</div>
           </div>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontSize: 20, lineHeight: 1, padding: 4 }}>×</button>
+          <button onClick={onClose} disabled={generating} style={{ background: "none", border: "none", color: "#666", cursor: generating ? "not-allowed" : "pointer", fontSize: 20, lineHeight: 1, padding: 4 }}>×</button>
         </div>
 
         {/* Search */}
@@ -604,22 +683,27 @@ function AddLocaleModal({ theme: T, productId, existingCodes, sourceLoc, sourceM
             <div style={{ color: "#555", fontSize: 13, textAlign: "center", padding: "20px 0" }}>No languages found</div>
           )}
           {filtered.map((loc) => {
-            const active = selected?.code === loc.code;
+            const active = selected.has(loc.code);
             return (
-              <button key={loc.code} onClick={() => setSelected(loc)}
+              <button key={loc.code} onClick={() => toggleLocale(loc)} disabled={generating}
                 style={{
                   display: "flex", alignItems: "center", gap: 10,
                   width: "100%", background: active ? T.accentSoft : "transparent",
                   border: active ? `1px solid ${T.accent}44` : "1px solid transparent",
-                  borderRadius: 8, padding: "8px 12px", cursor: "pointer", transition: "all 0.12s",
+                  borderRadius: 8, padding: "8px 12px", cursor: generating ? "not-allowed" : "pointer", transition: "all 0.12s",
                   textAlign: "left",
                 }}
-                onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.04)"; }}
+                onMouseEnter={(e) => { if (!active && !generating) (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.04)"; }}
                 onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
               >
                 <span style={{ fontSize: 18, lineHeight: 1 }}>{loc.flag}</span>
                 <span style={{ fontSize: 13, color: active ? "#fff" : "#ccc", fontWeight: active ? 600 : 400 }}>{loc.label}</span>
                 <span style={{ fontSize: 11, color: "#555", marginLeft: "auto" }}>{loc.code}</span>
+                {active && (
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke={T.accent} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 8l3.5 3.5L13 4.5"/>
+                  </svg>
+                )}
               </button>
             );
           })}
@@ -628,23 +712,28 @@ function AddLocaleModal({ theme: T, productId, existingCodes, sourceLoc, sourceM
         {/* Footer */}
         <div style={{ padding: "12px 16px", borderTop: "1px solid rgba(255,255,255,0.07)" }}>
           {error && <div style={{ fontSize: 12, color: "#f87171", marginBottom: 8 }}>{error}</div>}
+          {progress && (
+            <div style={{ fontSize: 12, color: "#999", marginBottom: 8 }}>
+              Generating {progress.current} ({progress.done + 1}/{progress.total})…
+            </div>
+          )}
           <button
             onClick={handleGenerate}
-            disabled={!selected || generating}
+            disabled={!hasSelected || generating}
             style={{
               width: "100%", padding: "9px 16px", borderRadius: 9, border: "none",
-              background: selected && !generating ? T.accent : "rgba(255,255,255,0.08)",
-              color: selected && !generating ? "#fff" : "#555",
-              fontWeight: 700, fontSize: 13, cursor: selected && !generating ? "pointer" : "not-allowed",
+              background: hasSelected && !generating ? T.accent : "rgba(255,255,255,0.08)",
+              color: hasSelected && !generating ? "#fff" : "#555",
+              fontWeight: 700, fontSize: 13, cursor: hasSelected && !generating ? "pointer" : "not-allowed",
               transition: "all 0.15s",
-              boxShadow: selected && !generating ? `0 2px 14px ${T.accentGlow}` : "none",
+              boxShadow: hasSelected && !generating ? `0 2px 14px ${T.accentGlow}` : "none",
             }}
           >
             {generating
-              ? "Generating with AI…"
-              : selected
-              ? `Generate ${selected.flag ?? ""} ${selected.label}`
-              : "Select a language"}
+              ? "Generating…"
+              : hasSelected
+              ? `Generate ${selected.size} language${selected.size > 1 ? "s" : ""}`
+              : "Select languages"}
           </button>
         </div>
       </div>
