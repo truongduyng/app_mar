@@ -1,9 +1,11 @@
+import { redirect } from "next/navigation";
 import { getSerializableProducts } from "@/db/queries";
-import { ScreenshotsPage } from "@/components/ScreenshotsPage";
 
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
   const products = await getSerializableProducts();
-  return <ScreenshotsPage rawProducts={products} />;
+  const first = products[0];
+  if (!first) return <div>No products configured.</div>;
+  redirect(`/${first.id}/screenshots`);
 }
