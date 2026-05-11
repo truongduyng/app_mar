@@ -11,12 +11,14 @@ import { segmentsToMarkup, markupToSegments, renderRichText } from "@/lib/rich-t
 import { preloadImages, bustCache } from "@/lib/images";
 import type { RichTextSegment } from "@/lib/rich-text";
 import type { AppPlatform, ProductConfig, ThemeTokens, SlideCopy } from "@/lib/types";
+import { COMPONENT_REGISTRY } from "@/components/component-registry";
 
 type Props = {
   product: ProductConfig;
   locale: string;
   multiProduct: boolean;
   platform: AppPlatform;
+  onSlidesChanged?: () => void;
 };
 
 type CopyEdit = { label: string; headline: string; subtitle: string };
@@ -45,7 +47,7 @@ function editToCopy(edit: CopyEdit, accentColor: string): SlideCopy {
   };
 }
 
-export function ScreenshotsSection({ product, locale, multiProduct, platform }: Props) {
+export function ScreenshotsSection({ product, locale, multiProduct, platform, onSlidesChanged }: Props) {
   const T: ThemeTokens = product.theme;
   const offscreenRef = useRef<HTMLDivElement>(null);
 
@@ -64,6 +66,19 @@ export function ScreenshotsSection({ product, locale, multiProduct, platform }: 
 
   const [uploadError, setUploadError]     = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
+
+  // New slide form state
+  type PanelMode = "edit" | "create";
+  const [panelMode, setPanelMode]         = useState<PanelMode>("edit");
+  const [newComponentKey, setNewComponentKey] = useState("");
+  const [newSlideKey, setNewSlideKey]     = useState("");
+  const [newLabel, setNewLabel]           = useState("");
+  const [newHeadline, setNewHeadline]     = useState("");
+  const [newSubtitle, setNewSubtitle]     = useState("");
+  const [newImageFile, setNewImageFile]   = useState<File | null>(null);
+  const [newImagePreview, setNewImagePreview] = useState<string | null>(null);
+  const [creating, setCreating]           = useState(false);
+  const [createError, setCreateError]     = useState<string | null>(null);
 
   const activeSlides = product.slidesByLocale?.[locale] ?? product.slides;
   const activeDevice = platform === "android" && activeSlides.android?.length ? "android" : "iphone";
@@ -183,11 +198,48 @@ export function ScreenshotsSection({ product, locale, multiProduct, platform }: 
     setTimeout(() => { setPublishState("idle"); setProgress(null); }, 5000);
   };
 
+  const handleDeleteSlide = useCallback(async (dbId: number, slideKey: string) => {
+    if (!confirm(`Delete slide "${slideKey}"? This cannot be undone.`)) return;
+    try {
+      const res = await fetch("/api/slides/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slideId: dbId, slideKey, productId: product.id }),
+      });
+      const data = await res.json() as { ok?: boolean; error?: string };
+      if (!res.ok || !data.ok) throw new Error(data.error ?? "Delete failed");
+      setSelectedSlideId(null);
+      onSlidesChanged?.();
+    } catch (e) {
+      setUploadError(e instanceof Error ? e.message : "Delete failed");
+    }
+  }, [product.id, onSlidesChanged]);
+
+  const handleDeleteImage = useCallback(async (dbId: number, currentImagePath: string) => {
+    setUploadError(null);
+    setUploadSuccess(null);
+    try {
+      const res = await fetch("/api/screenshots/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slideId: dbId, imagePath: currentImagePath }),
+      });
+      const data = await res.json() as { ok?: boolean; error?: string };
+      if (!res.ok || !data.ok) throw new Error(data.error ?? "Delete failed");
+      setImagePathOverrides((prev) => ({ ...prev, [dbId]: "" }));
+      setUploadSuccess("Removed");
+      setTimeout(() => setUploadSuccess(null), 3000);
+    } catch (e) {
+      setUploadError(e instanceof Error ? e.message : "Delete failed");
+    }
+  }, []);
+
   const handleUpload = useCallback(async (dbId: number, file: File) => {
     setUploadError(null);
     setUploadSuccess(null);
     const form = new FormData();
     form.append("slideId", String(dbId));
+    form.append("productId", product.id);
     form.append("file", file);
     try {
       const res  = await fetch("/api/screenshots/upload", { method: "POST", body: form });
@@ -202,7 +254,38 @@ export function ScreenshotsSection({ product, locale, multiProduct, platform }: 
     } catch (e) {
       setUploadError(e instanceof Error ? e.message : "Upload failed");
     }
-  }, []);
+  }, [product.id]);
+
+  const handleCreateSlide = useCallback(async () => {
+    if (!newComponentKey || !newSlideKey || !newLabel || !newImageFile) {
+      setCreateError("Screenshot image, component, slide key, and label are required.");
+      return;
+    }
+    setCreateError(null);
+    setCreating(true);
+    const form = new FormData();
+    form.append("productId",    product.id);
+    form.append("componentKey", newComponentKey);
+    form.append("device",       activeDevice);
+    form.append("slideKey",     newSlideKey);
+    form.append("label",        newLabel);
+    form.append("headline",     newHeadline);
+    form.append("subtitle",     newSubtitle);
+    form.append("file",         newImageFile);
+    try {
+      const res  = await fetch("/api/slides/add", { method: "POST", body: form });
+      const data = await res.json() as { ok?: boolean; error?: string };
+      if (!res.ok || !data.ok) throw new Error(data.error ?? "Create failed");
+      setNewComponentKey(""); setNewSlideKey(""); setNewLabel("");
+      setNewHeadline(""); setNewSubtitle("");
+      setNewImageFile(null); setNewImagePreview(null);
+      setPanelMode("edit");
+      onSlidesChanged?.();
+    } catch (e) {
+      setCreateError(e instanceof Error ? e.message : "Create failed");
+    }
+    setCreating(false);
+  }, [product.id, activeDevice, newComponentKey, newSlideKey, newLabel, newHeadline, newSubtitle, newImageFile, onSlidesChanged]);
 
   const handleExport = async () => {
     if (!offscreenRef.current || exporting) return;
@@ -341,42 +424,113 @@ export function ScreenshotsSection({ product, locale, multiProduct, platform }: 
                   <slide.Component theme={T} imagePath={imagePath} copy={copy} />
                 </ScreenshotPreview>
               </div>
+              {slide.dbId && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleDeleteSlide(slide.dbId, slide.id); }}
+                  title="Delete slide"
+                  style={{
+                    position: "absolute", top: 6, right: 6,
+                    width: 22, height: 22, borderRadius: "50%",
+                    background: "rgba(239,68,68,0.85)", color: "#fff",
+                    border: "none", fontSize: 13, lineHeight: 1,
+                    cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                    opacity: 0.7, transition: "opacity 0.15s",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.7")}
+                >
+                  ×
+                </button>
+              )}
             </div>
           );
         })}
+
+        {/* Add slide card */}
+        <div
+          onClick={() => { setSelectedSlideId(null); setPanelMode("create"); }}
+          style={{ cursor: "pointer" }}
+        >
+          <div style={{
+            width: "100%",
+            aspectRatio: `${activeDevice === "android" ? ANDROID_W : IPHONE_W}/${activeDevice === "android" ? ANDROID_H : IPHONE_H}`,
+            borderRadius: 12,
+            border: "1.5px dashed rgba(255,255,255,0.15)",
+            background: "rgba(255,255,255,0.02)",
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10,
+            transition: "border-color 0.15s, background 0.15s",
+          }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = `${T.accent}88`; (e.currentTarget as HTMLDivElement).style.background = `${T.accent}0a`; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.15)"; (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.02)"; }}
+          >
+            <div style={{ width: 36, height: 36, borderRadius: "50%", border: `1.5px solid ${T.accent}66`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ fontSize: 22, color: T.accent, lineHeight: 1 }}>+</span>
+            </div>
+            <div style={{ fontSize: 11, color: T.fgMuted, fontWeight: 500 }}>Add slide</div>
+          </div>
+        </div>
       </div>
 
-      {/* Copy editor panel */}
-      {selectedSlide && selectedIndex >= 0 && (() => {
-        const edit = copyEdits[selectedSlide.id];
-        if (!edit) return null;
-        return (
-          <div style={{
-            marginTop: 32,
-            background: "rgba(255,255,255,0.03)",
+      {/* Modal backdrop */}
+      {(panelMode === "create" || (selectedSlide && selectedIndex >= 0 && copyEdits[selectedSlide.id])) && (
+        <div
+          onClick={() => { setPanelMode("edit"); setSelectedSlideId(null); setCreateError(null); }}
+          style={{
+            position: "fixed", inset: 0, zIndex: 50,
+            background: "rgba(0,0,0,0.6)",
+            backdropFilter: "blur(4px)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}
+        >
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            width: "min(560px, calc(100vw - 48px))",
+            maxHeight: "calc(100vh - 80px)",
+            overflowY: "auto",
+            background: "#1a1a20",
             border: `1px solid ${T.accent}44`,
-            borderRadius: 14,
-            padding: "20px 24px",
+            borderRadius: 16,
+            padding: "24px 28px",
+            boxShadow: `0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04)`,
           }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-              <div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: T.fg }}>
-                  Edit Slide {selectedIndex + 1} Copy
-                </div>
+          {/* Panel header */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: T.fg }}>
+                {panelMode === "create" ? "Add Slide" : `Edit Slide ${selectedIndex + 1}`}
+              </div>
+              {panelMode === "edit" && (
                 <div style={{ fontSize: 12, color: T.fgMuted, marginTop: 2 }}>
-                  Use <code style={{ background: "rgba(255,255,255,0.08)", padding: "1px 5px", borderRadius: 4 }}>**text**</code> for accent color,{" "}
+                  Use <code style={{ background: "rgba(255,255,255,0.08)", padding: "1px 5px", borderRadius: 4 }}>**text**</code> for accent,{" "}
                   <code style={{ background: "rgba(255,255,255,0.08)", padding: "1px 5px", borderRadius: 4 }}>\n</code> for line break
                 </div>
-              </div>
-              <div style={{ display: "flex", gap: 8 }}>
+              )}
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={() => { setPanelMode("edit"); setSelectedSlideId(null); setCreateError(null); }}
+                style={{ background: "rgba(255,255,255,0.06)", color: T.fgMuted, border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "7px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+              >
+                Close
+              </button>
+              {panelMode === "create" ? (
                 <button
-                  onClick={() => setSelectedSlideId(null)}
-                  style={{ background: "rgba(255,255,255,0.06)", color: T.fgMuted, border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "7px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                  onClick={handleCreateSlide}
+                  disabled={creating}
+                  style={{
+                    background: `linear-gradient(135deg, ${T.accent}, ${T.accent}dd)`,
+                    color: "#fff", border: "none", borderRadius: 8, padding: "7px 18px",
+                    fontSize: 13, fontWeight: 600, cursor: creating ? "not-allowed" : "pointer",
+                    boxShadow: `0 4px 16px ${T.accentGlow}`, opacity: creating ? 0.7 : 1,
+                    transition: "all 0.15s",
+                  }}
                 >
-                  Close
+                  {creating ? "Creating…" : "Create Slide"}
                 </button>
+              ) : (
                 <button
-                  onClick={() => handleSaveCopy(selectedSlide.id)}
+                  onClick={() => handleSaveCopy(selectedSlide!.id)}
                   disabled={saveState === "saving"}
                   style={{
                     background: saveState === "saved" ? "#22C55E" : saveState === "error" ? "#EF4444" : `linear-gradient(135deg, ${T.accent}, ${T.accent}dd)`,
@@ -388,63 +542,142 @@ export function ScreenshotsSection({ product, locale, multiProduct, platform }: 
                 >
                   {saveState === "saving" ? "Saving…" : saveState === "saved" ? "Saved!" : saveState === "error" ? "Error" : "Save"}
                 </button>
-              </div>
+              )}
             </div>
+          </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <div>
-                <div style={{ fontSize: 12, color: T.fgMuted, marginBottom: 6, fontWeight: 600 }}>Screenshot</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {/* Screenshot image */}
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                <div style={{ fontSize: 12, color: T.fgMuted, fontWeight: 600 }}>Screenshot</div>
+                {panelMode === "create" && <div style={{ fontSize: 11, color: T.accent, fontWeight: 600 }}>required</div>}
+              </div>
+              {panelMode === "create" ? (
                 <label style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
-                  {getImagePath(selectedSlide) ? (
-                    <img src={getImagePath(selectedSlide)} alt="" style={{ width: 48, height: 80, objectFit: "cover", objectPosition: "top", borderRadius: 6, border: "1px solid rgba(255,255,255,0.1)" }} />
+                  {newImagePreview ? (
+                    <img src={newImagePreview} alt="" style={{ width: 48, height: 80, objectFit: "cover", objectPosition: "top", borderRadius: 6, border: "1px solid rgba(255,255,255,0.1)" }} />
                   ) : (
                     <div style={{ width: 48, height: 80, borderRadius: 6, border: "1px dashed rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.03)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       <span style={{ fontSize: 20, opacity: 0.3 }}>+</span>
                     </div>
                   )}
                   <div>
-                    <div style={{ fontSize: 12, color: T.accent, fontWeight: 600 }}>
-                      {getImagePath(selectedSlide) ? "Replace image" : "Upload image"}
-                    </div>
+                    <div style={{ fontSize: 12, color: T.accent, fontWeight: 600 }}>{newImagePreview ? "Replace image" : "Upload image"}</div>
                     <div style={{ fontSize: 11, color: T.fgMuted, marginTop: 2 }}>PNG or JPG</div>
                   </div>
-                  <input type="file" accept="image/*" style={{ display: "none" }}
-                    onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(selectedSlide.dbId, f); }} />
+                  <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (!f) return;
+                    setNewImageFile(f);
+                    const reader = new FileReader();
+                    reader.onload = (ev) => setNewImagePreview(ev.target?.result as string);
+                    reader.readAsDataURL(f);
+                  }} />
                 </label>
-                {uploadError && <div style={{ marginTop: 6, fontSize: 11, color: "#FCA5A5" }}>{uploadError}</div>}
-                {uploadSuccess && <div style={{ marginTop: 6, fontSize: 11, color: "#86EFAC" }}>{uploadSuccess}</div>}
-              </div>
+              ) : (
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
+                    {getImagePath(selectedSlide!) ? (
+                      <img src={getImagePath(selectedSlide!)} alt="" style={{ width: 48, height: 80, objectFit: "cover", objectPosition: "top", borderRadius: 6, border: "1px solid rgba(255,255,255,0.1)" }} />
+                    ) : (
+                      <div style={{ width: 48, height: 80, borderRadius: 6, border: "1px dashed rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.03)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <span style={{ fontSize: 20, opacity: 0.3 }}>+</span>
+                      </div>
+                    )}
+                    <div>
+                      <div style={{ fontSize: 12, color: T.accent, fontWeight: 600 }}>
+                        {getImagePath(selectedSlide!) ? "Replace image" : "Upload image"}
+                      </div>
+                      <div style={{ fontSize: 11, color: T.fgMuted, marginTop: 2 }}>PNG or JPG</div>
+                    </div>
+                    <input type="file" accept="image/*" style={{ display: "none" }}
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(selectedSlide!.dbId, f); }} />
+                  </label>
+                  {getImagePath(selectedSlide!) && (
+                    <button
+                      onClick={() => handleDeleteImage(selectedSlide!.dbId, getImagePath(selectedSlide!))}
+                      title="Remove image"
+                      style={{ background: "rgba(239,68,68,0.1)", color: "#FCA5A5", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 7, padding: "5px 10px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+              )}
+              {uploadError   && <div style={{ marginTop: 6, fontSize: 11, color: "#FCA5A5" }}>{uploadError}</div>}
+              {uploadSuccess && <div style={{ marginTop: 6, fontSize: 11, color: "#86EFAC" }}>{uploadSuccess}</div>}
+            </div>
+
+            {/* Component key — create only */}
+            {panelMode === "create" && (
               <div>
-                <div style={{ fontSize: 12, color: T.fgMuted, marginBottom: 6, fontWeight: 600 }}>Label</div>
+                <div style={{ fontSize: 12, color: T.fgMuted, marginBottom: 6, fontWeight: 600 }}>Component</div>
+                <select
+                  value={newComponentKey}
+                  onChange={(e) => setNewComponentKey(e.target.value)}
+                  style={{ ...inputStyle, resize: "none" }}
+                >
+                  <option value="">— select component —</option>
+                  {Object.keys(COMPONENT_REGISTRY).map((k) => (
+                    <option key={k} value={k}>{k}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Slide key — create only */}
+            {panelMode === "create" && (
+              <div>
+                <div style={{ fontSize: 12, color: T.fgMuted, marginBottom: 6, fontWeight: 600 }}>Slide key <span style={{ color: T.fgMuted, fontWeight: 400 }}>(unique id, e.g. slide-7)</span></div>
                 <input
                   type="text"
-                  value={edit.label}
-                  onChange={(e) => handleCopyChange(selectedSlide.id, "label", e.target.value)}
+                  value={newSlideKey}
+                  onChange={(e) => setNewSlideKey(e.target.value)}
+                  placeholder="slide-7"
                   style={inputStyle}
                 />
               </div>
-              <div>
-                <div style={{ fontSize: 12, color: T.fgMuted, marginBottom: 6, fontWeight: 600 }}>Headline</div>
-                <textarea
-                  value={edit.headline}
-                  onChange={(e) => handleCopyChange(selectedSlide.id, "headline", e.target.value)}
-                  rows={3}
-                  style={inputStyle}
-                />
-              </div>
-              <div>
-                <div style={{ fontSize: 12, color: T.fgMuted, marginBottom: 6, fontWeight: 600 }}>Subtitle</div>
-                <textarea
-                  value={edit.subtitle}
-                  onChange={(e) => handleCopyChange(selectedSlide.id, "subtitle", e.target.value)}
-                  rows={3}
-                  style={inputStyle}
-                />
-              </div>
+            )}
+
+            {/* Label */}
+            <div>
+              <div style={{ fontSize: 12, color: T.fgMuted, marginBottom: 6, fontWeight: 600 }}>Label</div>
+              <input
+                type="text"
+                value={panelMode === "create" ? newLabel : copyEdits[selectedSlide!.id]?.label ?? ""}
+                onChange={(e) => panelMode === "create" ? setNewLabel(e.target.value) : handleCopyChange(selectedSlide!.id, "label", e.target.value)}
+                style={inputStyle}
+              />
             </div>
+
+            {/* Headline */}
+            <div>
+              <div style={{ fontSize: 12, color: T.fgMuted, marginBottom: 6, fontWeight: 600 }}>Headline</div>
+              <textarea
+                value={panelMode === "create" ? newHeadline : copyEdits[selectedSlide!.id]?.headline ?? ""}
+                onChange={(e) => panelMode === "create" ? setNewHeadline(e.target.value) : handleCopyChange(selectedSlide!.id, "headline", e.target.value)}
+                rows={3}
+                style={inputStyle}
+              />
+            </div>
+
+            {/* Subtitle */}
+            <div>
+              <div style={{ fontSize: 12, color: T.fgMuted, marginBottom: 6, fontWeight: 600 }}>Subtitle</div>
+              <textarea
+                value={panelMode === "create" ? newSubtitle : copyEdits[selectedSlide!.id]?.subtitle ?? ""}
+                onChange={(e) => panelMode === "create" ? setNewSubtitle(e.target.value) : handleCopyChange(selectedSlide!.id, "subtitle", e.target.value)}
+                rows={3}
+                style={inputStyle}
+              />
+            </div>
+
+            {createError && <div style={{ fontSize: 12, color: "#FCA5A5" }}>{createError}</div>}
           </div>
-        );
-      })()}
+        </div>
+        </div>
+      )}
 
       {/* Offscreen export container */}
       <div ref={offscreenRef} style={{ position: "absolute", left: -9999, top: 0, fontFamily: "inherit" }}>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { preloadImages, getImagePathsForProduct, img } from "@/lib/images";
 import { MetadataPanel } from "@/components/metadata-panel";
 import { ScreenshotsSection } from "@/components/sections/ScreenshotsSection";
@@ -68,6 +69,9 @@ function getProductLocales(product: ReturnType<typeof hydrateProducts>[number]):
 }
 
 export function ScreenshotsPage({ rawProducts }: { rawProducts: SerializableProductConfig[] }) {
+  const router = useRouter();
+  const handleSlidesChanged = useCallback(() => router.refresh(), [router]);
+
   const PRODUCTS = useMemo(
     () => hydrateProducts(rawProducts, COMPONENT_REGISTRY),
     [rawProducts],
@@ -364,7 +368,7 @@ export function ScreenshotsPage({ rawProducts }: { rawProducts: SerializableProd
         {/* Main content */}
         <main style={{ marginLeft: SIDEBAR_W, flex: 1, minWidth: 0 }}>
           {section === "screenshots" && (
-            <ScreenshotsSection product={product} locale={locale} platform={platform} multiProduct={PRODUCTS.length > 1} />
+            <ScreenshotsSection product={product} locale={locale} platform={platform} multiProduct={PRODUCTS.length > 1} onSlidesChanged={handleSlidesChanged} />
           )}
           {section === "feature-graphic" && (
             <FeatureGraphicSection product={product} multiProduct={PRODUCTS.length > 1} />

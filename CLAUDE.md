@@ -8,6 +8,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 bun dev          # Start dev server on port 3000
 bun run build    # Production build
 bun start        # Start production server
+
+# Database
+DATABASE_URL=... bun run src/db/seed.ts   # Seed all product data
+DATABASE_URL=... bunx drizzle-kit push     # Push schema changes
+DATABASE_URL=... bunx drizzle-kit generate # Generate migration SQL
 ```
 
 No test or lint scripts are configured.
@@ -31,6 +36,8 @@ A Next.js app that generates App Store / Google Play screenshots, feature graphi
 
 The product selector toolbar only renders when `PRODUCTS.length > 1`.
 
+> **Note:** The static `src/products/` TypeScript files (index.tsx, theme.ts, metadata.ts, slides.tsx) are no longer the source of truth at runtime. Product data is stored in Postgres and loaded via `getSerializableProducts()` in `src/db/queries.ts`. The static files serve as a seed reference — `src/db/seed.ts` is what populates the DB.
+
 ### Slide Components
 
 Each product lives in `src/products/<product-id>/`:
@@ -40,7 +47,11 @@ Each product lives in `src/products/<product-id>/`:
 - `slides.tsx` — React components for each slide
 - `copy.tsx` — optional centralized copy mapping (used by some products)
 
-Slide components receive `{ theme, base, copy }` props. `base` is the screenshot folder path (locale-resolved). Screenshot filenames (e.g. `sc1.png`) are hardcoded inside the component. Common layout primitives are in `src/components/slide-layouts.tsx` (`CenteredSlide`, `SideSlide`, decorations). Device frame components (`Phone`, `AndroidPhone`, `Caption`, `OrbGlow`) are in `src/components/ui.tsx`.
+Slide components receive `{ theme, imagePath, copy }` props — `imagePath` is the full public path to the screenshot image (from the DB). Common layout primitives are in `src/components/slide-layouts.tsx` (`CenteredSlide`, `SideSlide`, decorations). Device frame components (`Phone`, `AndroidPhone`, `Caption`, `OrbGlow`) are in `src/components/ui.tsx`.
+
+**Component registry** — `src/components/component-registry.ts` exports `COMPONENT_REGISTRY`, a flat map of `componentKey` strings (e.g. `"AmfoSlide1"`) to React components. This is required because DB rows store component names as strings; `src/lib/product-hydration.ts` resolves them back to actual components at runtime via `hydrateProducts()`. When adding a new slide component, export it from `slides.tsx`, import it in `component-registry.ts`, and add it to `COMPONENT_REGISTRY`.
+
+**Rich text** — `SlideCopy.headline` and `SlideCopy.subtitle` are `React.ReactNode` at runtime but stored in the DB as `RichTextSegment[]` (serializable JSON). Three segment types: `{ t: "text", v }`, `{ t: "br" }`, `{ t: "accent", v }`. Helpers `txt()`, `br()`, `acc()` from `src/lib/rich-text.ts` build segment arrays in the seed. The in-browser copy editor uses `**bold**` / `\n` markup that round-trips through `segmentsToMarkup` / `markupToSegments`.
 
 ### Export Pipeline
 
@@ -66,17 +77,40 @@ All image assets **must** be preloaded as base64 data URIs before rendering. `sr
 
 `page.tsx` gates rendering on a `ready` state and re-preloads on product/locale switch. Skipping preload causes `html-to-image` to produce blank images due to fetch race conditions during DOM cloning.
 
+### Database Layer
+
+Products, slides, copy, metadata, and all asset configurations live in Postgres, managed via Drizzle ORM. Key tables in `src/db/schema.ts`:
+
+- `products` — id, name, iconPath, bundleId (Apple), packageName (Google)
+- `slide_groups` — named groups per product (`default` or a locale code for `slidesByLocale`)
+- `product_slides` — one row per slide slot, holds `componentKey` (matches registry) and `imagePath` (uploaded screenshot)
+- `slide_copy` — per (product, slideKey, locale): label + headline/subtitle as `RichTextSegment[]`
+- `product_metadata`, `product_feature_graphics`, `product_social_ogs`, `product_cta_images` — store-listing content per locale
+
+`src/db/queries.ts::getSerializableProducts()` fetches all tables in parallel and assembles `SerializableProductConfig[]` — a JSON-safe version of `ProductConfig` (React nodes replaced by `RichTextSegment[]`). `page.tsx` fetches this server-side and passes it to `hydrateProducts()` before rendering.
+
+### API Routes
+
+- `POST /api/screenshots/upload` — receives a screenshot image + `slideId` + `productId`, saves to `public/uploads/screenshots/<productId>/`, updates `product_slides.image_path` in DB
+- `POST /api/slide-copy` — saves edited copy segments for a slide/locale
+- `POST /api/metadata` — saves product metadata per locale
+- `POST /api/publish/apple` — pushes metadata to App Store Connect via JWT (requires `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_PRIVATE_KEY` env vars and `bundleId` on the product)
+- `POST /api/publish/google` — pushes metadata to Google Play (requires `GOOGLE_SERVICE_ACCOUNT_JSON` env var and `packageName` on the product)
+- `POST /api/generate-locale` — AI-translates copy to a new locale via Together AI (`TOGETHER_API_KEY`)
+
 ### Main Page
 
 `src/app/page.tsx` is a single large client component managing: selected product, locale, section (which asset type), metadata edits, and export progress. It renders section components from `src/components/sections/` and delegates export to `src/lib/export.ts`.
 
 ## Adding a New Product
 
-1. Create `src/products/<id>/index.tsx`, `theme.ts`, `metadata.ts`, `slides.tsx`
-2. Copy an existing product as template (e.g. `tinysteps`)
-3. Add slide components accepting `{ theme, base, copy }` — use `CenteredSlide` / `SideSlide` from `slide-layouts.tsx`
-4. Place image assets in `public/products/<id>/`
-5. Register in `src/products/index.ts` by appending to `PRODUCTS`
+1. Create slide components in `src/products/<id>/slides.tsx` accepting `{ theme, imagePath, copy }` — use `CenteredSlide` / `SideSlide` from `slide-layouts.tsx`
+2. Export each component from `slides.tsx`, import in `src/components/component-registry.ts`, add to `COMPONENT_REGISTRY`
+3. Add product rows to `src/db/seed.ts` (products, slide_groups, product_slides, slide_copy, product_metadata, etc.)
+4. Run `DATABASE_URL=... bun run src/db/seed.ts` to populate the DB
+5. Place icon and any initial screenshot images in `public/products/<id>/`; screenshots can also be uploaded via the UI
+
+The static `src/products/<id>/index.tsx` pattern is legacy — new products only need `slides.tsx` (components) and seed data.
 
 ## Skills
 
