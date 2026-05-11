@@ -63,6 +63,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     PRODUCTS, rawProducts, product, productId, setProductId,
     locale, setLocale, productLocales, extraLocales, setExtraLocales,
     metadataMap, setMetadataMap, regenLocaleCode, handleRegenLocale,
+    removeLocale,
     ready,
   } = useProduct();
 
@@ -182,6 +183,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           onSelect={setLocale}
           onRegen={handleRegenLocale}
           onAdd={() => setAddLocaleOpen(true)}
+          onRemove={removeLocale}
         />
       </div>
 
@@ -264,7 +266,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
 import type { HydratedProduct } from "@/components/ProductContext";
 
-function LocaleDropdown({ locales, locale, regenLocaleCode, theme: T, onSelect, onRegen, onAdd }: {
+function LocaleDropdown({ locales, locale, regenLocaleCode, theme: T, onSelect, onRegen, onAdd, onRemove }: {
   locales: LocaleDef[];
   locale: string;
   regenLocaleCode: string | null;
@@ -272,8 +274,10 @@ function LocaleDropdown({ locales, locale, regenLocaleCode, theme: T, onSelect, 
   onSelect: (code: string) => void;
   onRegen: (code: string) => Promise<void>;
   onAdd: () => void;
+  onRemove: (code: string) => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   const active = locales.find((l) => l.code === locale) ?? locales[0];
   const isRegen = regenLocaleCode === locale;
@@ -281,7 +285,7 @@ function LocaleDropdown({ locales, locale, regenLocaleCode, theme: T, onSelect, 
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) { setOpen(false); setConfirmDelete(null); }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -344,26 +348,74 @@ function LocaleDropdown({ locales, locale, regenLocaleCode, theme: T, onSelect, 
         }}>
           {locales.map((loc) => {
             const isCurrent = loc.code === locale;
+            const canRemove = locales.length > 1;
+            const isPendingDelete = confirmDelete === loc.code;
             return (
-              <button key={loc.code}
-                onClick={() => { onSelect(loc.code); setOpen(false); }}
-                style={{
-                  display: "flex", alignItems: "center", gap: 10,
-                  width: "100%", background: isCurrent ? T.accentSoft : "transparent",
-                  border: "none", borderRadius: 7, padding: "7px 10px",
-                  cursor: "pointer", textAlign: "left", transition: "background 0.1s",
-                }}
-                onMouseEnter={(e) => { if (!isCurrent) (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.05)"; }}
-                onMouseLeave={(e) => { if (!isCurrent) (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
-              >
-                <span style={{ fontSize: 16 }}>{loc.flag}</span>
-                <span style={{ fontSize: 13, color: isCurrent ? "#fff" : "#ccc", fontWeight: isCurrent ? 600 : 400, flex: 1 }}>{loc.label}</span>
-                {isCurrent && (
-                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke={T.accent} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 8l3.5 3.5L13 4.5"/>
-                  </svg>
+              <div key={loc.code} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <button
+                  onClick={() => { if (!isPendingDelete) { onSelect(loc.code); setOpen(false); } }}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 10, flex: 1,
+                    background: isPendingDelete ? "rgba(255,80,80,0.1)" : isCurrent ? T.accentSoft : "transparent",
+                    border: isPendingDelete ? "1px solid rgba(255,80,80,0.3)" : "none",
+                    borderRadius: 7, padding: "7px 10px",
+                    cursor: isPendingDelete ? "default" : "pointer", textAlign: "left", transition: "background 0.1s",
+                  }}
+                  onMouseEnter={(e) => { if (!isCurrent && !isPendingDelete) (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.05)"; }}
+                  onMouseLeave={(e) => { if (!isCurrent && !isPendingDelete) (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                >
+                  <span style={{ fontSize: 16 }}>{loc.flag}</span>
+                  {isPendingDelete
+                    ? <span style={{ fontSize: 12, color: "#f87171", flex: 1 }}>Delete {loc.label}?</span>
+                    : <span style={{ fontSize: 13, color: isCurrent ? "#fff" : "#ccc", fontWeight: isCurrent ? 600 : 400, flex: 1 }}>{loc.label}</span>
+                  }
+                  {isCurrent && !isPendingDelete && (
+                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke={T.accent} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 8l3.5 3.5L13 4.5"/>
+                    </svg>
+                  )}
+                </button>
+                {canRemove && (
+                  isPendingDelete ? (
+                    <div style={{ display: "flex", gap: 2 }}>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onRemove(loc.code); setConfirmDelete(null); }}
+                        title="Confirm delete"
+                        style={{
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          width: 22, height: 22, borderRadius: 5, flexShrink: 0,
+                          background: "rgba(255,80,80,0.2)", border: "none",
+                          color: "#f87171", cursor: "pointer", fontSize: 13, lineHeight: 1,
+                        }}
+                      >✓</button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setConfirmDelete(null); }}
+                        title="Cancel"
+                        style={{
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          width: 22, height: 22, borderRadius: 5, flexShrink: 0,
+                          background: "transparent", border: "none",
+                          color: "#555", cursor: "pointer", fontSize: 14, lineHeight: 1,
+                        }}
+                      >×</button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setConfirmDelete(loc.code); }}
+                      title="Remove language"
+                      style={{
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        width: 22, height: 22, borderRadius: 5, flexShrink: 0,
+                        background: "transparent", border: "none",
+                        color: "#555", cursor: "pointer", fontSize: 14, lineHeight: 1,
+                        transition: "all 0.1s",
+                      }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,80,80,0.15)"; (e.currentTarget as HTMLButtonElement).style.color = "#f87171"; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = "#555"; }}
+                    >×</button>
+                  )
                 )}
-              </button>
+              </div>
             );
           })}
         </div>

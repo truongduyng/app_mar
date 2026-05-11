@@ -32,6 +32,8 @@ type ProductContextValue = {
   ready: boolean;
   regenLocaleCode: string | null;
   handleRegenLocale: (locCode: string) => Promise<void>;
+  removeLocale: (code: string) => Promise<void>;
+  baseLocaleCodes: Set<string>;
   multiProduct: boolean;
 };
 
@@ -212,6 +214,28 @@ export function ProductProvider({
     }
   }, [productLocales, rawProducts, productId, metadataMap, product.name]);
 
+  const baseLocaleCodes = useMemo(
+    () => new Set((product.locales ?? [{ code: "en" }]).map((l) => l.code)),
+    [product.locales],
+  );
+
+  const removeLocale = useCallback(async (code: string) => {
+    await fetch("/api/locale", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ productId, locale: code }),
+    });
+    const remaining = productLocales.filter((l) => l.code !== code);
+    if (locale === code) {
+      setLocaleState(remaining[0]?.code ?? "en");
+    }
+    setExtraLocales((prev) => ({
+      ...prev,
+      [productId]: (prev[productId] ?? []).filter((l) => l.code !== code),
+    }));
+    router.refresh();
+  }, [productId, locale, productLocales, router]);
+
   const value: ProductContextValue = {
     PRODUCTS,
     rawProducts,
@@ -235,6 +259,8 @@ export function ProductProvider({
     ready,
     regenLocaleCode,
     handleRegenLocale,
+    removeLocale,
+    baseLocaleCodes,
     multiProduct: PRODUCTS.length > 1,
   };
 
