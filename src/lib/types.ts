@@ -72,6 +72,8 @@ export type MetadataConfig = {
   shortDescription: string;   // Google - 80 chars
   description: string;        // Both - 4000 chars
   keywords: string;           // Apple - 100 chars
+  privacyPolicyUrl?: string;  // Both - URL
+  supportUrl?: string;        // Both - URL
 };
 
 /** Locale definition for the metadata locale picker */

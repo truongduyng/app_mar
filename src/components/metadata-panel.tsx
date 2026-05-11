@@ -19,6 +19,8 @@ const FIELDS: FieldDef[] = [
   { id: "shortDescription", label: "Short Description",              platform: "Google", maxLength: 80,   multiline: false, placeholder: "One-line summary shown in search results" },
   { id: "keywords",         label: "Keywords",                       platform: "Apple",  maxLength: 100,  multiline: false, placeholder: "comma,separated,keywords" },
   { id: "description",      label: "Full Description",               platform: "Both",   maxLength: 4000, multiline: true,  placeholder: "Full app description for store listing..." },
+  { id: "privacyPolicyUrl", label: "Privacy Policy URL",             platform: "Both",   maxLength: 500,  multiline: false, placeholder: "https://example.com/privacy" },
+  { id: "supportUrl",       label: "Support URL",                    platform: "Both",   maxLength: 500,  multiline: false, placeholder: "https://example.com/support" },
 ];
 
 type SaveState = "idle" | "saving" | "saved" | "error";
@@ -419,7 +421,7 @@ export function MetadataPanel({
       {/* Field cards */}
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
         {visibleFields.map((field) => {
-          const value = metadata[field.id];
+          const value = metadata[field.id] ?? "";
           const charCount = value.length;
           const isOver = charCount > field.maxLength;
           const pct = Math.min(100, (charCount / field.maxLength) * 100);

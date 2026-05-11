@@ -188,7 +188,7 @@ Guidelines for each field:
 - promoText: Write a compelling hook for the ${ctx.language}-speaking audience; adapt tone to local expectations
 - shortDescription: One punchy sentence covering the top 2-3 features
 - description: Rewrite to sound natural in ${ctx.language}. CRITICAL FORMATTING — each section heading must be ALL CAPS on its own line, with a blank line before it and a blank line after it. Example: "...end of paragraph.\n\nSECTION HEADING\n\nStart of next paragraph..." — the blank lines are mandatory. Plain text only, no markdown, no bullet symbols, no emoji.
-- keywords: Comma-separated search terms, no space after each comma (e.g. "baby,tracker,growth"). Each term should be a single word or a natural short phrase in ${ctx.language} — spaces within a term are fine if the language requires it (e.g. "âm thanh,tiếng mưa" or "赤ちゃん,成長記録"). No emoji. Max 100 characters total.
+- keywords: Comma-separated search terms, no space after each comma (e.g. "baby,tracker,growth"). Each term should be a single word or a natural short phrase in ${ctx.language} — spaces within a term are fine if the language requires it (e.g. "âm thanh,tiếng mưa" or "赤ちゃん,成長記録"). No emoji. CRITICAL: use as close to 100 characters as possible — aim for 95–100 chars. Keep adding relevant terms until you are within that range. Hard max is 100 characters total.
 
 Return a JSON object with exactly these keys: name, subtitle, promoText, shortDescription, description, keywords.`;
 
@@ -279,6 +279,8 @@ Return a JSON object with a single key "slides" whose value is an array. Each el
                         .replace(/\n{3,}/g, "\n\n")
                         .trim(),
     keywords:         generatedMetadata.keywords ?? "",
+    privacyPolicyUrl: sourceMetadata.privacyPolicyUrl ?? null,
+    supportUrl:       sourceMetadata.supportUrl ?? null,
   };
 
   await db

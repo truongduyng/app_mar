@@ -127,6 +127,8 @@ export async function getSerializableProducts(): Promise<SerializableProductConf
       metadataByLocale[m.locale] = {
         name: m.name, subtitle: m.subtitle, promoText: m.promoText,
         shortDescription: m.shortDescription, description: m.description, keywords: m.keywords,
+        privacyPolicyUrl: m.privacyPolicyUrl ?? undefined,
+        supportUrl: m.supportUrl ?? undefined,
       };
     }
 
@@ -175,7 +177,7 @@ export async function getSerializableProducts(): Promise<SerializableProductConf
       socialOg:       og ? { tagline: og.tagline, subtitle: og.subtitle ?? undefined } : undefined,
       ctaImage,
       metadata: primaryMeta
-        ? { name: primaryMeta.name, subtitle: primaryMeta.subtitle, promoText: primaryMeta.promoText, shortDescription: primaryMeta.shortDescription, description: primaryMeta.description, keywords: primaryMeta.keywords }
+        ? { name: primaryMeta.name, subtitle: primaryMeta.subtitle, promoText: primaryMeta.promoText, shortDescription: primaryMeta.shortDescription, description: primaryMeta.description, keywords: primaryMeta.keywords, privacyPolicyUrl: primaryMeta.privacyPolicyUrl ?? undefined, supportUrl: primaryMeta.supportUrl ?? undefined }
         : undefined,
       metadataByLocale: Object.keys(metadataByLocale).length ? metadataByLocale : undefined,
     };

@@ -15,6 +15,8 @@ export async function POST(req: NextRequest) {
       shortDescription: string;
       description: string;
       keywords: string;
+      privacyPolicyUrl?: string;
+      supportUrl?: string;
     };
   };
 
@@ -22,28 +24,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
+  const metaValues = {
+    name: metadata.name,
+    subtitle: metadata.subtitle,
+    promoText: metadata.promoText,
+    shortDescription: metadata.shortDescription,
+    description: metadata.description,
+    keywords: metadata.keywords,
+    privacyPolicyUrl: metadata.privacyPolicyUrl ?? null,
+    supportUrl: metadata.supportUrl ?? null,
+  };
+
   await db
     .insert(productMetadata)
-    .values({
-      productId,
-      locale,
-      name: metadata.name,
-      subtitle: metadata.subtitle,
-      promoText: metadata.promoText,
-      shortDescription: metadata.shortDescription,
-      description: metadata.description,
-      keywords: metadata.keywords,
-    })
+    .values({ productId, locale, ...metaValues })
     .onConflictDoUpdate({
       target: [productMetadata.productId, productMetadata.locale],
-      set: {
-        name: metadata.name,
-        subtitle: metadata.subtitle,
-        promoText: metadata.promoText,
-        shortDescription: metadata.shortDescription,
-        description: metadata.description,
-        keywords: metadata.keywords,
-      },
+      set: metaValues,
     });
 
   return NextResponse.json({ ok: true });

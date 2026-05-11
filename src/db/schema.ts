@@ -96,6 +96,8 @@ export const productMetadata = pgTable("product_metadata", {
   shortDescription: text("short_description").notNull().default(""),
   description:      text("description").notNull().default(""),
   keywords:         text("keywords").notNull().default(""),
+  privacyPolicyUrl: text("privacy_policy_url"),
+  supportUrl:       text("support_url"),
 }, (t) => [
   unique().on(t.productId, t.locale),
 ]);
