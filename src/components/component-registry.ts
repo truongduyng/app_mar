@@ -12,6 +12,7 @@ import {
 
 import {
   AmfoSlide1, AmfoSlide2, AmfoSlide3, AmfoSlide4, AmfoSlide5,
+  AmfoSlide6,
 } from "@/products/amfo/slides";
 
 import {
@@ -36,7 +37,7 @@ import {
 export const COMPONENT_REGISTRY: Record<string, SlideComponent> = {
   HoneSlide1, HoneSlide2, HoneSlide3, HoneSlide4,
   HoneSlide5, HoneSlide6, HoneSlide7,
-  AmfoSlide1, AmfoSlide2, AmfoSlide3, AmfoSlide4, AmfoSlide5,
+  AmfoSlide1, AmfoSlide2, AmfoSlide3, AmfoSlide4, AmfoSlide5, AmfoSlide6,
   LichtaSlide1, LichtaSlide2, LichtaSlide3, LichtaSlide4,
   LichtaSlide5, LichtaSlide6, LichtaSlide7,
   LichtaAndroid1, LichtaAndroid2, LichtaAndroid3, LichtaAndroid4,
