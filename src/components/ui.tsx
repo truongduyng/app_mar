@@ -5,10 +5,8 @@ import {
   MK_W, MK_H, SC_L, SC_T, SC_W, SC_H, SC_RX, SC_RY,
   IPHONE_W, IPHONE_H, ANDROID_W, ANDROID_H,
   FG_W, FG_H, OG_W, OG_H,
-  IPHONE_SIZES, ANDROID_SIZES, FG_SIZES, OG_SIZES,
 } from "@/lib/constants";
 import { img } from "@/lib/images";
-import { exportSingle } from "@/lib/export";
 import type { ThemeTokens } from "@/lib/types";
 
 type DeviceType = "iphone" | "android" | "feature-graphic" | "social-og";
@@ -228,41 +226,25 @@ function getCanvasDimsForDevice(device: DeviceType) {
   }
 }
 
-function getSizesForDevice(device: DeviceType) {
-  switch (device) {
-    case "android":         return ANDROID_SIZES;
-    case "feature-graphic": return FG_SIZES;
-    case "social-og":       return OG_SIZES;
-    default:                return IPHONE_SIZES;
-  }
-}
-
 /* ── ScreenshotPreview ─────────────────────────── */
 export function ScreenshotPreview({
   children,
   index,
   label,
-  exportRef,
   theme,
-  productId,
-  multiProduct,
   device = "iphone",
-  selectedSize = 0,
+  onUpload,
 }: {
   children: React.ReactNode;
   index: number;
   label: string;
-  exportRef: React.RefObject<HTMLDivElement | null>;
   theme: ThemeTokens;
-  productId: string;
-  multiProduct: boolean;
   device?: DeviceType;
-  selectedSize?: number;
+  onUpload?: (file: File) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.2);
   const { cW: canvasW, cH: canvasH } = getCanvasDimsForDevice(device);
-  const sizes = getSizesForDevice(device);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -303,7 +285,7 @@ export function ScreenshotPreview({
           {children}
         </div>
       </div>
-      {/* Label + export button row */}
+      {/* Label + upload button row */}
       <div
         style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -312,42 +294,45 @@ export function ScreenshotPreview({
       >
         <div
           style={{
-            fontSize: 13,
+            fontSize: 11,
             color: theme.fgMuted,
             fontWeight: 500,
           }}
         >
           {String(index + 1).padStart(2, "0")} - {label}
         </div>
-        <button
-          onClick={async () => {
-            if (!exportRef.current) return;
-            const sizeEntry = sizes[Math.max(0, selectedSize)];
-            await exportSingle(exportRef.current, index, label, sizeEntry, productId, multiProduct, device);
-          }}
-          title={`Export "${label}"`}
-          style={{
-            display: "flex", alignItems: "center", gap: 5,
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            borderRadius: 6, padding: "4px 10px",
-            fontSize: 12, fontWeight: 600, color: theme.fgMuted,
-            cursor: "pointer", transition: "all 0.15s", flexShrink: 0,
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.1)";
-            (e.currentTarget as HTMLButtonElement).style.color = theme.fg;
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.06)";
-            (e.currentTarget as HTMLButtonElement).style.color = theme.fgMuted;
-          }}
-        >
-          <svg width={12} height={12} viewBox="0 0 12 12" fill="none">
-            <path d="M6 1v7M3 5l3 3 3-3M1 10h10" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          Export
-        </button>
+        {onUpload && (
+          <label
+            title={`Upload screenshot for "${label}"`}
+            style={{
+              display: "flex", alignItems: "center", gap: 5,
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: 6, padding: "4px 10px",
+              fontSize: 12, fontWeight: 600, color: theme.fgMuted,
+              cursor: "pointer", transition: "all 0.15s", flexShrink: 0,
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLLabelElement).style.background = "rgba(255,255,255,0.1)";
+              (e.currentTarget as HTMLLabelElement).style.color = theme.fg;
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLLabelElement).style.background = "rgba(255,255,255,0.06)";
+              (e.currentTarget as HTMLLabelElement).style.color = theme.fgMuted;
+            }}
+          >
+            <svg width={12} height={12} viewBox="0 0 12 12" fill="none">
+              <path d="M6 8V1M3 4l3-3 3 3M1 10h10" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Upload
+            <input
+              type="file"
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) onUpload(f); e.target.value = ""; }}
+            />
+          </label>
+        )}
       </div>
     </div>
   );

@@ -334,12 +334,9 @@ export function ScreenshotsSection({ product, locale, multiProduct, platform }: 
                 <ScreenshotPreview
                   index={i}
                   label={copy.label || slide.id}
-                  exportRef={offscreenRef}
                   theme={T}
-                  productId={product.id}
-                  multiProduct={multiProduct}
                   device={activeDevice}
-                  selectedSize={selectedSize}
+                  onUpload={slide.dbId ? (file) => handleUpload(slide.dbId, file) : undefined}
                 >
                   <slide.Component theme={T} imagePath={imagePath} copy={copy} />
                 </ScreenshotPreview>
