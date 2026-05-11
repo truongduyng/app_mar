@@ -93,9 +93,14 @@ export async function POST(req: NextRequest) {
         const method = existing ? "PATCH" : "POST";
         const url = existing ? `${BASE}/appInfoLocalizations/${existing.id}` : `${BASE}/appInfoLocalizations`;
 
+        const infoAttrs = {
+          name: row.name,
+          subtitle: row.subtitle,
+          ...(row.privacyPolicyUrl ? { privacyPolicyUrl: row.privacyPolicyUrl } : {}),
+        };
         const body = existing
-          ? { data: { type: "appInfoLocalizations", id: existing.id, attributes: { name: row.name, subtitle: row.subtitle } } }
-          : { data: { type: "appInfoLocalizations", attributes: { locale: appleLocale, name: row.name, subtitle: row.subtitle }, relationships: { appInfo: { data: { type: "appInfos", id: appInfoId } } } } };
+          ? { data: { type: "appInfoLocalizations", id: existing.id, attributes: infoAttrs } }
+          : { data: { type: "appInfoLocalizations", attributes: { locale: appleLocale, ...infoAttrs }, relationships: { appInfo: { data: { type: "appInfos", id: appInfoId } } } } };
 
         const r = await asc(url, headers, { method, body: JSON.stringify(body) });
         const rText = await r.text();
@@ -121,9 +126,15 @@ export async function POST(req: NextRequest) {
       const method = existing ? "PATCH" : "POST";
       const url = existing ? `${BASE}/appStoreVersionLocalizations/${existing.id}` : `${BASE}/appStoreVersionLocalizations`;
 
+      const versionAttrs = {
+        description: row.description,
+        keywords: row.keywords,
+        promotionalText: row.promoText,
+        ...(row.supportUrl ? { supportUrl: row.supportUrl } : {}),
+      };
       const body = existing
-        ? { data: { type: "appStoreVersionLocalizations", id: existing.id, attributes: { description: row.description, keywords: row.keywords, promotionalText: row.promoText } } }
-        : { data: { type: "appStoreVersionLocalizations", attributes: { locale: appleLocale, description: row.description, keywords: row.keywords, promotionalText: row.promoText }, relationships: { appStoreVersion: { data: { type: "appStoreVersions", id: versionForLocs.id } } } } };
+        ? { data: { type: "appStoreVersionLocalizations", id: existing.id, attributes: versionAttrs } }
+        : { data: { type: "appStoreVersionLocalizations", attributes: { locale: appleLocale, ...versionAttrs }, relationships: { appStoreVersion: { data: { type: "appStoreVersions", id: versionForLocs.id } } } } };
 
       const r = await asc(url, headers, { method, body: JSON.stringify(body) });
       const rText = await r.text();

@@ -53,7 +53,9 @@ export function MetadataPanel({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [appleState, setAppleState] = useState<PublishState>("idle");
+  const [appleAllState, setAppleAllState] = useState<PublishState>("idle");
   const [googleState, setGoogleState] = useState<PublishState>("idle");
+  const [googleAllState, setGoogleAllState] = useState<PublishState>("idle");
   const [publishErrors, setPublishErrors] = useState<string[]>([]);
   const [publishWarnings, setPublishWarnings] = useState<string[]>([]);
   const [localBundleId, setLocalBundleId] = useState(bundleId ?? "");
@@ -110,8 +112,10 @@ export function MetadataPanel({
     setTimeout(() => setSaveState("idle"), 2000);
   }, [productId, activeLocale, metadata, localBundleId, localPackageName]);
 
-  const handlePublish = useCallback(async (store: "apple" | "google") => {
-    const setState = store === "apple" ? setAppleState : setGoogleState;
+  const handlePublish = useCallback(async (store: "apple" | "google", all = false) => {
+    const setState = all
+      ? (store === "apple" ? setAppleAllState : setGoogleAllState)
+      : (store === "apple" ? setAppleState : setGoogleState);
     setState("publishing");
     setPublishErrors([]);
     setPublishWarnings([]);
@@ -119,7 +123,7 @@ export function MetadataPanel({
       const res = await fetch(`/api/publish/${store}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId, locale: activeLocale }),
+        body: JSON.stringify({ productId, locale: all ? null : activeLocale }),
       });
       const data = await res.json();
       if (data.warnings?.length) setPublishWarnings(data.warnings);
@@ -134,7 +138,7 @@ export function MetadataPanel({
       setState("error");
     }
     setTimeout(() => setState("idle"), 4000);
-  }, [productId]);
+  }, [productId, activeLocale]);
 
   const handleExportJson = useCallback(async () => {
     const pickVisibleFields = (entry: MetadataConfig) =>
@@ -251,11 +255,11 @@ export function MetadataPanel({
             {saveState === "saving" ? "Saving…" : saveState === "saved" ? "Saved" : saveState === "error" ? "Error" : "Save"}
           </button>
 
-          {localBundleId && (
+          {localBundleId && (<>
             <button
               onClick={() => handlePublish("apple")}
               disabled={appleState === "publishing"}
-              title="Publish all locales to App Store Connect"
+              title="Publish current locale to App Store Connect"
               style={{
                 background: appleState === "error" ? "#EF4444" : appleState === "published" ? "#22C55E" : "rgba(255,255,255,0.07)",
                 color: appleState === "idle" ? T.fgMuted : "#fff",
@@ -272,19 +276,43 @@ export function MetadataPanel({
                 transition: "all 0.15s",
               }}
             >
-              {/* Apple logo */}
               <svg width={13} height={13} viewBox="0 0 814 1000" fill="currentColor">
                 <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105.6-57.8-155.5-127.4C46 790.7 0 663 0 541.8c0-207.8 133.4-317.7 264.8-317.7 60.5 0 110.8 39.7 148.2 39.7 35.5 0 91.7-42.1 160.9-42.1 28.7 0 108.2 2.6 168.7 100.5zm-234.5-191.1c31.1-36.9 53.1-88.1 53.1-139.3 0-7.1-.6-14.3-1.9-20.1-50.6 1.9-110.8 33.7-147.1 75.8-28.5 32.4-55.1 83.6-55.1 135.5 0 7.8 1.3 15.6 1.9 18.1 3.2.6 8.4 1.3 13.6 1.3 45.4 0 102.5-30.4 135.5-71.3z"/>
               </svg>
               {appleState === "publishing" ? "Publishing…" : appleState === "published" ? "Published!" : appleState === "error" ? "Failed" : "Publish"}
             </button>
-          )}
+            <button
+              onClick={() => handlePublish("apple", true)}
+              disabled={appleAllState === "publishing"}
+              title="Publish all locales to App Store Connect"
+              style={{
+                background: appleAllState === "error" ? "#EF4444" : appleAllState === "published" ? "#22C55E" : "rgba(255,255,255,0.07)",
+                color: appleAllState === "idle" ? T.fgMuted : "#fff",
+                border: "1px solid rgba(255,255,255,0.12)",
+                borderRadius: 8,
+                padding: "8px 14px",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: appleAllState === "publishing" ? "not-allowed" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                opacity: appleAllState === "publishing" ? 0.7 : 1,
+                transition: "all 0.15s",
+              }}
+            >
+              <svg width={13} height={13} viewBox="0 0 814 1000" fill="currentColor">
+                <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105.6-57.8-155.5-127.4C46 790.7 0 663 0 541.8c0-207.8 133.4-317.7 264.8-317.7 60.5 0 110.8 39.7 148.2 39.7 35.5 0 91.7-42.1 160.9-42.1 28.7 0 108.2 2.6 168.7 100.5zm-234.5-191.1c31.1-36.9 53.1-88.1 53.1-139.3 0-7.1-.6-14.3-1.9-20.1-50.6 1.9-110.8 33.7-147.1 75.8-28.5 32.4-55.1 83.6-55.1 135.5 0 7.8 1.3 15.6 1.9 18.1 3.2.6 8.4 1.3 13.6 1.3 45.4 0 102.5-30.4 135.5-71.3z"/>
+              </svg>
+              {appleAllState === "publishing" ? "Publishing…" : appleAllState === "published" ? "All Published!" : appleAllState === "error" ? "Failed" : "Publish All"}
+            </button>
+          </>)}
 
-          {localPackageName && (
+          {localPackageName && (<>
             <button
               onClick={() => handlePublish("google")}
               disabled={googleState === "publishing"}
-              title="Publish all locales to Google Play"
+              title="Publish current locale to Google Play"
               style={{
                 background: googleState === "error" ? "#EF4444" : googleState === "published" ? "#22C55E" : "rgba(255,255,255,0.07)",
                 color: googleState === "idle" ? T.fgMuted : "#fff",
@@ -301,13 +329,37 @@ export function MetadataPanel({
                 transition: "all 0.15s",
               }}
             >
-              {/* Google Play triangle */}
               <svg width={13} height={13} viewBox="0 0 24 24" fill="currentColor">
                 <path d="M3 20.5v-17c0-.83 1-.83 1.5-.5l14 8.5c.5.3.5 1.2 0 1.5l-14 8.5c-.5.3-1.5.3-1.5-.5z"/>
               </svg>
               {googleState === "publishing" ? "Publishing…" : googleState === "published" ? "Published!" : googleState === "error" ? "Failed" : "Publish Google"}
             </button>
-          )}
+            <button
+              onClick={() => handlePublish("google", true)}
+              disabled={googleAllState === "publishing"}
+              title="Publish all locales to Google Play"
+              style={{
+                background: googleAllState === "error" ? "#EF4444" : googleAllState === "published" ? "#22C55E" : "rgba(255,255,255,0.07)",
+                color: googleAllState === "idle" ? T.fgMuted : "#fff",
+                border: "1px solid rgba(255,255,255,0.12)",
+                borderRadius: 8,
+                padding: "8px 14px",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: googleAllState === "publishing" ? "not-allowed" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                opacity: googleAllState === "publishing" ? 0.7 : 1,
+                transition: "all 0.15s",
+              }}
+            >
+              <svg width={13} height={13} viewBox="0 0 24 24" fill="currentColor">
+                <path d="M3 20.5v-17c0-.83 1-.83 1.5-.5l14 8.5c.5.3.5 1.2 0 1.5l-14 8.5c-.5.3-1.5.3-1.5-.5z"/>
+              </svg>
+              {googleAllState === "publishing" ? "Publishing…" : googleAllState === "published" ? "All Published!" : googleAllState === "error" ? "Failed" : "Publish All"}
+            </button>
+          </>)}
         </div>
       </div>
 
@@ -492,6 +544,7 @@ export function MetadataPanel({
               {/* Input */}
               {field.multiline ? (
                 <textarea
+                  autoComplete="off"
                   value={value}
                   onChange={(e) => handleChange(field.id, e.target.value)}
                   placeholder={field.placeholder}
@@ -524,6 +577,7 @@ export function MetadataPanel({
               ) : (
                 <input
                   type="text"
+                  autoComplete="off"
                   value={value}
                   onChange={(e) => handleChange(field.id, e.target.value)}
                   placeholder={field.placeholder}
