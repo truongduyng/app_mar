@@ -65,6 +65,7 @@ export function MetadataPanel({
   const [localPackageName, setLocalPackageName] = useState(packageName ?? "");
   const [localPrivacyUrl, setLocalPrivacyUrl] = useState(privacyPolicyUrl ?? "");
   const [localSupportUrl, setLocalSupportUrl] = useState(supportUrl ?? "");
+  const [translateAllState, setTranslateAllState] = useState<"idle" | "loading" | "done" | "error">("idle");
   const isFieldVisible = useCallback(
     (field: FieldDef) => (
       field.platform === "Both" ||
@@ -94,6 +95,32 @@ export function MetadataPanel({
     setCopiedId("__all__");
     setTimeout(() => setCopiedId(null), 1500);
   }, [metadata, visibleFields]);
+
+  const [translateAllError, setTranslateAllError] = useState<string | null>(null);
+
+  const handleTranslateAll = useCallback(async (fieldId: keyof MetadataConfig) => {
+    const sourceValue = metadata[fieldId] ?? "";
+    const targetLocales = locales.filter((l) => l.code !== activeLocale).map((l) => l.code);
+    setTranslateAllError(null);
+    setTranslateAllState("loading");
+    try {
+      const res = await fetch("/api/translate-field", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId, fieldId, sourceLocale: activeLocale, sourceValue, targetLocales }),
+      });
+      if (res.ok) {
+        setTranslateAllState("done");
+      } else {
+        const data = await res.json();
+        setTranslateAllError(data.error ?? "Failed");
+        setTranslateAllState("error");
+      }
+    } catch {
+      setTranslateAllState("error");
+    }
+    setTimeout(() => { setTranslateAllState("idle"); setTranslateAllError(null); }, 4000);
+  }, [productId, locales, allLocaleData]);
 
   const handleSave = useCallback(async () => {
     setSaveState("saving");
@@ -558,6 +585,31 @@ export function MetadataPanel({
                     {field.label}
                   </span>
                 </div>
+
+                {/* Translate all button — whatsNew only */}
+                {field.id === "whatsNew" && locales.length > 1 && (
+                  <button
+                    onClick={() => handleTranslateAll("whatsNew")}
+                    disabled={translateAllState === "loading"}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                      background: translateAllState === "done" ? "rgba(34,197,94,0.15)" : translateAllState === "error" ? "rgba(239,68,68,0.15)" : "rgba(255,255,255,0.06)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      borderRadius: 6,
+                      padding: "3px 10px",
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: translateAllState === "done" ? "#22C55E" : translateAllState === "error" ? "#EF4444" : T.accent,
+                      cursor: translateAllState === "loading" ? "not-allowed" : "pointer",
+                      opacity: translateAllState === "loading" ? 0.6 : 1,
+                      transition: "all 0.15s",
+                    }}
+                  >
+                    {translateAllState === "loading" ? "Translating…" : translateAllState === "done" ? "Done!" : translateAllState === "error" ? (translateAllError ?? "Failed") : "Translate for all langs"}
+                  </button>
+                )}
 
                 {/* Copy button */}
                 <button
