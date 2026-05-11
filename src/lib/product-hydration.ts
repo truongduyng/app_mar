@@ -30,8 +30,10 @@ function hydrateSlides(
     }
     return {
       id: s.id,
+      dbId: s.dbId,
       copy: hydrateSlideCopy(s.copy, accentColor),
       copyByLocale: Object.keys(copyByLocale).length ? copyByLocale : undefined,
+      imagePath: s.imagePath,
       Component: registry[s.componentKey],
     };
   });

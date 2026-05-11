@@ -45,18 +45,20 @@ export function Phone({
           borderRadius: `${SC_RX}% / ${SC_RY}%`,
         }}
       >
-        <img
-          src={img(src)}
-          alt={alt}
-          style={{
-            display: "block",
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            objectPosition: "top",
-          }}
-          draggable={false}
-        />
+        {src && (
+          <img
+            src={img(src)}
+            alt={alt}
+            style={{
+              display: "block",
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              objectPosition: "top",
+            }}
+            draggable={false}
+          />
+        )}
       </div>
     </div>
   );
@@ -86,7 +88,7 @@ export function AndroidPhone({ src, alt, style }: { src: string; alt: string; st
           width: "93%", height: "96%",
           borderRadius: "5.5% / 2.6%", overflow: "hidden", background: "#000",
         }}>
-          <img src={img(src)} alt={alt} style={{ display: "block", width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} draggable={false} />
+          {src && <img src={img(src)} alt={alt} style={{ display: "block", width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} draggable={false} />}
         </div>
       </div>
     </div>

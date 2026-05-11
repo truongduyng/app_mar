@@ -163,11 +163,7 @@ export function ScreenshotsPage({ rawProducts }: { rawProducts: SerializableProd
 
   useEffect(() => {
     setReady(false);
-    const ctaBase    = product.screenshotBase;
-    const extraPaths = product.ctaImage
-      ? [`${ctaBase}/${product.ctaImage.sc1}`, `${ctaBase}/${product.ctaImage.sc2}`]
-      : [];
-    preloadImages([...getImagePathsForProduct(product), ...extraPaths]).then(() => setReady(true));
+    preloadImages(getImagePathsForProduct(product)).then(() => setReady(true));
   }, [productId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Reset locale to first when switching products (but never when adding a new locale)

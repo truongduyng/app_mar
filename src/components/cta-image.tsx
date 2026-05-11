@@ -116,9 +116,8 @@ function DecoIcon({
 export function CtaImage({
   theme: T,
   iconPath,
-  screenshotBase,
-  sc1,
-  sc2,
+  sc1Path,
+  sc2Path,
   headline,
   subheadline,
   productName,
@@ -128,9 +127,8 @@ export function CtaImage({
 }: {
   theme: ThemeTokens;
   iconPath: string;
-  screenshotBase: string;
-  sc1: string;
-  sc2: string;
+  sc1Path: string;
+  sc2Path: string;
   headline: string;
   subheadline?: string;
   productName: string;
@@ -223,7 +221,7 @@ export function CtaImage({
       {/* ── Phones: anchored at bottom bar, overflow upward behind headline ── */}
       {/* Left phone: slightly behind, tilted left */}
       <CtaPhone
-        src={`${screenshotBase}/${sc1}`}
+        src={sc1Path}
         alt="Screenshot 1"
         mockupPath={mockupPath}
         style={{
@@ -238,7 +236,7 @@ export function CtaImage({
       />
       {/* Right phone: front, upright */}
       <CtaPhone
-        src={`${screenshotBase}/${sc2}`}
+        src={sc2Path}
         alt="Screenshot 2"
         mockupPath={mockupPath}
         style={{

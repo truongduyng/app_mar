@@ -17,10 +17,10 @@ import {
 ───────────────────────────────────────────────────────────────── */
 
 /* ── Slide 1: Hero - Home Dashboard ─────────────────────────── */
-export function FitFoSlide1({ theme: T, base, copy }: SlideProps) {
+export function FitFoSlide1({ theme: T, imagePath, copy }: SlideProps) {
   return (
     <CenteredSlide
-      theme={T} base={base}
+      theme={T} imagePath={imagePath}
       gradient={T.gradients.hero}
       orbs={[
         { size: 950, top: "-20%", left: "-20%", color: "rgba(249,115,22,0.18)" },
@@ -30,7 +30,7 @@ export function FitFoSlide1({ theme: T, base, copy }: SlideProps) {
       label={copy.label}
       headline={copy.headline}
       subtitle={copy.subtitle}
-      screenshot="sc5.png" alt="Home Dashboard"
+      alt="Home Dashboard"
       captionMt={0.05}
       subtitleMaxW={0.76}
       phoneWidth="86%" phoneTy="10%"
@@ -40,10 +40,10 @@ export function FitFoSlide1({ theme: T, base, copy }: SlideProps) {
 }
 
 /* ── Slide 2: Workout Plan ───────────────────────────────────── */
-export function FitFoSlide2({ theme: T, base, copy }: SlideProps) {
+export function FitFoSlide2({ theme: T, imagePath, copy }: SlideProps) {
   return (
     <CenteredSlide
-      theme={T} base={base}
+      theme={T} imagePath={imagePath}
       gradient={T.gradients.dark}
       orbs={[
         { size: 800, top: "5%", left: "45%", color: "rgba(249,115,22,0.14)" },
@@ -53,7 +53,7 @@ export function FitFoSlide2({ theme: T, base, copy }: SlideProps) {
       label={copy.label}
       headline={copy.headline}
       subtitle={copy.subtitle}
-      screenshot="sc6.png" alt="Workout Plan"
+      alt="Workout Plan"
       captionMt={0.05}
       subtitleMaxW={0.78}
       phoneWidth="86%" phoneTy="12%"
@@ -63,10 +63,10 @@ export function FitFoSlide2({ theme: T, base, copy }: SlideProps) {
 }
 
 /* ── Slide 3: Nutrition Tracking ─────────────────────────────── */
-export function FitFoSlide3({ theme: T, base, copy }: SlideProps) {
+export function FitFoSlide3({ theme: T, imagePath, copy }: SlideProps) {
   return (
     <CenteredSlide
-      theme={T} base={base}
+      theme={T} imagePath={imagePath}
       gradient={T.gradients.warm}
       orbs={[
         { size: 900, top: "-10%", right: "-20%", color: "rgba(249,115,22,0.20)" },
@@ -76,7 +76,7 @@ export function FitFoSlide3({ theme: T, base, copy }: SlideProps) {
       label={copy.label}
       headline={copy.headline}
       subtitle={copy.subtitle}
-      screenshot="sc7.png" alt="Nutrition"
+      alt="Nutrition"
       captionMt={0.05}
       subtitleMaxW={0.72}
       phoneTy="6%"
@@ -85,11 +85,11 @@ export function FitFoSlide3({ theme: T, base, copy }: SlideProps) {
 }
 
 /* ── Slide 4: Fit Score / Profile ────────────────────────────── */
-export function FitFoSlide4({ theme: T, base, copy }: SlideProps) {
+export function FitFoSlide4({ theme: T, imagePath, copy }: SlideProps) {
   const { W } = dims("iphone");
   return (
     <CenteredSlide
-      theme={T} base={base}
+      theme={T} imagePath={imagePath}
       gradient={T.gradients.accent}
       orbs={[
         { size: 800, top: "10%", left: "25%", color: "rgba(249,115,22,0.16)" },
@@ -98,7 +98,7 @@ export function FitFoSlide4({ theme: T, base, copy }: SlideProps) {
       label={copy.label}
       headline={copy.headline}
       subtitle={copy.subtitle}
-      screenshot="sc8.png" alt="Fit Score"
+      alt="Fit Score"
       captionMt={0.05}
       subtitleMaxW={0.78}
       phoneWidth="82%" phoneTy="2%"
@@ -109,10 +109,10 @@ export function FitFoSlide4({ theme: T, base, copy }: SlideProps) {
 }
 
 /* ── Slide 5: AI-Generated Plan (30-day forecast) ────────────── */
-export function FitFoSlide5({ theme: T, base, copy }: SlideProps) {
+export function FitFoSlide5({ theme: T, imagePath, copy }: SlideProps) {
   return (
     <CenteredSlide
-      theme={T} base={base}
+      theme={T} imagePath={imagePath}
       gradient={T.gradients.deep}
       orbs={[
         { size: 1000, top: "15%", left: "10%", color: "rgba(249,115,22,0.18)" },
@@ -122,7 +122,7 @@ export function FitFoSlide5({ theme: T, base, copy }: SlideProps) {
       label={copy.label}
       headline={copy.headline}
       subtitle={copy.subtitle}
-      screenshot="sc4.png" alt="30-Day Forecast"
+      alt="30-Day Forecast"
       captionMt={0.05}
       subtitleMaxW={0.80}
       phoneWidth="86%" phoneTy="8%"
@@ -132,10 +132,10 @@ export function FitFoSlide5({ theme: T, base, copy }: SlideProps) {
 }
 
 /* ── Slide 6: Body Type / Onboarding ─────────────────────────── */
-export function FitFoSlide6({ theme: T, base, copy }: SlideProps) {
+export function FitFoSlide6({ theme: T, imagePath, copy }: SlideProps) {
   return (
     <CenteredSlide
-      theme={T} base={base}
+      theme={T} imagePath={imagePath}
       gradient={T.gradients.hero}
       orbs={[
         { size: 700, top: "35%", left: "-10%", color: "rgba(249,115,22,0.15)" },
@@ -145,7 +145,7 @@ export function FitFoSlide6({ theme: T, base, copy }: SlideProps) {
       label={copy.label}
       headline={copy.headline}
       subtitle={copy.subtitle}
-      screenshot="sc1.png" alt="Body Type"
+      alt="Body Type"
       captionMt={0.05}
       subtitleMaxW={0.78}
       phoneWidth="86%" phoneTy="6%"
@@ -155,10 +155,10 @@ export function FitFoSlide6({ theme: T, base, copy }: SlideProps) {
 }
 
 /* ── Slide 7: Progress Photos (dual phone) ───────────────────── */
-export function FitFoSlide7({ theme: T, base, copy }: SlideProps) {
+export function FitFoSlide7({ theme: T, imagePath, copy }: SlideProps) {
   return (
     <SideSlide
-      theme={T} base={base}
+      theme={T} imagePath={imagePath}
       gradient={T.gradients.warm}
       orbs={[
         { size: 800, top: "5%", right: "-20%", color: "rgba(249,115,22,0.20)" },
@@ -169,10 +169,10 @@ export function FitFoSlide7({ theme: T, base, copy }: SlideProps) {
       subtitle={copy.subtitle}
       phones={<>
         <div style={{ position: "absolute", bottom: 0, left: "-4%", transform: "translateY(4%) rotate(-3deg)", width: "76%", zIndex: 2, opacity: 0.35, filter: "brightness(0.6)" }}>
-          <PhoneFrame platform="iphone" src={`${base}/sc2.png`} alt="" />
+          <PhoneFrame platform="iphone" src={imagePath} alt="" />
         </div>
         <div style={{ position: "absolute", bottom: 0, right: "-4%", transform: "translateY(4%)", width: "83%", zIndex: 3 }}>
-          <PhoneFrame platform="iphone" src={`${base}/sc3.png`} alt="Your Profile" />
+          <PhoneFrame platform="iphone" src={imagePath} alt="Your Profile" />
         </div>
       </>}
     />
@@ -180,7 +180,7 @@ export function FitFoSlide7({ theme: T, base, copy }: SlideProps) {
 }
 
 /* ── Slide 8: More Features pill slide ───────────────────────── */
-export function FitFoSlide8({ theme: T, base, copy }: SlideProps) {
+export function FitFoSlide8({ theme: T, imagePath, copy }: SlideProps) {
   const { W, H } = dims("iphone");
   const pills = [
     "Calorie Targets", "Macro Tracking", "Streak Counter",

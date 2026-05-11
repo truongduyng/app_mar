@@ -9,7 +9,7 @@ import type { ThemeTokens } from "@/lib/types";
 export type Platform = "iphone" | "android";
 export type SlideProps = {
   theme: ThemeTokens;
-  base: string;
+  imagePath: string;
   copy: import("@/lib/types").SlideCopy;
 };
 export type OrbDef = {
@@ -148,7 +148,7 @@ export function AccentLine({
  */
 export function CenteredSlide({
   theme: T,
-  base,
+  imagePath,
   platform = "iphone",
   gradient,
   orbs,
@@ -156,7 +156,6 @@ export function CenteredSlide({
   label,
   headline,
   subtitle,
-  screenshot,
   alt,
   phoneWidth,
   phoneTy,
@@ -166,7 +165,7 @@ export function CenteredSlide({
   fadeH = "8%",
 }: {
   theme: ThemeTokens;
-  base: string;
+  imagePath: string;
   platform?: Platform;
   gradient: string;
   orbs: OrbDef[];
@@ -174,7 +173,6 @@ export function CenteredSlide({
   label: string;
   headline: ReactNode;
   subtitle: ReactNode;
-  screenshot: string;
   alt: string;
   phoneWidth?: string;
   phoneTy?: string;
@@ -240,7 +238,7 @@ export function CenteredSlide({
       >
         <PhoneFrame
           platform={platform}
-          src={`${base}/${screenshot}`}
+          src={imagePath}
           alt={alt}
         />
       </div>
@@ -281,7 +279,7 @@ export function SideSlide({
   fadeH = "6%",
 }: {
   theme: ThemeTokens;
-  base: string;
+  imagePath: string;
   platform?: Platform;
   gradient: string;
   orbs: OrbDef[];

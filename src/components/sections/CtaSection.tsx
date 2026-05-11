@@ -26,18 +26,12 @@ export function CtaSection({ product, locale, platform, ctaSc1, ctaSc2, onSc1Cha
   const allSlides = platform === "android" && localizedSlides.android?.length
     ? localizedSlides.android
     : localizedSlides.iphone;
-  const defaultSc   = product.ctaImage?.sc1 ?? "sc1.png";
-  const prefix      = defaultSc.replace(/\d+\.png$/, "");
-  const scFiles     = allSlides.map((_, i) => `${prefix}${i + 1}.png`);
-  const uniqueFiles = [...new Set([
-    ...(product.ctaImage ? [product.ctaImage.sc1, product.ctaImage.sc2] : []),
-    ...scFiles,
-  ])];
+  const slideImagePaths = allSlides.map((s) => s.imagePath).filter(Boolean) as string[];
+  const uniquePaths     = [...new Set(slideImagePaths)];
 
   const headline    = product.ctaImage?.headlineByLocale?.[locale] ?? product.ctaImage?.headline ?? product.name;
   const subheadline = product.metadataByLocale?.[locale]?.subtitle ?? product.metadata?.subtitle;
   const ctaLabel    = product.ctaImage?.ctaLabelByLocale?.[locale] ?? product.ctaImage?.ctaLabel;
-  const screenshotBase = product.screenshotBaseByLocale?.[locale] ?? product.screenshotBase;
 
   const selectStyle: React.CSSProperties = {
     background: "rgba(255,255,255,0.06)", color: T.fg,
@@ -50,10 +44,10 @@ export function CtaSection({ product, locale, platform, ctaSc1, ctaSc2, onSc1Cha
       {/* Controls */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
         <select value={ctaSc1} onChange={(e) => onSc1Change(e.target.value)} style={selectStyle}>
-          {uniqueFiles.map((f) => <option key={f} value={f}>{f} (left)</option>)}
+          {uniquePaths.map((p) => <option key={p} value={p}>{p.split("/").pop()} (left)</option>)}
         </select>
         <select value={ctaSc2} onChange={(e) => onSc2Change(e.target.value)} style={selectStyle}>
-          {uniqueFiles.map((f) => <option key={f} value={f}>{f} (right)</option>)}
+          {uniquePaths.map((p) => <option key={p} value={p}>{p.split("/").pop()} (right)</option>)}
         </select>
         <div style={{ display: "flex", gap: 2, background: "rgba(255,255,255,0.04)", borderRadius: 6, padding: 3 }}>
           {(["1:1", "4:5"] as CtaRatio[]).map((r) => (
@@ -75,8 +69,8 @@ export function CtaSection({ product, locale, platform, ctaSc1, ctaSc2, onSc1Cha
       {/* Preview */}
       <div style={{ borderRadius: 12, overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)", background: T.bg }}>
         <div style={{ position: "relative", width: "100%", aspectRatio: `${CTA_W}/${ctaH}`, overflow: "hidden" }}>
-          <ScaledCtaImage theme={T} iconPath={product.iconPath} screenshotBase={screenshotBase}
-            sc1={ctaSc1} sc2={ctaSc2} headline={headline} productName={product.name}
+          <ScaledCtaImage theme={T} iconPath={product.iconPath}
+            sc1Path={ctaSc1} sc2Path={ctaSc2} headline={headline} productName={product.name}
             subheadline={subheadline} ctaLabel={ctaLabel} ratio={ratio} />
         </div>
       </div>
@@ -84,8 +78,8 @@ export function CtaSection({ product, locale, platform, ctaSc1, ctaSc2, onSc1Cha
       {/* Offscreen */}
       <div ref={offscreenRef} style={{ position: "fixed", top: 0, fontFamily: "inherit", pointerEvents: "none" }}>
         <div style={{ width: CTA_W, height: ctaH, position: "absolute", left: -9999, fontFamily: "inherit" }}>
-          <CtaImage theme={T} iconPath={product.iconPath} screenshotBase={screenshotBase}
-            sc1={ctaSc1} sc2={ctaSc2} headline={headline} productName={product.name}
+          <CtaImage theme={T} iconPath={product.iconPath}
+            sc1Path={ctaSc1} sc2Path={ctaSc2} headline={headline} productName={product.name}
             subheadline={subheadline} ctaLabel={ctaLabel} ratio={ratio} />
         </div>
       </div>

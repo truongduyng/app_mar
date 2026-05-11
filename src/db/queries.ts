@@ -51,12 +51,6 @@ export async function getSerializableProducts(): Promise<SerializableProductConf
 
     const primaryLocale = localeRows[0]?.code ?? "en";
 
-    // screenshot_base overrides keyed by locale
-    const screenshotBaseByLocale: Record<string, string> = {};
-    for (const l of localeRows) {
-      if (l.screenshotBaseOverride) screenshotBaseByLocale[l.code] = l.screenshotBaseOverride;
-    }
-
     // Slide groups for this product
     const groups = allGroups.filter((g) => g.productId === pid);
     const defaultGroup = groups.find((g) => g.name === "default");
@@ -93,7 +87,9 @@ export async function getSerializableProducts(): Promise<SerializableProductConf
 
           return {
             id:           slide.slideKey,
+            dbId:         slide.id,
             componentKey: slide.componentKey,
+            imagePath:    slide.imagePath ?? undefined,
             copy: {
               label:    primaryCopy.label,
               headline: primaryCopy.headline as RichTextSegment[],
@@ -165,11 +161,9 @@ export async function getSerializableProducts(): Promise<SerializableProductConf
     }
 
     return {
-      id:             pid,
-      name:           product.name,
-      iconPath:       product.iconPath,
-      screenshotBase: product.screenshotBase,
-      screenshotBaseByLocale: Object.keys(screenshotBaseByLocale).length ? screenshotBaseByLocale : undefined,
+      id:          pid,
+      name:        product.name,
+      iconPath:    product.iconPath,
       mockupPath:  product.mockupPath ?? undefined,
       bundleId:    product.bundleId ?? undefined,
       packageName: product.packageName ?? undefined,

@@ -3,7 +3,7 @@
 import type { ThemeTokens, SlideCopy } from "@/lib/types";
 
 // Slide component prop type (matches SlideProps in slide-layouts)
-export type SlideComponent = React.FC<{ theme: ThemeTokens; base: string; copy: SlideCopy }>;
+export type SlideComponent = React.FC<{ theme: ThemeTokens; imagePath: string; copy: SlideCopy }>;
 
 import {
   HoneSlide1, HoneSlide2, HoneSlide3, HoneSlide4,

@@ -25,11 +25,15 @@ export type SlideCopy = {
 
 export type SlideDef = {
   id: string;
+  /** Numeric DB primary key of the product_slides row — used for screenshot upload */
+  dbId: number;
   /** Default (en) copy - required */
   copy: SlideCopy;
   /** Optional per-locale overrides, e.g. { vi: { label: "…", headline: … } } */
   copyByLocale?: Record<string, SlideCopy>;
-  Component: React.FC<{ theme: ThemeTokens; base: string; copy: SlideCopy }>;
+  /** Full public path to the screenshot image, e.g. /products/amfo/screenshots/sc1.png */
+  imagePath?: string;
+  Component: React.FC<{ theme: ThemeTokens; imagePath: string; copy: SlideCopy }>;
 };
 
 /**
@@ -81,9 +85,6 @@ export type ProductConfig = {
   id: string;
   name: string;
   iconPath: string;
-  screenshotBase: string;
-  /** Per-locale screenshot base path overrides, e.g. { en: "/products/foo/screenshots/en", vi: "..." } */
-  screenshotBaseByLocale?: Record<string, string>;
   mockupPath?: string;
   theme: ThemeTokens;
   /**
@@ -141,9 +142,11 @@ export type SerializableSlideCopy = {
 
 export type SerializableSlideDef = {
   id: string;
+  dbId: number;
   componentKey: string;
   copy: SerializableSlideCopy;
   copyByLocale?: Record<string, SerializableSlideCopy>;
+  imagePath?: string;
 };
 
 export type SerializableProductConfig = Omit<

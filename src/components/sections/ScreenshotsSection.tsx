@@ -8,6 +8,7 @@ import {
 import { exportAllToZip, captureAllAsBase64 } from "@/lib/export";
 import { ScreenshotPreview } from "@/components/ui";
 import { segmentsToMarkup, markupToSegments, renderRichText } from "@/lib/rich-text";
+import { preloadImages, bustCache } from "@/lib/images";
 import type { RichTextSegment } from "@/lib/rich-text";
 import type { AppPlatform, ProductConfig, ThemeTokens, SlideCopy } from "@/lib/types";
 
@@ -61,13 +62,20 @@ export function ScreenshotsSection({ product, locale, multiProduct, platform }: 
   const [copyEdits, setCopyEdits] = useState<Record<string, CopyEdit>>({}); // slideId → edit
   const [saveState, setSaveState] = useState<SaveState>("idle");
 
-  const activeSlides   = product.slidesByLocale?.[locale] ?? product.slides;
-  const activeDevice   = platform === "android" && activeSlides.android?.length ? "android" : "iphone";
-  const slides         = (activeDevice === "android" ? activeSlides.android : activeSlides.iphone) ?? [];
-  const sizes          = activeDevice === "android" ? ANDROID_SIZES : IPHONE_SIZES;
-  const canvasW        = activeDevice === "android" ? ANDROID_W : IPHONE_W;
-  const canvasH        = activeDevice === "android" ? ANDROID_H : IPHONE_H;
-  const screenshotBase = product.screenshotBaseByLocale?.[locale] ?? product.screenshotBase;
+  const [uploadError, setUploadError]     = useState<string | null>(null);
+  const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
+
+  const activeSlides = product.slidesByLocale?.[locale] ?? product.slides;
+  const activeDevice = platform === "android" && activeSlides.android?.length ? "android" : "iphone";
+  const slides       = (activeDevice === "android" ? activeSlides.android : activeSlides.iphone) ?? [];
+  const sizes        = activeDevice === "android" ? ANDROID_SIZES : IPHONE_SIZES;
+  const canvasW      = activeDevice === "android" ? ANDROID_W : IPHONE_W;
+  const canvasH      = activeDevice === "android" ? ANDROID_H : IPHONE_H;
+
+  // imagePath overrides applied after upload, keyed by dbId
+  const [imagePathOverrides, setImagePathOverrides] = useState<Record<number, string>>({});
+  const getImagePath = (slide: typeof slides[number]) =>
+    imagePathOverrides[slide.dbId] ?? slide.imagePath ?? "";
 
   // Reset selections when product/locale/device changes
   useEffect(() => { setSelectedSize(0); setSelectedSlideId(null); }, [activeDevice]);
@@ -174,6 +182,27 @@ export function ScreenshotsSection({ product, locale, multiProduct, platform }: 
     }
     setTimeout(() => { setPublishState("idle"); setProgress(null); }, 5000);
   };
+
+  const handleUpload = useCallback(async (dbId: number, file: File) => {
+    setUploadError(null);
+    setUploadSuccess(null);
+    const form = new FormData();
+    form.append("slideId", String(dbId));
+    form.append("file", file);
+    try {
+      const res  = await fetch("/api/screenshots/upload", { method: "POST", body: form });
+      const data = await res.json() as { ok?: boolean; imagePath?: string; error?: string };
+      if (!res.ok || !data.ok || !data.imagePath) throw new Error(data.error ?? "Upload failed");
+      const freshPath = `${data.imagePath}?t=${Date.now()}`;
+      bustCache(data.imagePath);
+      await preloadImages([freshPath]);
+      setImagePathOverrides((prev) => ({ ...prev, [dbId]: freshPath }));
+      setUploadSuccess("Uploaded");
+      setTimeout(() => setUploadSuccess(null), 3000);
+    } catch (e) {
+      setUploadError(e instanceof Error ? e.message : "Upload failed");
+    }
+  }, []);
 
   const handleExport = async () => {
     if (!offscreenRef.current || exporting) return;
@@ -286,33 +315,35 @@ export function ScreenshotsSection({ product, locale, multiProduct, platform }: 
         gap: 24,
       }}>
         {slides.map((slide, i) => {
-          const baseCopy = slide.copyByLocale?.[locale] ?? slide.copy;
-          const copy = getEffectiveCopy(slide.id, baseCopy);
+          const baseCopy  = slide.copyByLocale?.[locale] ?? slide.copy;
+          const copy      = getEffectiveCopy(slide.id, baseCopy);
           const isSelected = selectedSlideId === slide.id;
+          const imagePath = getImagePath(slide);
           return (
-            <div
-              key={`${product.id}-${activeDevice}-${slide.id}-${locale}`}
-              onClick={() => handleSlideClick(slide.id, baseCopy)}
-              style={{
-                cursor: "pointer",
-                borderRadius: 14,
-                outline: isSelected ? `2px solid ${T.accent}` : "2px solid transparent",
-                outlineOffset: 4,
-                transition: "outline-color 0.15s",
-              }}
-            >
-              <ScreenshotPreview
-                index={i}
-                label={copy.label || slide.id}
-                exportRef={offscreenRef}
-                theme={T}
-                productId={product.id}
-                multiProduct={multiProduct}
-                device={activeDevice}
-                selectedSize={selectedSize}
+            <div key={`${product.id}-${activeDevice}-${slide.id}-${locale}`} style={{ position: "relative" }}>
+              <div
+                onClick={() => handleSlideClick(slide.id, baseCopy)}
+                style={{
+                  cursor: "pointer",
+                  borderRadius: 14,
+                  outline: isSelected ? `2px solid ${T.accent}` : "2px solid transparent",
+                  outlineOffset: 4,
+                  transition: "outline-color 0.15s",
+                }}
               >
-                <slide.Component theme={T} base={screenshotBase} copy={copy} />
-              </ScreenshotPreview>
+                <ScreenshotPreview
+                  index={i}
+                  label={copy.label || slide.id}
+                  exportRef={offscreenRef}
+                  theme={T}
+                  productId={product.id}
+                  multiProduct={multiProduct}
+                  device={activeDevice}
+                  selectedSize={selectedSize}
+                >
+                  <slide.Component theme={T} imagePath={imagePath} copy={copy} />
+                </ScreenshotPreview>
+              </div>
             </div>
           );
         })}
@@ -365,6 +396,28 @@ export function ScreenshotsSection({ product, locale, multiProduct, platform }: 
 
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <div>
+                <div style={{ fontSize: 12, color: T.fgMuted, marginBottom: 6, fontWeight: 600 }}>Screenshot</div>
+                <label style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
+                  {getImagePath(selectedSlide) ? (
+                    <img src={getImagePath(selectedSlide)} alt="" style={{ width: 48, height: 80, objectFit: "cover", objectPosition: "top", borderRadius: 6, border: "1px solid rgba(255,255,255,0.1)" }} />
+                  ) : (
+                    <div style={{ width: 48, height: 80, borderRadius: 6, border: "1px dashed rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.03)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <span style={{ fontSize: 20, opacity: 0.3 }}>+</span>
+                    </div>
+                  )}
+                  <div>
+                    <div style={{ fontSize: 12, color: T.accent, fontWeight: 600 }}>
+                      {getImagePath(selectedSlide) ? "Replace image" : "Upload image"}
+                    </div>
+                    <div style={{ fontSize: 11, color: T.fgMuted, marginTop: 2 }}>PNG or JPG</div>
+                  </div>
+                  <input type="file" accept="image/*" style={{ display: "none" }}
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(selectedSlide.dbId, f); }} />
+                </label>
+                {uploadError && <div style={{ marginTop: 6, fontSize: 11, color: "#FCA5A5" }}>{uploadError}</div>}
+                {uploadSuccess && <div style={{ marginTop: 6, fontSize: 11, color: "#86EFAC" }}>{uploadSuccess}</div>}
+              </div>
+              <div>
                 <div style={{ fontSize: 12, color: T.fgMuted, marginBottom: 6, fontWeight: 600 }}>Label</div>
                 <input
                   type="text"
@@ -404,7 +457,7 @@ export function ScreenshotsSection({ product, locale, multiProduct, platform }: 
           return (
             <div key={`export-${product.id}-${activeDevice}-${slide.id}-${locale}`}
               style={{ width: canvasW, height: canvasH, position: "absolute", left: -9999, fontFamily: "inherit" }}>
-              <slide.Component theme={T} base={screenshotBase} copy={copy} />
+              <slide.Component theme={T} imagePath={getImagePath(slide)} copy={copy} />
             </div>
           );
         })}

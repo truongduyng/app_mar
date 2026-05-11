@@ -17,10 +17,10 @@ import { GridPattern, DiagonalLine } from "@/components/ui";
 ───────────────────────────────────────────────────────────────── */
 
 /* ── Slide 1: Hero ──────────────────────────────────────── */
-export function HoneSlide1({ theme: T, base, copy }: SlideProps) {
+export function HoneSlide1({ theme: T, imagePath, copy }: SlideProps) {
   return (
     <CenteredSlide
-      theme={T} base={base}
+      theme={T} imagePath={imagePath}
       gradient={T.gradients.hero}
       orbs={[
         { size: 900, top: "-20%", left: "-30%", color: "rgba(249,115,22,0.15)" },
@@ -34,18 +34,18 @@ export function HoneSlide1({ theme: T, base, copy }: SlideProps) {
       label={copy.label}
       headline={copy.headline}
       subtitle={copy.subtitle}
-      screenshot="sc_hone7.png" alt="Journal"
+      alt="Journal"
       captionMt={0.04}
     />
   );
 }
 
 /* ── Slide 2: AI Sensei ─────────────────────────────────── */
-export function HoneSlide2({ theme: T, base, copy }: SlideProps) {
+export function HoneSlide2({ theme: T, imagePath, copy }: SlideProps) {
   const { W, H } = dims("iphone");
   return (
     <CenteredSlide
-      theme={T} base={base}
+      theme={T} imagePath={imagePath}
       gradient={T.gradients.warm}
       orbs={[
         { size: 700, top: "5%", left: "50%", color: "rgba(249,115,22,0.12)" },
@@ -54,7 +54,7 @@ export function HoneSlide2({ theme: T, base, copy }: SlideProps) {
       label={copy.label}
       headline={copy.headline}
       subtitle={copy.subtitle}
-      screenshot="sc_hone2.png" alt="Journal"
+      alt="Journal"
       captionMt={0.05}
       subtitleMaxW={0.78}
       phoneWidth="86%" phoneTy="12%"
@@ -67,10 +67,10 @@ export function HoneSlide2({ theme: T, base, copy }: SlideProps) {
 }
 
 /* ── Slide 3: Daily Protocol ────────────────────────────── */
-export function HoneSlide3({ theme: T, base, copy }: SlideProps) {
+export function HoneSlide3({ theme: T, imagePath, copy }: SlideProps) {
   return (
     <CenteredSlide
-      theme={T} base={base}
+      theme={T} imagePath={imagePath}
       gradient={T.gradients.accent}
       orbs={[
         { size: 800, top: "-5%", right: "-30%", color: "rgba(249,115,22,0.18)" },
@@ -79,7 +79,7 @@ export function HoneSlide3({ theme: T, base, copy }: SlideProps) {
       label={copy.label}
       headline={copy.headline}
       subtitle={copy.subtitle}
-      screenshot="sc_hone3.png" alt="Daily Protocol"
+      alt="Daily Protocol"
       captionMt={0.05}
       subtitleMaxW={0.7}
       phoneTy="5%"
@@ -88,10 +88,10 @@ export function HoneSlide3({ theme: T, base, copy }: SlideProps) {
 }
 
 /* ── Slide 4: Progress ──────────────────────────────────── */
-export function HoneSlide4({ theme: T, base, copy }: SlideProps) {
+export function HoneSlide4({ theme: T, imagePath, copy }: SlideProps) {
   return (
     <CenteredSlide
-      theme={T} base={base}
+      theme={T} imagePath={imagePath}
       gradient={T.gradients.deep}
       orbs={[
         { size: 1000, top: "20%", left: "10%", color: "rgba(249,115,22,0.2)" },
@@ -101,7 +101,7 @@ export function HoneSlide4({ theme: T, base, copy }: SlideProps) {
       label={copy.label}
       headline={copy.headline}
       subtitle={copy.subtitle}
-      screenshot="sc_hone5.png" alt="Track"
+      alt="Track"
       captionMt={0.05}
       subtitleMaxW={0.78}
       phoneTy="5%"
@@ -110,11 +110,11 @@ export function HoneSlide4({ theme: T, base, copy }: SlideProps) {
 }
 
 /* ── Slide 5: Journey ───────────────────────────────────── */
-export function HoneSlide5({ theme: T, base, copy }: SlideProps) {
+export function HoneSlide5({ theme: T, imagePath, copy }: SlideProps) {
   const { W } = dims("iphone");
   return (
     <CenteredSlide
-      theme={T} base={base}
+      theme={T} imagePath={imagePath}
       gradient={T.gradients.warm}
       orbs={[
         { size: 800, top: "10%", left: "30%", color: "rgba(249,115,22,0.15)" },
@@ -127,7 +127,7 @@ export function HoneSlide5({ theme: T, base, copy }: SlideProps) {
       label={copy.label}
       headline={copy.headline}
       subtitle={copy.subtitle}
-      screenshot="sc_hone1.png" alt="Profile"
+      alt="Profile"
       captionMt={0.05}
       subtitleMaxW={0.78}
       phoneWidth="82%" phoneTy="0%"
@@ -138,11 +138,11 @@ export function HoneSlide5({ theme: T, base, copy }: SlideProps) {
 }
 
 /* ── Slide 6: Mood Flow (Added) ─────────────────────────── */
-export function HoneSlide6({ theme: T, base, copy }: SlideProps) {
+export function HoneSlide6({ theme: T, imagePath, copy }: SlideProps) {
   const { W } = dims("iphone");
   return (
     <CenteredSlide
-      theme={T} base={base}
+      theme={T} imagePath={imagePath}
       gradient={T.gradients.deep}
       orbs={[
         { size: 700, top: "40%", left: "-10%", color: "rgba(249,115,22,0.15)" },
@@ -152,7 +152,7 @@ export function HoneSlide6({ theme: T, base, copy }: SlideProps) {
       label={copy.label}
       headline={copy.headline}
       subtitle={copy.subtitle}
-      screenshot="sc_hone6.png" alt="Mood Flow"
+      alt="Mood Flow"
       captionMt={0.05}
       subtitleMaxW={0.8}
       phoneWidth="86%" phoneTy="6%"
@@ -162,10 +162,10 @@ export function HoneSlide6({ theme: T, base, copy }: SlideProps) {
 }
 
 /* ── Slide 7: Reward (Added) ────────────────────────────── */
-export function HoneSlide7({ theme: T, base, copy }: SlideProps) {
+export function HoneSlide7({ theme: T, imagePath, copy }: SlideProps) {
   return (
     <CenteredSlide
-      theme={T} base={base}
+      theme={T} imagePath={imagePath}
       gradient={T.gradients.warm}
       orbs={[
         { size: 800, bottom: "-10%", left: "10%", color: "rgba(249,115,22,0.15)" },
@@ -174,11 +174,10 @@ export function HoneSlide7({ theme: T, base, copy }: SlideProps) {
       label={copy.label}
       headline={copy.headline}
       subtitle={copy.subtitle}
-      screenshot="sc_hone4.png" alt="Reward"
+      alt="Reward"
       captionMt={0.05}
       subtitleMaxW={0.78}
       phoneTy="8%"
     />
   );
 }
-

@@ -1064,31 +1064,26 @@ async function seed() {
       id: "hone",
       name: "Life Refine",
       iconPath: "/products/hone/icon.png",
-      screenshotBase: "/products/hone/screenshots",
     },
     {
       id: "amfo",
       name: "Amfo: Ambient Focus Sounds",
       iconPath: "/products/amfo/icon.png",
-      screenshotBase: "/products/amfo/screenshots",
     },
     {
       id: "lichta",
       name: "Lịch Ta - Lịch Âm & Tử Vi AI",
       iconPath: "/products/lichta/icon.png",
-      screenshotBase: "/products/lichta/screenshots",
     },
     {
       id: "tinysteps",
       name: "TinySteps: Baby Growth Tracker",
       iconPath: "/products/tinysteps/icon.png",
-      screenshotBase: "/products/tinysteps/screenshots/en",
     },
     {
       id: "fitfo",
       name: "FitFo: Workout Plan & Log Pal",
       iconPath: "/products/fitfo/icon.png",
-      screenshotBase: "/products/fitfo/screenshots",
     },
   ]);
 
@@ -1225,7 +1220,6 @@ async function seed() {
       label: "English",
       flag: "🇺🇸",
       sortOrder: 0,
-      screenshotBaseOverride: "/products/tinysteps/screenshots/en",
     },
     {
       productId: "tinysteps",
@@ -1233,7 +1227,6 @@ async function seed() {
       label: "Tiếng Việt",
       flag: "🇻🇳",
       sortOrder: 1,
-      screenshotBaseOverride: "/products/tinysteps/screenshots/vi",
     },
     {
       productId: "fitfo",
