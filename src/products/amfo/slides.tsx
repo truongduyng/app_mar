@@ -32,7 +32,7 @@ export function AmfoSlide1({ theme: T, base, copy }: SlideProps) {
       label={copy.label}
       headline={copy.headline}
       subtitle={copy.subtitle}
-      screenshot="sc_amfo2.png" alt="Sound library"
+      screenshot="sc1.png" alt="Sound library"
       phoneWidth="83%"
     />
   );
@@ -51,7 +51,7 @@ export function AmfoSlide2({ theme: T, base, copy }: SlideProps) {
       label={copy.label}
       headline={copy.headline}
       subtitle={copy.subtitle}
-      screenshot="sc_amfo3.png" alt="Saved Presets"
+      screenshot="sc2.png" alt="Saved Presets"
       phoneWidth="83%" phoneTy="3%"
     />
   );
@@ -71,7 +71,7 @@ export function AmfoSlide3({ theme: T, base, copy }: SlideProps) {
       label={copy.label}
       headline={copy.headline}
       subtitle={copy.subtitle}
-      screenshot="sc_amfo4.png" alt="Focus timer"
+      screenshot="sc3.png" alt="Focus timer"
       captionMt={0.08}
       phoneWidth="83%" phoneTy="3%"
     />
@@ -94,7 +94,7 @@ export function AmfoSlide4({ theme: T, base, copy }: SlideProps) {
       label={copy.label}
       headline={copy.headline}
       subtitle={copy.subtitle}
-      screenshot="sc_amfo5.png" alt="Focus mode"
+      screenshot="sc4.png" alt="Focus mode"
       phoneWidth="82%" phoneTy="3%"
       fadeH="6%"
       extras={<AccentLine canvasW={W} accentColor={T.accent} opacity={0.5} />}
@@ -116,7 +116,7 @@ export function AmfoSlide5({ theme: T, base, copy }: SlideProps) {
       label={copy.label}
       headline={copy.headline}
       subtitle={copy.subtitle}
-      screenshot="sc_amfo6.png" alt="Settings"
+      screenshot="sc5.png" alt="Settings"
       phoneWidth="83%" phoneTy="3%"
     />
   );
@@ -137,7 +137,7 @@ export function AmfoSlide6({ theme: T, base, copy }: SlideProps) {
       label={copy.label}
       headline={copy.headline}
       subtitle={copy.subtitle}
-      screenshot="sc_amfo1.png" alt="Premium"
+      screenshot="sc6.png" alt="Premium"
       phoneWidth="83%" phoneTy="3%"
       fadeH="8%"
       extras={<AccentLine canvasW={W} accentColor={T.accent} opacity={0.6} />}
