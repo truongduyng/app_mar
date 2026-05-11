@@ -107,7 +107,7 @@ export function ScreenshotsPage({ rawProducts }: { rawProducts: SerializableProd
   const [regenLocaleCode, setRegenLocaleCode] = useState<string | null>(null);
 
   const [metadataMap, setMetadataMap] = useState<Record<string, Record<string, MetadataConfig>>>(() => {
-    const empty: MetadataConfig = { name: "", subtitle: "", promoText: "", shortDescription: "", description: "", keywords: "" };
+    const empty: MetadataConfig = { name: "", subtitle: "", promoText: "", shortDescription: "", description: "", keywords: "", whatsNew: "" };
     const map: Record<string, Record<string, MetadataConfig>> = {};
     for (const p of PRODUCTS) {
       const locales = p.locales ?? [{ code: "en", label: "English", flag: "🇺🇸" }];

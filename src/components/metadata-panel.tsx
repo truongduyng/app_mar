@@ -19,6 +19,7 @@ const FIELDS: FieldDef[] = [
   { id: "shortDescription", label: "Short Description",              platform: "Google", maxLength: 80,   multiline: false, placeholder: "One-line summary shown in search results" },
   { id: "keywords",         label: "Keywords",                       platform: "Apple",  maxLength: 100,  multiline: false, placeholder: "comma,separated,keywords" },
   { id: "description",      label: "Full Description",               platform: "Both",   maxLength: 4000, multiline: true,  placeholder: "Full app description for store listing..." },
+  { id: "whatsNew",         label: "What's New in This Version",     platform: "Apple",  maxLength: 4000, multiline: true,  placeholder: "Describe what's new in this version..." },
 ];
 
 type SaveState = "idle" | "saving" | "saved" | "error";

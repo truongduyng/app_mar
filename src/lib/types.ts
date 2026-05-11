@@ -72,6 +72,7 @@ export type MetadataConfig = {
   shortDescription: string;   // Google - 80 chars
   description: string;        // Both - 4000 chars
   keywords: string;           // Apple - 100 chars
+  whatsNew: string;           // Apple - 4000 chars
 };
 
 /** Locale definition for the metadata locale picker */

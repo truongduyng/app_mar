@@ -15,6 +15,7 @@ export async function POST(req: NextRequest) {
       shortDescription: string;
       description: string;
       keywords: string;
+      whatsNew: string;
     };
   };
 
@@ -29,6 +30,7 @@ export async function POST(req: NextRequest) {
     shortDescription: metadata.shortDescription,
     description: metadata.description,
     keywords: metadata.keywords,
+    whatsNew: metadata.whatsNew ?? "",
   };
 
   await db

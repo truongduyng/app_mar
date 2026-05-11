@@ -95,8 +95,9 @@ const METADATA_SCHEMA: JsonSchema = {
       shortDescription: s({ type: "string" }),
       description:      s({ type: "string" }),
       keywords:         s({ type: "string" }),
+      whatsNew:         s({ type: "string" }),
     }),
-    required: ["name", "subtitle", "promoText", "shortDescription", "description", "keywords"],
+    required: ["name", "subtitle", "promoText", "shortDescription", "description", "keywords", "whatsNew"],
     additionalProperties: false,
   }),
 };
@@ -171,6 +172,7 @@ STRICT CHARACTER LIMITS (never exceed — count carefully):
 - shortDescription: 80 characters
 - description: 4000 characters
 - keywords: 100 characters (comma-separated, no spaces after commas)
+- whatsNew: 4000 characters
 
 SOURCE LISTING (${sourceLocale.toUpperCase()}) — use this to understand the app, not to translate word-for-word:
 name: ${sourceMetadata.name}
@@ -179,6 +181,7 @@ promoText: ${sourceMetadata.promoText}
 shortDescription: ${sourceMetadata.shortDescription}
 description: ${sourceMetadata.description}
 keywords: ${sourceMetadata.keywords}
+whatsNew: ${sourceMetadata.whatsNew}
 
 IMPORTANT: Do not use any emoji in any field — the App Store will reject them.
 
@@ -189,8 +192,9 @@ Guidelines for each field:
 - shortDescription: One punchy sentence covering the top 2-3 features
 - description: Rewrite to sound natural in ${ctx.language}. CRITICAL FORMATTING — each section heading must be ALL CAPS on its own line, with a blank line before it and a blank line after it. Example: "...end of paragraph.\n\nSECTION HEADING\n\nStart of next paragraph..." — the blank lines are mandatory. Plain text only, no markdown, no bullet symbols, no emoji.
 - keywords: Comma-separated search terms, no space after each comma (e.g. "baby,tracker,growth"). Each term should be a single word or a natural short phrase in ${ctx.language} — spaces within a term are fine if the language requires it (e.g. "âm thanh,tiếng mưa" or "赤ちゃん,成長記録"). No emoji. CRITICAL: use as close to 100 characters as possible — aim for 95–100 chars. Keep adding relevant terms until you are within that range. Hard max is 100 characters total.
+- whatsNew: Short "What's New" release note in ${ctx.language}. 2-3 sentences max. Friendly, conversational tone. Plain text only, no emoji, no bullet points.
 
-Return a JSON object with exactly these keys: name, subtitle, promoText, shortDescription, description, keywords.`;
+Return a JSON object with exactly these keys: name, subtitle, promoText, shortDescription, description, keywords, whatsNew.`;
 
   // ── 2. Generate slide copy ─────────────────────────────────────────────────
   const slidesInput = sourceSlides.map((s) =>
@@ -279,6 +283,7 @@ Return a JSON object with a single key "slides" whose value is an array. Each el
                         .replace(/\n{3,}/g, "\n\n")
                         .trim(),
     keywords:         generatedMetadata.keywords ?? "",
+    whatsNew:         generatedMetadata.whatsNew ?? "",
   };
 
   await db

@@ -88,7 +88,7 @@ export function ProductProvider({
   const product = PRODUCTS.find((p) => p.id === productId) ?? PRODUCTS[0];
 
   const [metadataMap, setMetadataMap] = useState<Record<string, Record<string, MetadataConfig>>>(() => {
-    const empty: MetadataConfig = { name: "", subtitle: "", promoText: "", shortDescription: "", description: "", keywords: "" };
+    const empty: MetadataConfig = { name: "", subtitle: "", promoText: "", shortDescription: "", description: "", keywords: "", whatsNew: "" };
     const map: Record<string, Record<string, MetadataConfig>> = {};
     for (const p of PRODUCTS) {
       const locales = p.locales ?? [{ code: "en", label: "English", flag: "🇺🇸" }];
@@ -177,7 +177,7 @@ export function ProductProvider({
     const rawProduct = rawProducts.find((p) => p.id === productId)!;
     const sourceMetadata =
       metadataMap[productId]?.[sourceLoc.code] ??
-      { name: product.name, subtitle: "", promoText: "", shortDescription: "", description: "", keywords: "" };
+      { name: product.name, subtitle: "", promoText: "", shortDescription: "", description: "", keywords: "", whatsNew: "" };
     const slides = rawProduct.slides.iphone.map((s) => ({
       slideKey: s.id,
       label:    s.copy.label,

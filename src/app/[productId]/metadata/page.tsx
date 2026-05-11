@@ -23,7 +23,7 @@ export default function MetadataPage() {
       metadata={
         metadataMap[product.id]?.[locale] ??
         metadataMap[product.id]?.[productLocales[0].code] ??
-        { name: product.name, subtitle: "", promoText: "", shortDescription: "", description: "", keywords: "" }
+        { name: product.name, subtitle: "", promoText: "", shortDescription: "", description: "", keywords: "", whatsNew: "" }
       }
       onUpdate={(updated) =>
         setMetadataMap((prev) => ({ ...prev, [product.id]: { ...prev[product.id], [locale]: updated } }))

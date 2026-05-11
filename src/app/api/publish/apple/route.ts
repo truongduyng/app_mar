@@ -130,6 +130,7 @@ export async function POST(req: NextRequest) {
         description: row.description,
         keywords: row.keywords,
         promotionalText: row.promoText,
+        whatsNew: row.whatsNew || undefined,
         ...(product.supportUrl ? { supportUrl: product.supportUrl } : {}),
       };
       const body = existing

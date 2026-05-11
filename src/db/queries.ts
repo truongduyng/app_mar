@@ -126,7 +126,7 @@ export async function getSerializableProducts(): Promise<SerializableProductConf
     for (const m of metaRows) {
       metadataByLocale[m.locale] = {
         name: m.name, subtitle: m.subtitle, promoText: m.promoText,
-        shortDescription: m.shortDescription, description: m.description, keywords: m.keywords,
+        shortDescription: m.shortDescription, description: m.description, keywords: m.keywords, whatsNew: m.whatsNew,
       };
     }
 
@@ -177,7 +177,7 @@ export async function getSerializableProducts(): Promise<SerializableProductConf
       socialOg:       og ? { tagline: og.tagline, subtitle: og.subtitle ?? undefined } : undefined,
       ctaImage,
       metadata: primaryMeta
-        ? { name: primaryMeta.name, subtitle: primaryMeta.subtitle, promoText: primaryMeta.promoText, shortDescription: primaryMeta.shortDescription, description: primaryMeta.description, keywords: primaryMeta.keywords }
+        ? { name: primaryMeta.name, subtitle: primaryMeta.subtitle, promoText: primaryMeta.promoText, shortDescription: primaryMeta.shortDescription, description: primaryMeta.description, keywords: primaryMeta.keywords, whatsNew: primaryMeta.whatsNew }
         : undefined,
       metadataByLocale: Object.keys(metadataByLocale).length ? metadataByLocale : undefined,
     };
