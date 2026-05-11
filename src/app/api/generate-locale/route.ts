@@ -279,8 +279,6 @@ Return a JSON object with a single key "slides" whose value is an array. Each el
                         .replace(/\n{3,}/g, "\n\n")
                         .trim(),
     keywords:         generatedMetadata.keywords ?? "",
-    privacyPolicyUrl: sourceMetadata.privacyPolicyUrl ?? null,
-    supportUrl:       sourceMetadata.supportUrl ?? null,
   };
 
   await db

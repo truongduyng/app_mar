@@ -72,8 +72,6 @@ export type MetadataConfig = {
   shortDescription: string;   // Google - 80 chars
   description: string;        // Both - 4000 chars
   keywords: string;           // Apple - 100 chars
-  privacyPolicyUrl?: string;  // Both - URL
-  supportUrl?: string;        // Both - URL
 };
 
 /** Locale definition for the metadata locale picker */
@@ -130,6 +128,8 @@ export type ProductConfig = {
   bundleId?: string;
   /** Google Play package name, e.g. "com.example.myapp" */
   packageName?: string;
+  privacyPolicyUrl?: string;
+  supportUrl?: string;
 };
 
 // ─── Serializable versions (DB ↔ API, no React nodes) ─────────────────────

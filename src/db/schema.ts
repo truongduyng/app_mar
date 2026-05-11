@@ -5,9 +5,11 @@ export const products = pgTable("products", {
   name:        text("name").notNull(),
   iconPath:    text("icon_path").notNull(),
   mockupPath:  text("mockup_path"),
-  bundleId:    text("bundle_id"),
-  packageName: text("package_name"),
-  createdAt:   timestamp("created_at").defaultNow(),
+  bundleId:         text("bundle_id"),
+  packageName:      text("package_name"),
+  privacyPolicyUrl: text("privacy_policy_url"),
+  supportUrl:       text("support_url"),
+  createdAt:        timestamp("created_at").defaultNow(),
 });
 
 export const productThemes = pgTable("product_themes", {
@@ -96,8 +98,6 @@ export const productMetadata = pgTable("product_metadata", {
   shortDescription: text("short_description").notNull().default(""),
   description:      text("description").notNull().default(""),
   keywords:         text("keywords").notNull().default(""),
-  privacyPolicyUrl: text("privacy_policy_url"),
-  supportUrl:       text("support_url"),
 }, (t) => [
   unique().on(t.productId, t.locale),
 ]);

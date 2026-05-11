@@ -127,8 +127,6 @@ export async function getSerializableProducts(): Promise<SerializableProductConf
       metadataByLocale[m.locale] = {
         name: m.name, subtitle: m.subtitle, promoText: m.promoText,
         shortDescription: m.shortDescription, description: m.description, keywords: m.keywords,
-        privacyPolicyUrl: m.privacyPolicyUrl ?? undefined,
-        supportUrl: m.supportUrl ?? undefined,
       };
     }
 
@@ -167,8 +165,10 @@ export async function getSerializableProducts(): Promise<SerializableProductConf
       name:        product.name,
       iconPath:    product.iconPath,
       mockupPath:  product.mockupPath ?? undefined,
-      bundleId:    product.bundleId ?? undefined,
-      packageName: product.packageName ?? undefined,
+      bundleId:         product.bundleId ?? undefined,
+      packageName:      product.packageName ?? undefined,
+      privacyPolicyUrl: product.privacyPolicyUrl ?? undefined,
+      supportUrl:       product.supportUrl ?? undefined,
       theme,
       locales: locales.length ? locales : undefined,
       slides:         defaultSlides,
@@ -177,7 +177,7 @@ export async function getSerializableProducts(): Promise<SerializableProductConf
       socialOg:       og ? { tagline: og.tagline, subtitle: og.subtitle ?? undefined } : undefined,
       ctaImage,
       metadata: primaryMeta
-        ? { name: primaryMeta.name, subtitle: primaryMeta.subtitle, promoText: primaryMeta.promoText, shortDescription: primaryMeta.shortDescription, description: primaryMeta.description, keywords: primaryMeta.keywords, privacyPolicyUrl: primaryMeta.privacyPolicyUrl ?? undefined, supportUrl: primaryMeta.supportUrl ?? undefined }
+        ? { name: primaryMeta.name, subtitle: primaryMeta.subtitle, promoText: primaryMeta.promoText, shortDescription: primaryMeta.shortDescription, description: primaryMeta.description, keywords: primaryMeta.keywords }
         : undefined,
       metadataByLocale: Object.keys(metadataByLocale).length ? metadataByLocale : undefined,
     };

@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
         const infoAttrs = {
           name: row.name,
           subtitle: row.subtitle,
-          ...(row.privacyPolicyUrl ? { privacyPolicyUrl: row.privacyPolicyUrl } : {}),
+          ...(product.privacyPolicyUrl ? { privacyPolicyUrl: product.privacyPolicyUrl } : {}),
         };
         const body = existing
           ? { data: { type: "appInfoLocalizations", id: existing.id, attributes: infoAttrs } }
@@ -130,7 +130,7 @@ export async function POST(req: NextRequest) {
         description: row.description,
         keywords: row.keywords,
         promotionalText: row.promoText,
-        ...(row.supportUrl ? { supportUrl: row.supportUrl } : {}),
+        ...(product.supportUrl ? { supportUrl: product.supportUrl } : {}),
       };
       const body = existing
         ? { data: { type: "appStoreVersionLocalizations", id: existing.id, attributes: versionAttrs } }

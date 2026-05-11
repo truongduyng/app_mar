@@ -15,8 +15,6 @@ export async function POST(req: NextRequest) {
       shortDescription: string;
       description: string;
       keywords: string;
-      privacyPolicyUrl?: string;
-      supportUrl?: string;
     };
   };
 
@@ -31,8 +29,6 @@ export async function POST(req: NextRequest) {
     shortDescription: metadata.shortDescription,
     description: metadata.description,
     keywords: metadata.keywords,
-    privacyPolicyUrl: metadata.privacyPolicyUrl ?? null,
-    supportUrl: metadata.supportUrl ?? null,
   };
 
   await db

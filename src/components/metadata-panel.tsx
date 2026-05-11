@@ -19,8 +19,6 @@ const FIELDS: FieldDef[] = [
   { id: "shortDescription", label: "Short Description",              platform: "Google", maxLength: 80,   multiline: false, placeholder: "One-line summary shown in search results" },
   { id: "keywords",         label: "Keywords",                       platform: "Apple",  maxLength: 100,  multiline: false, placeholder: "comma,separated,keywords" },
   { id: "description",      label: "Full Description",               platform: "Both",   maxLength: 4000, multiline: true,  placeholder: "Full app description for store listing..." },
-  { id: "privacyPolicyUrl", label: "Privacy Policy URL",             platform: "Both",   maxLength: 500,  multiline: false, placeholder: "https://example.com/privacy" },
-  { id: "supportUrl",       label: "Support URL",                    platform: "Both",   maxLength: 500,  multiline: false, placeholder: "https://example.com/support" },
 ];
 
 type SaveState = "idle" | "saving" | "saved" | "error";
@@ -35,6 +33,8 @@ export function MetadataPanel({
   productId,
   bundleId,
   packageName,
+  privacyPolicyUrl,
+  supportUrl,
   onUpdate,
   allLocaleData,
 }: {
@@ -46,6 +46,8 @@ export function MetadataPanel({
   productId: string;
   bundleId?: string;
   packageName?: string;
+  privacyPolicyUrl?: string;
+  supportUrl?: string;
   onUpdate: (updated: MetadataConfig) => void;
   /** All locale data for JSON export - { [locale]: MetadataConfig } */
   allLocaleData: Record<string, MetadataConfig>;
@@ -60,6 +62,8 @@ export function MetadataPanel({
   const [publishWarnings, setPublishWarnings] = useState<string[]>([]);
   const [localBundleId, setLocalBundleId] = useState(bundleId ?? "");
   const [localPackageName, setLocalPackageName] = useState(packageName ?? "");
+  const [localPrivacyUrl, setLocalPrivacyUrl] = useState(privacyPolicyUrl ?? "");
+  const [localSupportUrl, setLocalSupportUrl] = useState(supportUrl ?? "");
   const isFieldVisible = useCallback(
     (field: FieldDef) => (
       field.platform === "Both" ||
@@ -102,7 +106,7 @@ export function MetadataPanel({
         fetch("/api/product-settings", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ productId, bundleId: localBundleId, packageName: localPackageName }),
+          body: JSON.stringify({ productId, bundleId: localBundleId, packageName: localPackageName, privacyPolicyUrl: localPrivacyUrl, supportUrl: localSupportUrl }),
         }),
       ]);
       setSaveState(metaRes.ok && idsRes.ok ? "saved" : "error");
@@ -110,7 +114,7 @@ export function MetadataPanel({
       setSaveState("error");
     }
     setTimeout(() => setSaveState("idle"), 2000);
-  }, [productId, activeLocale, metadata, localBundleId, localPackageName]);
+  }, [productId, activeLocale, metadata, localBundleId, localPackageName, localPrivacyUrl, localSupportUrl]);
 
   const handlePublish = useCallback(async (store: "apple" | "google", all = false) => {
     const setState = all
@@ -453,6 +457,56 @@ export function MetadataPanel({
               value={localPackageName}
               onChange={(e) => setLocalPackageName(e.target.value)}
               placeholder="com.example.myapp"
+              style={{
+                width: "100%",
+                background: "rgba(0,0,0,0.25)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                borderRadius: 8,
+                padding: "8px 12px",
+                fontSize: 13,
+                color: T.fg,
+                fontFamily: "monospace",
+                outline: "none",
+                boxSizing: "border-box",
+              }}
+            />
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 12, alignItems: "flex-end", flexWrap: "wrap", marginTop: 12 }}>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <div style={{ fontSize: 12, color: T.fgMuted, marginBottom: 6 }}>
+              Privacy Policy URL
+            </div>
+            <input
+              type="text"
+              autoComplete="off"
+              value={localPrivacyUrl}
+              onChange={(e) => setLocalPrivacyUrl(e.target.value)}
+              placeholder="https://example.com/privacy"
+              style={{
+                width: "100%",
+                background: "rgba(0,0,0,0.25)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                borderRadius: 8,
+                padding: "8px 12px",
+                fontSize: 13,
+                color: T.fg,
+                fontFamily: "monospace",
+                outline: "none",
+                boxSizing: "border-box",
+              }}
+            />
+          </div>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <div style={{ fontSize: 12, color: T.fgMuted, marginBottom: 6 }}>
+              Support URL
+            </div>
+            <input
+              type="text"
+              autoComplete="off"
+              value={localSupportUrl}
+              onChange={(e) => setLocalSupportUrl(e.target.value)}
+              placeholder="https://example.com/support"
               style={{
                 width: "100%",
                 background: "rgba(0,0,0,0.25)",
