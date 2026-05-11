@@ -56,7 +56,6 @@ export function MetadataPanel({
   const [publishWarnings, setPublishWarnings] = useState<string[]>([]);
   const [localBundleId, setLocalBundleId] = useState(bundleId ?? "");
   const [localPackageName, setLocalPackageName] = useState(packageName ?? "");
-  const [storeIdSaveState, setStoreIdSaveState] = useState<SaveState>("idle");
   const isFieldVisible = useCallback(
     (field: FieldDef) => (
       field.platform === "Both" ||
@@ -90,32 +89,24 @@ export function MetadataPanel({
   const handleSave = useCallback(async () => {
     setSaveState("saving");
     try {
-      const res = await fetch("/api/metadata", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId, locale: activeLocale, metadata }),
-      });
-      setSaveState(res.ok ? "saved" : "error");
+      const [metaRes, idsRes] = await Promise.all([
+        fetch("/api/metadata", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ productId, locale: activeLocale, metadata }),
+        }),
+        fetch("/api/product-settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ productId, bundleId: localBundleId, packageName: localPackageName }),
+        }),
+      ]);
+      setSaveState(metaRes.ok && idsRes.ok ? "saved" : "error");
     } catch {
       setSaveState("error");
     }
     setTimeout(() => setSaveState("idle"), 2000);
-  }, [productId, activeLocale, metadata]);
-
-  const handleSaveStoreIds = useCallback(async () => {
-    setStoreIdSaveState("saving");
-    try {
-      const res = await fetch("/api/product-settings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId, bundleId: localBundleId, packageName: localPackageName }),
-      });
-      setStoreIdSaveState(res.ok ? "saved" : "error");
-    } catch {
-      setStoreIdSaveState("error");
-    }
-    setTimeout(() => setStoreIdSaveState("idle"), 2000);
-  }, [productId, localBundleId, localPackageName]);
+  }, [productId, activeLocale, metadata, localBundleId, localPackageName]);
 
   const handlePublish = useCallback(async (store: "apple" | "google") => {
     const setState = store === "apple" ? setAppleState : setGoogleState;
@@ -126,7 +117,7 @@ export function MetadataPanel({
       const res = await fetch(`/api/publish/${store}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId }),
+        body: JSON.stringify({ productId, locale: activeLocale }),
       });
       const data = await res.json();
       if (data.warnings?.length) setPublishWarnings(data.warnings);
@@ -422,31 +413,7 @@ export function MetadataPanel({
               }}
             />
           </div>
-          <button
-            onClick={handleSaveStoreIds}
-            disabled={storeIdSaveState === "saving"}
-            style={{
-              background: storeIdSaveState === "error" ? "#EF4444" : storeIdSaveState === "saved" ? "#22C55E" : "rgba(255,255,255,0.08)",
-              color: storeIdSaveState === "idle" ? T.fgMuted : "#fff",
-              border: "1px solid rgba(255,255,255,0.12)",
-              borderRadius: 8,
-              padding: "8px 16px",
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: storeIdSaveState === "saving" ? "not-allowed" : "pointer",
-              whiteSpace: "nowrap",
-              transition: "all 0.15s",
-              opacity: storeIdSaveState === "saving" ? 0.7 : 1,
-            }}
-          >
-            {storeIdSaveState === "saving" ? "Saving…" : storeIdSaveState === "saved" ? "Saved!" : storeIdSaveState === "error" ? "Error" : "Save IDs"}
-          </button>
         </div>
-        {(localBundleId || localPackageName) && (
-          <div style={{ fontSize: 12, color: T.fgMuted, marginTop: 10 }}>
-            Save IDs first, then use the Publish buttons above to push metadata to the stores.
-          </div>
-        )}
       </div>
 
       {/* Field cards */}

@@ -6,7 +6,7 @@ import { products, productMetadata } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function POST(req: NextRequest) {
-  const { productId } = await req.json();
+  const { productId, locale } = await req.json();
 
   const [product] = await db.select().from(products).where(eq(products.id, productId));
   if (!product?.packageName) {
@@ -18,7 +18,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Google credentials not configured (GOOGLE_PLAY_SERVICE_ACCOUNT_JSON)" }, { status: 500 });
   }
 
-  const metaRows = await db.select().from(productMetadata).where(eq(productMetadata.productId, productId));
+  const allRows = await db.select().from(productMetadata).where(eq(productMetadata.productId, productId));
+  const metaRows = locale ? allRows.filter((r) => r.locale === locale) : allRows;
   if (!metaRows.length) {
     return NextResponse.json({ error: "No metadata found in DB — save metadata first" }, { status: 404 });
   }

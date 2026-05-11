@@ -23,7 +23,7 @@ const EDITABLE_STATES = [
 ];
 
 export async function POST(req: NextRequest) {
-  const { productId } = await req.json();
+  const { productId, locale } = await req.json();
 
   const [product] = await db.select().from(products).where(eq(products.id, productId));
   if (!product?.bundleId) {
@@ -40,7 +40,8 @@ export async function POST(req: NextRequest) {
   const token = generateAppleJWT(keyId, issuerId, privateKey);
   const headers: AscHeaders = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
 
-  const metaRows = await db.select().from(productMetadata).where(eq(productMetadata.productId, productId));
+  const allRows = await db.select().from(productMetadata).where(eq(productMetadata.productId, productId));
+  const metaRows = locale ? allRows.filter((r) => r.locale === locale) : allRows;
   if (!metaRows.length) {
     return NextResponse.json({ error: "No metadata found in DB — save metadata first" }, { status: 404 });
   }
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest) {
   if (!versionsRes.ok) {
     return NextResponse.json({ error: `Failed to fetch versions: ${await versionsRes.text()}` }, { status: 502 });
   }
-  const allVersions: Array<{ id: string; attributes: { appStoreState: string } }> =
+  const allVersions: Array<{ id: string; attributes: { appStoreState: string; versionString: string } }> =
     (await versionsRes.json()).data ?? [];
 
   const editableVersion = allVersions.find((v) => EDITABLE_STATES.includes(v.attributes.appStoreState));
@@ -89,19 +90,16 @@ export async function POST(req: NextRequest) {
       for (const row of metaRows) {
         const appleLocale = toAppleLocale(row.locale);
         const existing = infoLocs.find((l) => l.attributes.locale === appleLocale);
+        const method = existing ? "PATCH" : "POST";
+        const url = existing ? `${BASE}/appInfoLocalizations/${existing.id}` : `${BASE}/appInfoLocalizations`;
 
         const body = existing
           ? { data: { type: "appInfoLocalizations", id: existing.id, attributes: { name: row.name, subtitle: row.subtitle } } }
           : { data: { type: "appInfoLocalizations", attributes: { locale: appleLocale, name: row.name, subtitle: row.subtitle }, relationships: { appInfo: { data: { type: "appInfos", id: appInfoId } } } } };
 
-        const r = await asc(
-          existing ? `${BASE}/appInfoLocalizations/${existing.id}` : `${BASE}/appInfoLocalizations`,
-          headers,
-          { method: existing ? "PATCH" : "POST", body: JSON.stringify(body) }
-        );
-        if (!r.ok) {
-          errors.push(`AppInfo [${appleLocale}]: ${await r.text()}`);
-        }
+        const r = await asc(url, headers, { method, body: JSON.stringify(body) });
+        const rText = await r.text();
+        if (!r.ok) errors.push(`AppInfo [${appleLocale}] ${r.status}: ${rText}`);
       }
     }
   } else {
@@ -120,19 +118,16 @@ export async function POST(req: NextRequest) {
     for (const row of metaRows) {
       const appleLocale = toAppleLocale(row.locale);
       const existing = versionLocs.find((l) => l.attributes.locale === appleLocale);
+      const method = existing ? "PATCH" : "POST";
+      const url = existing ? `${BASE}/appStoreVersionLocalizations/${existing.id}` : `${BASE}/appStoreVersionLocalizations`;
 
       const body = existing
         ? { data: { type: "appStoreVersionLocalizations", id: existing.id, attributes: { description: row.description, keywords: row.keywords, promotionalText: row.promoText } } }
         : { data: { type: "appStoreVersionLocalizations", attributes: { locale: appleLocale, description: row.description, keywords: row.keywords, promotionalText: row.promoText }, relationships: { appStoreVersion: { data: { type: "appStoreVersions", id: versionForLocs.id } } } } };
 
-      const r = await asc(
-        existing ? `${BASE}/appStoreVersionLocalizations/${existing.id}` : `${BASE}/appStoreVersionLocalizations`,
-        headers,
-        { method: existing ? "PATCH" : "POST", body: JSON.stringify(body) }
-      );
-      if (!r.ok) {
-        errors.push(`VersionLoc [${appleLocale}]: ${await r.text()}`);
-      }
+      const r = await asc(url, headers, { method, body: JSON.stringify(body) });
+      const rText = await r.text();
+      if (!r.ok) errors.push(`VersionLoc [${appleLocale}] ${r.status}: ${rText}`);
     }
   }
 
