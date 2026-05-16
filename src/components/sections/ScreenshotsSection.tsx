@@ -71,7 +71,6 @@ export function ScreenshotsSection({ product, locale, multiProduct, platform, on
   type PanelMode = "edit" | "create";
   const [panelMode, setPanelMode]         = useState<PanelMode>("edit");
   const [newStyleKey, setNewStyleKey]     = useState(defaultSlideStyleKey("iphone"));
-  const [newSlideKey, setNewSlideKey]     = useState("");
   const [newLabel, setNewLabel]           = useState("");
   const [newHeadline, setNewHeadline]     = useState("");
   const [newSubtitle, setNewSubtitle]     = useState("");
@@ -258,17 +257,18 @@ export function ScreenshotsSection({ product, locale, multiProduct, platform, on
   }, [product.id]);
 
   const handleCreateSlide = useCallback(async () => {
-    if (!newSlideKey || !newLabel || !newImageFile) {
-      setCreateError("Screenshot image, slide key, and label are required.");
+    if (!newLabel || !newImageFile) {
+      setCreateError("Screenshot image and label are required.");
       return;
     }
+    const autoSlideKey = `${newLabel.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}-${Date.now()}`;
     setCreateError(null);
     setCreating(true);
     const form = new FormData();
     form.append("productId",    product.id);
     form.append("componentKey", newStyleKey || defaultSlideStyleKey(activeDevice));
     form.append("device",       activeDevice);
-    form.append("slideKey",     newSlideKey);
+    form.append("slideKey",     autoSlideKey);
     form.append("label",        newLabel);
     form.append("headline",     newHeadline);
     form.append("subtitle",     newSubtitle);
@@ -277,7 +277,7 @@ export function ScreenshotsSection({ product, locale, multiProduct, platform, on
       const res  = await fetch("/api/slides/add", { method: "POST", body: form });
       const data = await res.json() as { ok?: boolean; error?: string };
       if (!res.ok || !data.ok) throw new Error(data.error ?? "Create failed");
-      setNewSlideKey(""); setNewLabel("");
+      setNewLabel("");
       setNewHeadline(""); setNewSubtitle("");
       setNewImageFile(null); setNewImagePreview(null);
       setPanelMode("edit");
@@ -286,7 +286,7 @@ export function ScreenshotsSection({ product, locale, multiProduct, platform, on
       setCreateError(e instanceof Error ? e.message : "Create failed");
     }
     setCreating(false);
-  }, [product.id, activeDevice, newStyleKey, newSlideKey, newLabel, newHeadline, newSubtitle, newImageFile, onSlidesChanged]);
+  }, [product.id, activeDevice, newStyleKey, newLabel, newHeadline, newSubtitle, newImageFile, onSlidesChanged]);
 
   const handleExport = async () => {
     if (!offscreenRef.current || exporting) return;
@@ -628,20 +628,6 @@ export function ScreenshotsSection({ product, locale, multiProduct, platform, on
                 <div style={{ fontSize: 11, color: T.fgMuted, marginTop: 6 }}>
                   {SLIDE_STYLE_OPTIONS.find((style) => style.key === newStyleKey)?.description}
                 </div>
-              </div>
-            )}
-
-            {/* Slide key — create only */}
-            {panelMode === "create" && (
-              <div>
-                <div style={{ fontSize: 12, color: T.fgMuted, marginBottom: 6, fontWeight: 600 }}>Slide key <span style={{ color: T.fgMuted, fontWeight: 400 }}>(unique id, e.g. slide-7)</span></div>
-                <input
-                  type="text"
-                  value={newSlideKey}
-                  onChange={(e) => setNewSlideKey(e.target.value)}
-                  placeholder="slide-7"
-                  style={inputStyle}
-                />
               </div>
             )}
 
