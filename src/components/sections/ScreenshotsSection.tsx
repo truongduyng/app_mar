@@ -79,6 +79,65 @@ export function ScreenshotsSection({ product, locale, multiProduct, platform, on
   const [creating, setCreating]           = useState(false);
   const [createError, setCreateError]     = useState<string | null>(null);
 
+  const [generatingCopy, setGeneratingCopy] = useState(false);
+
+  const handleGenerateCopy = useCallback(async (slideId: string | null, isCreate: boolean, imagePath: string) => {
+    const label = isCreate ? newLabel : copyEdits[slideId!]?.label ?? "";
+    if (!label) return;
+    setGeneratingCopy(true);
+    try {
+      // Convert image to base64 for vision model
+      let screenshotBase64: string | undefined;
+      const src = isCreate ? newImagePreview : imagePath;
+      if (src) {
+        if (src.startsWith("data:")) {
+          screenshotBase64 = src;
+        } else {
+          try {
+            const imgRes = await fetch(src);
+            const blob = await imgRes.blob();
+            screenshotBase64 = await new Promise<string>((resolve) => {
+              const reader = new FileReader();
+              reader.onload = (e) => resolve(e.target?.result as string);
+              reader.readAsDataURL(blob);
+            });
+          } catch { /* skip image if fetch fails */ }
+        }
+      }
+
+      const res = await fetch("/api/slides/generate-copy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productName: product.name,
+          label,
+          currentHeadline: isCreate ? newHeadline : copyEdits[slideId!]?.headline,
+          currentSubtitle: isCreate ? newSubtitle : copyEdits[slideId!]?.subtitle,
+          locale,
+          screenshotBase64,
+        }),
+      });
+      const data = await res.json() as { ok?: boolean; headline?: string; subtitle?: string; error?: string };
+      if (!res.ok || !data.ok) throw new Error(data.error ?? "Generation failed");
+      if (isCreate) {
+        setNewHeadline(data.headline ?? "");
+        setNewSubtitle(data.subtitle ?? "");
+      } else {
+        setCopyEdits((prev) => ({
+          ...prev,
+          [slideId!]: {
+            ...prev[slideId!],
+            headline: data.headline ?? prev[slideId!]?.headline ?? "",
+            subtitle: data.subtitle ?? prev[slideId!]?.subtitle ?? "",
+          },
+        }));
+      }
+    } catch {
+      // silently fail
+    }
+    setGeneratingCopy(false);
+  }, [product.name, locale, newLabel, newHeadline, newSubtitle, newImagePreview, copyEdits]);
+
   const activeSlides = product.slidesByLocale?.[locale] ?? product.slides;
   const activeDevice = platform === "android" && activeSlides.android?.length ? "android" : "iphone";
   const slides       = (activeDevice === "android" ? activeSlides.android : activeSlides.iphone) ?? [];
@@ -155,11 +214,17 @@ export function ScreenshotsSection({ product, locale, multiProduct, platform, on
           subtitle:  markupToSegments(edit.subtitle),
         }),
       });
-      setSaveState(res.ok ? "saved" : "error");
+      if (res.ok) {
+        setSaveState("saved");
+        setTimeout(() => { setSaveState("idle"); setSelectedSlideId(null); }, 800);
+      } else {
+        setSaveState("error");
+        setTimeout(() => setSaveState("idle"), 2000);
+      }
     } catch {
       setSaveState("error");
+      setTimeout(() => setSaveState("idle"), 2000);
     }
-    setTimeout(() => setSaveState("idle"), 2000);
   }, [copyEdits, product.id, locale]);
 
   const handlePublishScreenshots = async () => {
@@ -642,9 +707,42 @@ export function ScreenshotsSection({ product, locale, multiProduct, platform, on
               />
             </div>
 
-            {/* Headline */}
+            {/* Headline + Subtitle with AI generate */}
             <div>
-              <div style={{ fontSize: 12, color: T.fgMuted, marginBottom: 6, fontWeight: 600 }}>Headline</div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                <div style={{ fontSize: 12, color: T.fgMuted, fontWeight: 600 }}>Headline</div>
+                <button
+                  onClick={() => handleGenerateCopy(panelMode === "edit" ? selectedSlide!.id : null, panelMode === "create", panelMode === "edit" ? getImagePath(selectedSlide!) : "")}
+                  disabled={generatingCopy || !(panelMode === "create" ? newLabel : copyEdits[selectedSlide!.id]?.label)}
+                  title="Generate headline & subtitle with AI"
+                  style={{
+                    display: "flex", alignItems: "center", gap: 5,
+                    background: generatingCopy ? "rgba(255,255,255,0.04)" : `${T.accent}22`,
+                    color: generatingCopy ? T.fgMuted : T.accent,
+                    border: `1px solid ${T.accent}44`,
+                    borderRadius: 6, padding: "3px 10px", fontSize: 11, fontWeight: 600,
+                    cursor: generatingCopy ? "not-allowed" : "pointer",
+                    opacity: (panelMode === "create" ? !newLabel : !copyEdits[selectedSlide!.id]?.label) ? 0.4 : 1,
+                    transition: "all 0.15s",
+                  }}
+                >
+                  {generatingCopy ? (
+                    <>
+                      <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} style={{ animation: "spin 1s linear infinite" }}>
+                        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                      </svg>
+                      Generating…
+                    </>
+                  ) : (
+                    <>
+                      <svg width={10} height={10} viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2L9.1 9.1 2 12l7.1 2.9L12 22l2.9-7.1L22 12l-7.1-2.9z"/>
+                      </svg>
+                      AI Generate
+                    </>
+                  )}
+                </button>
+              </div>
               <textarea
                 value={panelMode === "create" ? newHeadline : copyEdits[selectedSlide!.id]?.headline ?? ""}
                 onChange={(e) => panelMode === "create" ? setNewHeadline(e.target.value) : handleCopyChange(selectedSlide!.id, "headline", e.target.value)}
@@ -663,6 +761,7 @@ export function ScreenshotsSection({ product, locale, multiProduct, platform, on
                 style={inputStyle}
               />
             </div>
+            <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
 
             {createError && <div style={{ fontSize: 12, color: "#FCA5A5" }}>{createError}</div>}
           </div>
