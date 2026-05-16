@@ -20,6 +20,7 @@ function hydrateSlides(
   slides: SerializableSlideDef[],
   accentColor: string,
   registry: Record<string, SlideComponent>,
+  fallbackComponentKey: string,
 ): SlideDef[] {
   return slides.map((s): SlideDef => {
     const copyByLocale: Record<string, SlideCopy> = {};
@@ -34,7 +35,7 @@ function hydrateSlides(
       copy: hydrateSlideCopy(s.copy, accentColor),
       copyByLocale: Object.keys(copyByLocale).length ? copyByLocale : undefined,
       imagePath: s.imagePath,
-      Component: registry[s.componentKey],
+      Component: registry[s.componentKey] ?? registry[fallbackComponentKey],
     };
   });
 }
@@ -50,8 +51,8 @@ export function hydrateProducts(
     if (p.slidesByLocale) {
       for (const [locale, s] of Object.entries(p.slidesByLocale)) {
         slidesByLocale[locale] = {
-          iphone: hydrateSlides(s.iphone, accent, registry),
-          ...(s.android ? { android: hydrateSlides(s.android, accent, registry) } : {}),
+          iphone: hydrateSlides(s.iphone, accent, registry, "GenericCenteredSlide"),
+          ...(s.android ? { android: hydrateSlides(s.android, accent, registry, "GenericAndroidCenteredSlide") } : {}),
         };
       }
     }
@@ -59,8 +60,8 @@ export function hydrateProducts(
     return {
       ...p,
       slides: {
-        iphone: hydrateSlides(p.slides.iphone, accent, registry),
-        ...(p.slides.android ? { android: hydrateSlides(p.slides.android, accent, registry) } : {}),
+        iphone: hydrateSlides(p.slides.iphone, accent, registry, "GenericCenteredSlide"),
+        ...(p.slides.android ? { android: hydrateSlides(p.slides.android, accent, registry, "GenericAndroidCenteredSlide") } : {}),
       },
       slidesByLocale: Object.keys(slidesByLocale).length ? slidesByLocale : undefined,
     };

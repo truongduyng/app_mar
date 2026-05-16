@@ -11,7 +11,7 @@ import { segmentsToMarkup, markupToSegments, renderRichText } from "@/lib/rich-t
 import { preloadImages, bustCache } from "@/lib/images";
 import type { RichTextSegment } from "@/lib/rich-text";
 import type { AppPlatform, ProductConfig, ThemeTokens, SlideCopy } from "@/lib/types";
-import { COMPONENT_REGISTRY } from "@/components/component-registry";
+import { SLIDE_STYLE_OPTIONS, defaultSlideStyleKey } from "@/components/component-registry";
 
 type Props = {
   product: ProductConfig;
@@ -70,7 +70,7 @@ export function ScreenshotsSection({ product, locale, multiProduct, platform, on
   // New slide form state
   type PanelMode = "edit" | "create";
   const [panelMode, setPanelMode]         = useState<PanelMode>("edit");
-  const [newComponentKey, setNewComponentKey] = useState("");
+  const [newStyleKey, setNewStyleKey]     = useState(defaultSlideStyleKey("iphone"));
   const [newSlideKey, setNewSlideKey]     = useState("");
   const [newLabel, setNewLabel]           = useState("");
   const [newHeadline, setNewHeadline]     = useState("");
@@ -94,6 +94,7 @@ export function ScreenshotsSection({ product, locale, multiProduct, platform, on
 
   // Reset selections when product/locale/device changes
   useEffect(() => { setSelectedSize(0); setSelectedSlideId(null); }, [activeDevice]);
+  useEffect(() => { setNewStyleKey(defaultSlideStyleKey(activeDevice)); }, [activeDevice]);
   useEffect(() => { setSelectedSlideId(null); setCopyEdits({}); }, [product.id, locale]);
 
   const selectedSlide = selectedSlideId ? slides.find((s) => s.id === selectedSlideId) : null;
@@ -257,15 +258,15 @@ export function ScreenshotsSection({ product, locale, multiProduct, platform, on
   }, [product.id]);
 
   const handleCreateSlide = useCallback(async () => {
-    if (!newComponentKey || !newSlideKey || !newLabel || !newImageFile) {
-      setCreateError("Screenshot image, component, slide key, and label are required.");
+    if (!newSlideKey || !newLabel || !newImageFile) {
+      setCreateError("Screenshot image, slide key, and label are required.");
       return;
     }
     setCreateError(null);
     setCreating(true);
     const form = new FormData();
     form.append("productId",    product.id);
-    form.append("componentKey", newComponentKey);
+    form.append("componentKey", newStyleKey || defaultSlideStyleKey(activeDevice));
     form.append("device",       activeDevice);
     form.append("slideKey",     newSlideKey);
     form.append("label",        newLabel);
@@ -276,7 +277,7 @@ export function ScreenshotsSection({ product, locale, multiProduct, platform, on
       const res  = await fetch("/api/slides/add", { method: "POST", body: form });
       const data = await res.json() as { ok?: boolean; error?: string };
       if (!res.ok || !data.ok) throw new Error(data.error ?? "Create failed");
-      setNewComponentKey(""); setNewSlideKey(""); setNewLabel("");
+      setNewSlideKey(""); setNewLabel("");
       setNewHeadline(""); setNewSubtitle("");
       setNewImageFile(null); setNewImagePreview(null);
       setPanelMode("edit");
@@ -285,7 +286,7 @@ export function ScreenshotsSection({ product, locale, multiProduct, platform, on
       setCreateError(e instanceof Error ? e.message : "Create failed");
     }
     setCreating(false);
-  }, [product.id, activeDevice, newComponentKey, newSlideKey, newLabel, newHeadline, newSubtitle, newImageFile, onSlidesChanged]);
+  }, [product.id, activeDevice, newStyleKey, newSlideKey, newLabel, newHeadline, newSubtitle, newImageFile, onSlidesChanged]);
 
   const handleExport = async () => {
     if (!offscreenRef.current || exporting) return;
@@ -609,20 +610,24 @@ export function ScreenshotsSection({ product, locale, multiProduct, platform, on
               {uploadSuccess && <div style={{ marginTop: 6, fontSize: 11, color: "#86EFAC" }}>{uploadSuccess}</div>}
             </div>
 
-            {/* Component key — create only */}
+            {/* Slide style — create only */}
             {panelMode === "create" && (
               <div>
-                <div style={{ fontSize: 12, color: T.fgMuted, marginBottom: 6, fontWeight: 600 }}>Component</div>
+                <div style={{ fontSize: 12, color: T.fgMuted, marginBottom: 6, fontWeight: 600 }}>Style</div>
                 <select
-                  value={newComponentKey}
-                  onChange={(e) => setNewComponentKey(e.target.value)}
+                  value={newStyleKey}
+                  onChange={(e) => setNewStyleKey(e.target.value)}
                   style={{ ...inputStyle, resize: "none" }}
                 >
-                  <option value="">— select component —</option>
-                  {Object.keys(COMPONENT_REGISTRY).map((k) => (
-                    <option key={k} value={k}>{k}</option>
-                  ))}
+                  {SLIDE_STYLE_OPTIONS
+                    .filter((style) => !style.platforms || style.platforms.includes(activeDevice))
+                    .map((style) => (
+                      <option key={style.key} value={style.key}>{style.label}</option>
+                    ))}
                 </select>
+                <div style={{ fontSize: 11, color: T.fgMuted, marginTop: 6 }}>
+                  {SLIDE_STYLE_OPTIONS.find((style) => style.key === newStyleKey)?.description}
+                </div>
               </div>
             )}
 

@@ -1,51 +1,157 @@
 "use client";
 
+import React from "react";
 import type { ThemeTokens, SlideCopy } from "@/lib/types";
+import {
+  CenteredSlide,
+  SideSlide,
+  PhoneFrame,
+  DotGrid,
+  type SlideProps,
+} from "@/components/slide-layouts";
 
-// Slide component prop type (matches SlideProps in slide-layouts)
 export type SlideComponent = React.FC<{ theme: ThemeTokens; imagePath: string; copy: SlideCopy }>;
 
-import {
-  HoneSlide1, HoneSlide2, HoneSlide3, HoneSlide4,
-  HoneSlide5, HoneSlide6, HoneSlide7,
-} from "@/products/hone/slides";
-
-import {
-  AmfoSlide1, AmfoSlide2, AmfoSlide3, AmfoSlide4, AmfoSlide5,
-  AmfoSlide6,
-} from "@/products/amfo/slides";
-
-import {
-  LichtaSlide1, LichtaSlide2, LichtaSlide3, LichtaSlide4,
-  LichtaSlide5, LichtaSlide6, LichtaSlide7,
-  LichtaAndroid1, LichtaAndroid2, LichtaAndroid3, LichtaAndroid4,
-  LichtaAndroid5, LichtaAndroid6, LichtaAndroid7,
-} from "@/products/lichta/slides";
-
-import {
-  TinyStepsSlide1, TinyStepsSlide2, TinyStepsSlide3,
-  TinyStepsSlide4, TinyStepsSlide5, TinyStepsSlide6, TinyStepsSlide7,
-  TinyStepsViSlide1, TinyStepsViSlide2, TinyStepsViSlide3,
-  TinyStepsViSlide4, TinyStepsViSlide5, TinyStepsViSlide6,
-} from "@/products/tinysteps/slides";
-
-import {
-  FitFoSlide1, FitFoSlide2, FitFoSlide3, FitFoSlide4,
-  FitFoSlide5, FitFoSlide6, FitFoSlide7, FitFoSlide8,
-} from "@/products/fitfo/slides";
-
-export const COMPONENT_REGISTRY: Record<string, SlideComponent> = {
-  HoneSlide1, HoneSlide2, HoneSlide3, HoneSlide4,
-  HoneSlide5, HoneSlide6, HoneSlide7,
-  AmfoSlide1, AmfoSlide2, AmfoSlide3, AmfoSlide4, AmfoSlide5, AmfoSlide6,
-  LichtaSlide1, LichtaSlide2, LichtaSlide3, LichtaSlide4,
-  LichtaSlide5, LichtaSlide6, LichtaSlide7,
-  LichtaAndroid1, LichtaAndroid2, LichtaAndroid3, LichtaAndroid4,
-  LichtaAndroid5, LichtaAndroid6, LichtaAndroid7,
-  TinyStepsSlide1, TinyStepsSlide2, TinyStepsSlide3,
-  TinyStepsSlide4, TinyStepsSlide5, TinyStepsSlide6, TinyStepsSlide7,
-  TinyStepsViSlide1, TinyStepsViSlide2, TinyStepsViSlide3,
-  TinyStepsViSlide4, TinyStepsViSlide5, TinyStepsViSlide6,
-  FitFoSlide1, FitFoSlide2, FitFoSlide3, FitFoSlide4,
-  FitFoSlide5, FitFoSlide6, FitFoSlide7, FitFoSlide8,
+export type SlideStyleOption = {
+  key: string;
+  label: string;
+  description: string;
+  platforms?: Array<"iphone" | "android">;
 };
+
+export const SLIDE_STYLE_OPTIONS: SlideStyleOption[] = [
+  { key: "GenericCenteredSlide", label: "Centered phone", description: "Caption at top, one phone centered.", platforms: ["iphone"] },
+  { key: "GenericSideSlide", label: "Side phone", description: "Left caption with layered phone preview.", platforms: ["iphone"] },
+  { key: "GenericAndroidCenteredSlide", label: "Android centered", description: "Caption at top, Android phone centered.", platforms: ["android"] },
+  { key: "GenericAndroidSideSlide", label: "Android side", description: "Left caption with layered Android preview.", platforms: ["android"] },
+];
+
+export function defaultSlideStyleKey(device: "iphone" | "android") {
+  return device === "android" ? "GenericAndroidCenteredSlide" : "GenericCenteredSlide";
+}
+
+
+function GenericCenteredSlide({ theme: T, imagePath, copy }: SlideProps) {
+  return React.createElement(CenteredSlide, {
+    theme: T,
+    imagePath,
+    gradient: T.gradients.hero,
+    orbs: [
+      { size: 900, top: "-15%", left: "-25%", color: T.accentGlow },
+      { size: 620, top: "38%", right: "-30%", color: T.accentSoft },
+    ],
+    decoration: React.createElement(DotGrid, { color: "rgba(255,255,255,0.05)", gap: "48px" }),
+    label: copy.label,
+    headline: copy.headline,
+    subtitle: copy.subtitle,
+    alt: copy.label,
+    phoneWidth: "84%",
+    phoneTy: "4%",
+  });
+}
+
+function GenericAndroidCenteredSlide({ theme: T, imagePath, copy }: SlideProps) {
+  return React.createElement(CenteredSlide, {
+    theme: T,
+    imagePath,
+    platform: "android",
+    gradient: T.gradients.hero,
+    orbs: [
+      { size: 820, top: "-12%", left: "-22%", color: T.accentGlow },
+      { size: 560, top: "40%", right: "-28%", color: T.accentSoft },
+    ],
+    decoration: React.createElement(DotGrid, { color: "rgba(255,255,255,0.05)", gap: "44px" }),
+    label: copy.label,
+    headline: copy.headline,
+    subtitle: copy.subtitle,
+    alt: copy.label,
+  });
+}
+
+function GenericSideSlide({ theme: T, imagePath, copy }: SlideProps) {
+  return React.createElement(SideSlide, {
+    theme: T,
+    imagePath,
+    gradient: T.gradients.warm,
+    orbs: [
+      { size: 800, top: "5%", right: "-20%", color: T.accentGlow },
+      { size: 500, top: "52%", left: "-15%", color: T.accentSoft },
+    ],
+    label: copy.label,
+    headline: copy.headline,
+    subtitle: copy.subtitle,
+    phones: React.createElement(React.Fragment, null,
+      React.createElement("div", {
+        style: {
+          position: "absolute",
+          bottom: 0,
+          left: "-4%",
+          transform: "translateY(4%) rotate(-3deg)",
+          width: "76%",
+          zIndex: 2,
+          opacity: 0.35,
+          filter: "brightness(0.65)",
+        },
+      }, React.createElement(PhoneFrame, { platform: "iphone", src: imagePath, alt: "" })),
+      React.createElement("div", {
+        style: {
+          position: "absolute",
+          bottom: 0,
+          right: "-4%",
+          transform: "translateY(4%)",
+          width: "83%",
+          zIndex: 3,
+        },
+      }, React.createElement(PhoneFrame, { platform: "iphone", src: imagePath, alt: copy.label })),
+    ),
+  });
+}
+
+function GenericAndroidSideSlide({ theme: T, imagePath, copy }: SlideProps) {
+  return React.createElement(SideSlide, {
+    theme: T,
+    imagePath,
+    platform: "android",
+    gradient: T.gradients.warm,
+    orbs: [
+      { size: 720, top: "5%", right: "-20%", color: T.accentGlow },
+      { size: 430, top: "52%", left: "-15%", color: T.accentSoft },
+    ],
+    label: copy.label,
+    headline: copy.headline,
+    subtitle: copy.subtitle,
+    phones: React.createElement(React.Fragment, null,
+      React.createElement("div", {
+        style: {
+          position: "absolute",
+          bottom: 0,
+          left: "-3%",
+          transform: "translateY(3%) rotate(-3deg)",
+          width: "50%",
+          zIndex: 2,
+          opacity: 0.35,
+          filter: "brightness(0.65)",
+        },
+      }, React.createElement(PhoneFrame, { platform: "android", src: imagePath, alt: "" })),
+      React.createElement("div", {
+        style: {
+          position: "absolute",
+          bottom: 0,
+          right: "-3%",
+          transform: "translateY(2%)",
+          width: "58%",
+          zIndex: 3,
+        },
+      }, React.createElement(PhoneFrame, { platform: "android", src: imagePath, alt: copy.label })),
+    ),
+  });
+}
+
+const DIRECT_STYLES: Record<string, SlideComponent> = {
+  GenericCenteredSlide,
+  GenericSideSlide,
+  GenericAndroidCenteredSlide,
+  GenericAndroidSideSlide,
+};
+
+export const COMPONENT_REGISTRY: Record<string, SlideComponent> = DIRECT_STYLES;

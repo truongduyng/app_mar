@@ -23,33 +23,23 @@ A Next.js app that generates App Store / Google Play screenshots, feature graphi
 
 ## Architecture
 
-### Product Registry
+### Product Data
 
-`src/products/index.ts` exports a `PRODUCTS` array. Each entry is a `ProductConfig` (`src/lib/types.ts`) with:
+Product data is stored in Postgres and loaded via `getSerializableProducts()` in `src/db/queries.ts`. The client hydrates the JSON-safe rows into `ProductConfig` (`src/lib/types.ts`) values with:
 - `theme` — brand colors and gradients (`ThemeTokens`)
 - `locales` — supported language codes; the toolbar locale picker appears automatically
 - `slides.iphone` / `slides.android` — arrays of `SlideDef` (React component + per-locale copy)
 - `slidesByLocale` — optional: entirely different slide sets per locale
-- `screenshotBaseByLocale` — optional: different screenshot folder paths per locale
 - `featureGraphic`, `socialOg`, `ctaImage` — additional asset configurations
 - `metadata` / `metadataByLocale` — App Store / Play Store listing text per locale
 
-The product selector toolbar only renders when `PRODUCTS.length > 1`.
+`src/db/seed.ts` populates product data for local/dev databases.
 
-> **Note:** The static `src/products/` TypeScript files (index.tsx, theme.ts, metadata.ts, slides.tsx) are no longer the source of truth at runtime. Product data is stored in Postgres and loaded via `getSerializableProducts()` in `src/db/queries.ts`. The static files serve as a seed reference — `src/db/seed.ts` is what populates the DB.
+### Slide Styles
 
-### Slide Components
+Slides use generic style keys, not product-specific React components. Common layout primitives are in `src/components/slide-layouts.tsx` (`CenteredSlide`, `SideSlide`, decorations). Device frame components (`Phone`, `AndroidPhone`, `Caption`, `OrbGlow`) are in `src/components/ui.tsx`.
 
-Each product lives in `src/products/<product-id>/`:
-- `index.tsx` — the `ProductConfig` object
-- `theme.ts` — `ThemeTokens` (8 color/gradient tokens)
-- `metadata.ts` — `MetadataConfig` keyed by locale
-- `slides.tsx` — React components for each slide
-- `copy.tsx` — optional centralized copy mapping (used by some products)
-
-Slide components receive `{ theme, imagePath, copy }` props — `imagePath` is the full public path to the screenshot image (from the DB). Common layout primitives are in `src/components/slide-layouts.tsx` (`CenteredSlide`, `SideSlide`, decorations). Device frame components (`Phone`, `AndroidPhone`, `Caption`, `OrbGlow`) are in `src/components/ui.tsx`.
-
-**Component registry** — `src/components/component-registry.ts` exports `COMPONENT_REGISTRY`, a flat map of `componentKey` strings (e.g. `"AmfoSlide1"`) to React components. This is required because DB rows store component names as strings; `src/lib/product-hydration.ts` resolves them back to actual components at runtime via `hydrateProducts()`. When adding a new slide component, export it from `slides.tsx`, import it in `component-registry.ts`, and add it to `COMPONENT_REGISTRY`.
+**Style registry** — `src/components/component-registry.ts` exports generic styles such as `GenericCenteredSlide`, `GenericSideSlide`, `GenericFeatureListSlide`, and Android variants. DB rows still store the value in `product_slides.component_key` for compatibility, but it now means "style key". `hydrateProducts()` resolves style keys through `COMPONENT_REGISTRY` and falls back to a generic centered style when needed.
 
 **Rich text** — `SlideCopy.headline` and `SlideCopy.subtitle` are `React.ReactNode` at runtime but stored in the DB as `RichTextSegment[]` (serializable JSON). Three segment types: `{ t: "text", v }`, `{ t: "br" }`, `{ t: "accent", v }`. Helpers `txt()`, `br()`, `acc()` from `src/lib/rich-text.ts` build segment arrays in the seed. The in-browser copy editor uses `**bold**` / `\n` markup that round-trips through `segmentsToMarkup` / `markupToSegments`.
 
@@ -83,7 +73,7 @@ Products, slides, copy, metadata, and all asset configurations live in Postgres,
 
 - `products` — id, name, iconPath, bundleId (Apple), packageName (Google)
 - `slide_groups` — named groups per product (`default` or a locale code for `slidesByLocale`)
-- `product_slides` — one row per slide slot, holds `componentKey` (matches registry) and `imagePath` (uploaded screenshot)
+- `product_slides` — one row per slide slot, holds `componentKey` / `component_key` as the generic slide style key and `imagePath` (uploaded screenshot)
 - `slide_copy` — per (product, slideKey, locale): label + headline/subtitle as `RichTextSegment[]`
 - `product_metadata`, `product_feature_graphics`, `product_social_ogs`, `product_cta_images` — store-listing content per locale
 
@@ -104,13 +94,12 @@ Products, slides, copy, metadata, and all asset configurations live in Postgres,
 
 ## Adding a New Product
 
-1. Create slide components in `src/products/<id>/slides.tsx` accepting `{ theme, imagePath, copy }` — use `CenteredSlide` / `SideSlide` from `slide-layouts.tsx`
-2. Export each component from `slides.tsx`, import in `src/components/component-registry.ts`, add to `COMPONENT_REGISTRY`
-3. Add product rows to `src/db/seed.ts` (products, slide_groups, product_slides, slide_copy, product_metadata, etc.)
-4. Run `DATABASE_URL=... bun run src/db/seed.ts` to populate the DB
-5. Place icon and any initial screenshot images in `public/products/<id>/`; screenshots can also be uploaded via the UI
+1. Add product rows to `src/db/seed.ts` (products, slide_groups, product_slides, slide_copy, product_metadata, etc.)
+2. Use one of the generic style keys in `product_slides.componentKey`.
+3. Run `DATABASE_URL=... bun run src/db/seed.ts` to populate the DB.
+4. Place icon and any initial screenshot images in `public/products/<id>/`; screenshots can also be uploaded via the UI.
 
-The static `src/products/<id>/index.tsx` pattern is legacy — new products only need `slides.tsx` (components) and seed data.
+Adding a new slide style only requires adding a generic style component and option in `src/components/component-registry.ts`.
 
 ## Skills
 
