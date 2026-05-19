@@ -86,7 +86,13 @@ Products, slides, copy, metadata, and all asset configurations live in Postgres,
 - `POST /api/metadata` — saves product metadata per locale
 - `POST /api/publish/apple` — pushes metadata to App Store Connect via JWT (requires `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_PRIVATE_KEY` env vars and `bundleId` on the product)
 - `POST /api/publish/google` — pushes metadata to Google Play (requires `GOOGLE_SERVICE_ACCOUNT_JSON` env var and `packageName` on the product)
-- `POST /api/generate-locale` — AI-translates copy to a new locale via Together AI (`TOGETHER_API_KEY`)
+- `POST /api/generate-locale` — AI-translates slide copy + metadata to a new locale via Together AI (`TOGETHER_API_KEY`); uses `zai-org/GLM-5.1`
+- `POST /api/translate-field` — AI-translates a single metadata field to target locales; uses `zai-org/GLM-5.1`
+- `POST /api/slides/add` — creates a new slide row (slide_groups + product_slides + slide_copy) from multipart form data
+- `POST /api/slides/delete` — deletes a slide and its associated copy/image file
+- `POST /api/slides/generate-copy` — AI-generates headline/subtitle for a slide given a screenshot; uses `moonshotai/Kimi-K2.6`
+- `POST /api/product-settings` — updates `bundleId`, `packageName`, `privacyPolicyUrl`, `supportUrl` on a product
+- `DELETE /api/locale` — removes all DB rows for a given product+locale (locales, copy, metadata, feature graphics, social OGs, CTA images)
 
 ### Main Page
 

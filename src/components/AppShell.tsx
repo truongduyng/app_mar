@@ -74,6 +74,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [productMenuOpen, setProductMenuOpen] = useState(false);
   const productMenuRef = useRef<HTMLDivElement>(null);
   const [addLocaleOpen, setAddLocaleOpen] = useState(false);
+  const [addProductOpen, setAddProductOpen] = useState(false);
 
   const T = product.theme;
 
@@ -154,6 +155,17 @@ export function AppShell({ children }: { children: ReactNode }) {
                   </button>
                 );
               })}
+              <div className="border-t border-white/8 mt-0.5 pt-0.5">
+                <button
+                  onClick={() => { setProductMenuOpen(false); setAddProductOpen(true); }}
+                  className="flex items-center gap-2.5 border-none rounded-lg px-2.5 py-2 cursor-pointer transition-colors duration-120 w-full text-left hover:bg-white/5 bg-transparent text-[#9999a8]"
+                >
+                  <div className="w-7 h-7 rounded-md shrink-0 flex items-center justify-center bg-white/6 border border-white/10">
+                    <Plus size={13} />
+                  </div>
+                  <span className="text-sm font-medium">Add product</span>
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -206,6 +218,18 @@ export function AppShell({ children }: { children: ReactNode }) {
           {children}
         </main>
       </div>
+
+      {addProductOpen && (
+        <AddProductModal
+          theme={T}
+          onClose={() => setAddProductOpen(false)}
+          onCreated={(id: string) => {
+            setAddProductOpen(false);
+            router.push(`/${id}/screenshots`);
+            router.refresh();
+          }}
+        />
+      )}
 
       {addLocaleOpen && (
         <AddLocaleModal
@@ -523,6 +547,135 @@ function AddLocaleModal({ theme: T, productId, existingCodes, sourceLoc, sourceM
               : "Select languages"}
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Add Product Modal ────────────────────────────────────────────────────────
+
+function AddProductModal({ theme: T, onClose, onCreated }: {
+  theme: HydratedProduct["theme"];
+  onClose: () => void;
+  onCreated: (id: string) => void;
+}) {
+  const [name, setName] = useState("");
+  const [iconFile, setIconFile] = useState<File | null>(null);
+  const [iconPreview, setIconPreview] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  function handleIconChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] ?? null;
+    setIconFile(file);
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (ev) => setIconPreview(ev.target?.result as string);
+      reader.readAsDataURL(file);
+    } else {
+      setIconPreview(null);
+    }
+  }
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!name.trim()) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const form = new FormData();
+      form.append("name", name.trim());
+      if (iconFile) form.append("icon", iconFile);
+      const res = await fetch("/api/products", { method: "POST", body: form });
+      const data = await res.json() as { ok?: boolean; id?: string; error?: string };
+      if (res.ok && data.ok && data.id) {
+        onCreated(data.id);
+      } else {
+        setError(data.error ?? "Failed to create product");
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Network error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const canSubmit = name.trim().length > 0 && !saving;
+
+  return (
+    <div
+      className="fixed inset-0 z-500 bg-black/70 backdrop-blur-md flex items-center justify-center"
+      onClick={(e) => { if (e.target === e.currentTarget && !saving) onClose(); }}
+    >
+      <div className="bg-[#111114] border border-white/10 rounded-2xl w-88 flex flex-col shadow-[0_32px_80px_rgba(0,0,0,0.8)]">
+        <div className="px-5 pt-4.5 pb-3.5 border-b border-white/7 flex items-center justify-between">
+          <div>
+            <div className="font-bold text-[15px] text-white">Add product</div>
+            <div className="text-xs text-[#666] mt-0.5">Creates a new app with default slides</div>
+          </div>
+          <button
+            onClick={onClose}
+            disabled={saving}
+            className="bg-transparent border-none text-[#666] text-xl leading-none p-1 disabled:cursor-not-allowed cursor-pointer"
+          >×</button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="px-5 py-4 flex flex-col gap-4">
+          {/* Icon upload */}
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="w-16 h-16 rounded-2xl border-2 border-dashed border-white/15 flex items-center justify-center shrink-0 cursor-pointer transition-colors hover:border-white/30 overflow-hidden bg-white/4"
+            >
+              {iconPreview
+                ? <img src={iconPreview} alt="icon" className="w-full h-full object-cover" />
+                : <Plus size={20} color="#555" />
+              }
+            </button>
+            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleIconChange} />
+            <div className="flex flex-col gap-1">
+              <div className="text-[13px] text-white font-medium">App icon</div>
+              <div className="text-[11px] text-[#555]">Optional — PNG recommended</div>
+              {iconFile && (
+                <button
+                  type="button"
+                  onClick={() => { setIconFile(null); setIconPreview(null); if (fileRef.current) fileRef.current.value = ""; }}
+                  className="text-[11px] text-[#666] bg-transparent border-none cursor-pointer text-left hover:text-red-400 transition-colors"
+                >Remove</button>
+              )}
+            </div>
+          </div>
+
+          {/* Name */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[12px] font-medium text-[#999]">App name</label>
+            <input
+              autoFocus
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="My App"
+              maxLength={60}
+              className="w-full bg-white/6 border border-white/10 rounded-lg px-3 py-2 text-[13px] text-white outline-none focus:border-white/25 box-border transition-colors"
+            />
+          </div>
+
+          {error && <div className="text-xs text-red-400">{error}</div>}
+
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            className="w-full py-2.25 px-4 rounded-[9px] border-none font-bold text-[13px] transition-all duration-150 disabled:cursor-not-allowed mt-1"
+            style={{
+              background: canSubmit ? T.accent : "rgba(255,255,255,0.08)",
+              color: canSubmit ? "#fff" : "#555",
+              boxShadow: canSubmit ? `0 2px 14px ${T.accentGlow}` : "none",
+            }}
+          >
+            {saving ? "Creating…" : "Create product"}
+          </button>
+        </form>
       </div>
     </div>
   );
