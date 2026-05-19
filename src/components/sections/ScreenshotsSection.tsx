@@ -110,6 +110,7 @@ export function ScreenshotsSection({ product, locale, multiProduct, platform, on
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           productName: product.name,
+          productDescription: product.metadata?.description,
           label,
           currentHeadline: isCreate ? newHeadline : copyEdits[slideId!]?.headline,
           currentSubtitle: isCreate ? newSubtitle : copyEdits[slideId!]?.subtitle,
@@ -791,6 +792,7 @@ export function ScreenshotsSection({ product, locale, multiProduct, platform, on
           theme={T}
           productId={product.id}
           productName={product.name}
+          productDescription={product.metadata?.description}
           device={activeDevice}
           locale={locale}
           styleKey={defaultSlideStyleKey(activeDevice)}
@@ -837,10 +839,11 @@ function labelFromFilename(name: string): string {
     || "Slide";
 }
 
-function BulkUploadModal({ theme: T, productId, productName, device, locale, styleKey, onClose, onDone }: {
+function BulkUploadModal({ theme: T, productId, productName, productDescription, device, locale, styleKey, onClose, onDone }: {
   theme: ThemeTokens;
   productId: string;
   productName: string;
+  productDescription?: string;
   device: "iphone" | "android";
   locale: string;
   styleKey: string;
@@ -923,6 +926,7 @@ function BulkUploadModal({ theme: T, productId, productName, device, locale, sty
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             productName,
+            productDescription,
             label: item.label,
             locale,
             screenshotBase64: item.preview,

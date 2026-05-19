@@ -1,22 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import Together from "together-ai";
+import { LOCALE_NAMES } from "@/lib/locale-names";
 
-const MODEL = "moonshotai/Kimi-K2.6";
+const MODEL = "Qwen/Qwen3.5-397B-A17B";
 const together = new Together();
 
-const LOCALE_NAMES: Record<string, string> = {
-  ar: "Arabic", cs: "Czech", da: "Danish", de: "German", el: "Greek",
-  en: "English", es: "Spanish", fi: "Finnish", fr: "French", he: "Hebrew",
-  hr: "Croatian", hu: "Hungarian", id: "Indonesian", it: "Italian",
-  ja: "Japanese", ko: "Korean", ms: "Malay", nl: "Dutch", no: "Norwegian",
-  pl: "Polish", pt: "Portuguese", ro: "Romanian", ru: "Russian",
-  sk: "Slovak", sv: "Swedish", th: "Thai", tr: "Turkish", uk: "Ukrainian",
-  vi: "Vietnamese", "zh-Hans": "Simplified Chinese", "zh-Hant": "Traditional Chinese",
-};
-
 export async function POST(req: NextRequest) {
-  const { productName, label, currentHeadline, currentSubtitle, locale, screenshotBase64 } = await req.json() as {
+  const { productName, productDescription, label, currentHeadline, currentSubtitle, locale, screenshotBase64 } = await req.json() as {
     productName: string;
+    productDescription?: string;
     label: string;
     currentHeadline?: string;
     currentSubtitle?: string;
@@ -32,6 +24,7 @@ export async function POST(req: NextRequest) {
 
   const contextLines = [
     `App name: ${productName}`,
+    productDescription ? `App description: ${productDescription}` : null,
     `Slide label: ${label}`,
     currentHeadline ? `Current headline: ${currentHeadline}` : null,
     currentSubtitle ? `Current subtitle: ${currentSubtitle}` : null,
@@ -48,18 +41,18 @@ RULES:
 - headline: Max 40 characters. Main benefit statement. Use **bold** to wrap 1-3 key words for emphasis (e.g. "Track **every milestone**"). Use \\n only if needed.
 - subtitle: Max 60 characters. One short, benefit-driven sentence. Use \\n only if needed.
 - Write punchy, emotional copy that sells the benefit — not a dry feature list.
-- Write in ${language}. Sound native, not translated.
-
-You MUST respond with ONLY a raw JSON object — no markdown, no code fences, no explanation. Example: {"headline": "...", "subtitle": "..."}`;
+- Write in ${language}. Sound native, not translated."}`;
 
   try {
     const messages: Parameters<typeof together.chat.completions.create>[0]["messages"] = screenshotBase64
       ? [
           {
-            role: "user",
-            content: [{ type: "image_url", image_url: { url: screenshotBase64 } }] as Parameters<typeof together.chat.completions.create>[0]["messages"][0]["content"],
+            role: "user" as const,
+            content: [
+              { type: "text" as const, text: promptText },
+              { type: "image_url" as const, image_url: { url: screenshotBase64 } },
+            ],
           },
-          { role: "user", content: promptText },
         ]
       : [{ role: "user", content: promptText }];
 
@@ -67,12 +60,10 @@ You MUST respond with ONLY a raw JSON object — no markdown, no code fences, no
       model: MODEL,
       messages,
       response_format: { type: "json_object" },
-      temperature: 0.7,
-      max_tokens: 512,
-    }) as { choices: Array<{ message: { content: string } }> };
+      max_tokens: 8192,
+    });
 
-    const raw = response.choices[0]?.message.content ?? "{}";
-    console.log("[generate-copy] raw response:", raw);
+    const raw = response.choices[0]?.message?.content ?? "{}";
 
     let result: { headline?: string; subtitle?: string };
     try {
