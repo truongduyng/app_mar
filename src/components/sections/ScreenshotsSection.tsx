@@ -25,6 +25,21 @@ type CopyEdit = { label: string; headline: string; subtitle: string };
 type SaveState = "idle" | "saving" | "saved" | "error";
 
 /** Convert a SlideCopy (headline/subtitle may be React.ReactNode or RichTextSegment[]) to editable markup strings */
+function compressImage(dataUrl: string, maxWidth = 800, quality = 0.7): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxWidth / img.width);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+    img.src = dataUrl;
+  });
+}
+
 function copyToEdit(copy: SlideCopy): CopyEdit {
   const toMarkup = (v: React.ReactNode): string => {
     if (Array.isArray(v)) return segmentsToMarkup(v as RichTextSegment[]);
@@ -90,19 +105,21 @@ export function ScreenshotsSection({ product, locale, multiProduct, platform, on
       let screenshotBase64: string | undefined;
       const src = isCreate ? newImagePreview : imagePath;
       if (src) {
-        if (src.startsWith("data:")) {
-          screenshotBase64 = src;
-        } else {
-          try {
+        try {
+          let dataUrl: string;
+          if (src.startsWith("data:")) {
+            dataUrl = src;
+          } else {
             const imgRes = await fetch(src);
             const blob = await imgRes.blob();
-            screenshotBase64 = await new Promise<string>((resolve) => {
+            dataUrl = await new Promise<string>((resolve) => {
               const reader = new FileReader();
               reader.onload = (e) => resolve(e.target?.result as string);
               reader.readAsDataURL(blob);
             });
-          } catch { /* skip image if fetch fails */ }
-        }
+          }
+          screenshotBase64 = await compressImage(dataUrl);
+        } catch { /* skip image if fetch fails */ }
       }
 
       const res = await fetch("/api/slides/generate-copy", {
@@ -929,7 +946,7 @@ function BulkUploadModal({ theme: T, productId, productName, productDescription,
             productDescription,
             label: item.label,
             locale,
-            screenshotBase64: item.preview,
+            screenshotBase64: await compressImage(item.preview),
           }),
         });
         const data = await res.json() as { ok?: boolean; headline?: string; subtitle?: string; error?: string };
