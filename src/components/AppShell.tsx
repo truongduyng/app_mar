@@ -7,7 +7,7 @@ import { useProduct } from "@/components/ProductContext";
 import type { LocaleDef, MetadataConfig } from "@/lib/types";
 import { segmentsToMarkup } from "@/lib/rich-text";
 import type { RichTextSegment } from "@/lib/rich-text";
-import { ChevronDown, RefreshCw, Plus, Check, Smartphone, Image, Share2, MousePointerClick, AlignLeft } from "lucide-react";
+import { ChevronDown, RefreshCw, Plus, Check, Smartphone, Image, Share2, MousePointerClick, AlignLeft, Settings } from "lucide-react";
 
 // Common App Store / Play Store locales
 const COMMON_LOCALES: LocaleDef[] = [
@@ -75,6 +75,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const productMenuRef = useRef<HTMLDivElement>(null);
   const [addLocaleOpen, setAddLocaleOpen] = useState(false);
   const [addProductOpen, setAddProductOpen] = useState(false);
+  const [editProductOpen, setEditProductOpen] = useState(false);
 
   const T = product.theme;
 
@@ -135,24 +136,32 @@ export function AppShell({ children }: { children: ReactNode }) {
               {PRODUCTS.map((p) => {
                 const active = p.id === productId;
                 return (
-                  <button
-                    key={p.id}
-                    onClick={() => { setProductId(p.id); setProductMenuOpen(false); }}
-                    className={`flex items-center gap-2.5 border-none rounded-lg px-2.5 py-2 cursor-pointer transition-colors duration-120 w-full text-left hover:bg-white/5 ${
-                      active ? "bg-white/8" : "bg-transparent"
-                    }`}
-                  >
-                    <img
-                      src={img(p.iconPath)}
-                      alt={p.name}
-                      className="w-7 h-7 rounded-md shrink-0"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                    />
-                    <span className={`text-sm flex-1 ${active ? "font-bold" : "font-medium text-[#9999a8]"}`} style={active ? { color: T.fg } : undefined}>
-                      {p.name}
-                    </span>
-                    {active && <Check size={14} color={T.accent} />}
-                  </button>
+                  <div key={p.id} className="flex items-center gap-0.5">
+                    <button
+                      onClick={() => { setProductId(p.id); setProductMenuOpen(false); }}
+                      className={`flex items-center gap-2.5 border-none rounded-lg px-2.5 py-2 cursor-pointer transition-colors duration-120 flex-1 text-left hover:bg-white/5 ${
+                        active ? "bg-white/8" : "bg-transparent"
+                      }`}
+                    >
+                      <img
+                        src={img(p.iconPath)}
+                        alt={p.name}
+                        className="w-7 h-7 rounded-md shrink-0"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                      />
+                      <span className={`text-sm flex-1 ${active ? "font-bold" : "font-medium text-[#9999a8]"}`} style={active ? { color: T.fg } : undefined}>
+                        {p.name}
+                      </span>
+                      {active && <Check size={14} color={T.accent} />}
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setProductId(p.id); setProductMenuOpen(false); setEditProductOpen(true); }}
+                      title="Edit product"
+                      className="flex items-center justify-center w-6 h-6 rounded-md border-none bg-transparent text-[#555] cursor-pointer transition-colors hover:bg-white/8 hover:text-[#999] shrink-0"
+                    >
+                      <Settings size={12} />
+                    </button>
+                  </div>
                 );
               })}
               <div className="border-t border-white/8 mt-0.5 pt-0.5">
@@ -218,6 +227,15 @@ export function AppShell({ children }: { children: ReactNode }) {
           {children}
         </main>
       </div>
+
+      {editProductOpen && (
+        <EditProductModal
+          theme={T}
+          product={product}
+          onClose={() => setEditProductOpen(false)}
+          onSaved={() => { setEditProductOpen(false); router.refresh(); }}
+        />
+      )}
 
       {addProductOpen && (
         <AddProductModal
@@ -674,6 +692,191 @@ function AddProductModal({ theme: T, onClose, onCreated }: {
             }}
           >
             {saving ? "Creating…" : "Create product"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ─── Edit Product Modal ───────────────────────────────────────────────────────
+
+function EditProductModal({ theme: T, product, onClose, onSaved }: {
+  theme: HydratedProduct["theme"];
+  product: HydratedProduct;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [name, setName] = useState(product.name);
+  const [accent, setAccent] = useState(T.accent);
+  const [bundleId, setBundleId] = useState(product.bundleId ?? "");
+  const [packageName, setPackageName] = useState(product.packageName ?? "");
+  const [privacyPolicyUrl, setPrivacyPolicyUrl] = useState(product.privacyPolicyUrl ?? "");
+  const [supportUrl, setSupportUrl] = useState(product.supportUrl ?? "");
+  const [iconFile, setIconFile] = useState<File | null>(null);
+  const [iconPreview, setIconPreview] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  function handleIconChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] ?? null;
+    setIconFile(file);
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (ev) => setIconPreview(ev.target?.result as string);
+      reader.readAsDataURL(file);
+    } else {
+      setIconPreview(null);
+    }
+  }
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!name.trim()) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const form = new FormData();
+      form.append("productId", product.id);
+      form.append("name", name.trim());
+      form.append("accent", accent);
+      form.append("bundleId", bundleId);
+      form.append("packageName", packageName);
+      form.append("privacyPolicyUrl", privacyPolicyUrl);
+      form.append("supportUrl", supportUrl);
+      if (iconFile) form.append("icon", iconFile);
+      const res = await fetch("/api/product-settings", { method: "POST", body: form });
+      const data = await res.json() as { ok?: boolean; error?: string };
+      if (res.ok && data.ok) {
+        onSaved();
+      } else {
+        setError(data.error ?? "Failed to save");
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Network error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const inputCls = "w-full bg-white/6 border border-white/10 rounded-lg px-3 py-2 text-[13px] text-white outline-none focus:border-white/25 box-border transition-colors font-[inherit]";
+  const labelCls = "text-[12px] font-medium text-[#999]";
+
+  return (
+    <div
+      className="fixed inset-0 z-500 bg-black/70 backdrop-blur-md flex items-center justify-center"
+      onClick={(e) => { if (e.target === e.currentTarget && !saving) onClose(); }}
+    >
+      <div className="bg-[#111114] border border-white/10 rounded-2xl w-110 max-h-[90vh] overflow-y-auto flex flex-col shadow-[0_32px_80px_rgba(0,0,0,0.8)]">
+        {/* Header */}
+        <div className="px-5 pt-4.5 pb-3.5 border-b border-white/7 flex items-center justify-between sticky top-0 bg-[#111114] z-10">
+          <div>
+            <div className="font-bold text-[15px] text-white">Edit product</div>
+            <div className="text-xs text-[#666] mt-0.5">{product.id}</div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={saving}
+            className="bg-transparent border-none text-[#666] text-xl leading-none p-1 disabled:cursor-not-allowed cursor-pointer"
+          >×</button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="px-5 py-4 flex flex-col gap-4">
+          {/* Icon + Name row */}
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="w-16 h-16 rounded-2xl border-2 border-dashed border-white/15 flex items-center justify-center shrink-0 cursor-pointer transition-colors hover:border-white/30 overflow-hidden bg-white/4"
+            >
+              {iconPreview
+                ? <img src={iconPreview} alt="icon" className="w-full h-full object-cover" />
+                : product.iconPath
+                ? <img src={product.iconPath} alt="icon" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                : <Plus size={20} color="#555" />
+              }
+            </button>
+            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleIconChange} />
+            <div className="flex flex-col gap-1.5 flex-1">
+              <label className={labelCls}>App name</label>
+              <input
+                autoFocus
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="My App"
+                maxLength={60}
+                className={inputCls}
+              />
+            </div>
+          </div>
+
+          {/* Accent colour */}
+          <div className="flex flex-col gap-1.5">
+            <label className={labelCls}>Accent colour</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={accent}
+                onChange={(e) => setAccent(e.target.value)}
+                className="w-9 h-9 rounded-lg border border-white/10 cursor-pointer bg-transparent p-0.5"
+              />
+              <input
+                value={accent}
+                onChange={(e) => setAccent(e.target.value)}
+                placeholder="#6366F1"
+                maxLength={7}
+                className={`${inputCls} font-mono`}
+              />
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-white/7" />
+
+          {/* Store IDs */}
+          <div className="flex flex-col gap-3">
+            <div className="text-[11px] font-bold tracking-widest uppercase text-[#555]">Store Publishing</div>
+            <div className="flex flex-col gap-1.5">
+              <label className={labelCls}>Apple Bundle ID</label>
+              <input value={bundleId} onChange={(e) => setBundleId(e.target.value)} placeholder="com.example.myapp" className={`${inputCls} font-mono`} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className={labelCls}>Google Package Name</label>
+              <input value={packageName} onChange={(e) => setPackageName(e.target.value)} placeholder="com.example.myapp" className={`${inputCls} font-mono`} />
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-white/7" />
+
+          {/* URLs */}
+          <div className="flex flex-col gap-3">
+            <div className="text-[11px] font-bold tracking-widest uppercase text-[#555]">URLs</div>
+            <div className="flex flex-col gap-1.5">
+              <label className={labelCls}>Privacy Policy URL</label>
+              <input value={privacyPolicyUrl} onChange={(e) => setPrivacyPolicyUrl(e.target.value)} placeholder="https://example.com/privacy" className={inputCls} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className={labelCls}>Support URL</label>
+              <input value={supportUrl} onChange={(e) => setSupportUrl(e.target.value)} placeholder="https://example.com/support" className={inputCls} />
+            </div>
+          </div>
+
+          {error && <div className="text-xs text-red-400">{error}</div>}
+
+          <button
+            type="submit"
+            disabled={!name.trim() || saving}
+            className="w-full py-2.25 px-4 rounded-[9px] border-none font-bold text-[13px] transition-all duration-150 disabled:cursor-not-allowed mt-1"
+            style={{
+              background: name.trim() && !saving ? accent : "rgba(255,255,255,0.08)",
+              color: name.trim() && !saving ? "#fff" : "#555",
+              boxShadow: name.trim() && !saving ? `0 2px 14px ${T.accentGlow}` : "none",
+            }}
+          >
+            {saving ? "Saving…" : "Save changes"}
           </button>
         </form>
       </div>
