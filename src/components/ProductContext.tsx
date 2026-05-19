@@ -25,10 +25,14 @@ type ProductContextValue = {
   metadataMap: Record<string, Record<string, MetadataConfig>>;
   setMetadataMap: React.Dispatch<React.SetStateAction<Record<string, Record<string, MetadataConfig>>>>;
   ctaScMap: Record<string, { sc1: string; sc2: string }>;
+  ctaHeadlineMap: Record<string, Record<string, string>>;
   setCtaSc1: (v: string) => void;
   setCtaSc2: (v: string) => void;
+  setCtaHeadline: (v: string) => void;
+  saveCtaHeadline: () => Promise<boolean>;
   ctaSc1: string;
   ctaSc2: string;
+  ctaHeadline: string;
   ready: boolean;
   regenLocaleCode: string | null;
   handleRegenLocale: (locCode: string) => Promise<void>;
@@ -125,6 +129,18 @@ export function ProductProvider({
     return defaults;
   });
 
+  const [ctaHeadlineMap, setCtaHeadlineMap] = useState<Record<string, Record<string, string>>>(() => {
+    const defaults: Record<string, Record<string, string>> = {};
+    for (const p of PRODUCTS) {
+      if (!p.ctaImage) continue;
+      defaults[p.id] = { [p.locales?.[0]?.code ?? "en"]: p.ctaImage.headline };
+      for (const [code, headline] of Object.entries(p.ctaImage.headlineByLocale ?? {})) {
+        defaults[p.id][code] = headline;
+      }
+    }
+    return defaults;
+  });
+
   const productLocales = useMemo(
     () => getProductLocales(product, extraLocales),
     [product, extraLocales],
@@ -132,6 +148,11 @@ export function ProductProvider({
 
   const ctaSc1 = ctaScMap[product.id]?.sc1 ?? product.ctaImage?.sc1 ?? "sc1.png";
   const ctaSc2 = ctaScMap[product.id]?.sc2 ?? product.ctaImage?.sc2 ?? "sc2.png";
+  const ctaHeadline =
+    ctaHeadlineMap[product.id]?.[locale] ??
+    product.ctaImage?.headlineByLocale?.[locale] ??
+    product.ctaImage?.headline ??
+    product.name;
 
   const setCtaSc1 = useCallback((v: string) => setCtaScMap((m) => {
     const next = { ...m, [product.id]: { ...m[product.id], sc1: v } };
@@ -144,6 +165,32 @@ export function ProductProvider({
     localStorage.setItem("ctaScMap", JSON.stringify(next));
     return next;
   }), [product.id]);
+
+  const setCtaHeadline = useCallback((v: string) => setCtaHeadlineMap((m) => {
+    const next = { ...m, [product.id]: { ...m[product.id], [locale]: v } };
+    return next;
+  }), [product.id, locale]);
+
+  const saveCtaHeadline = useCallback(async () => {
+    const headline = ctaHeadlineMap[product.id]?.[locale] ?? product.ctaImage?.headlineByLocale?.[locale] ?? product.ctaImage?.headline ?? product.name;
+    const res = await fetch("/api/cta-image", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        productId: product.id,
+        locale,
+        headline,
+        sc1: ctaSc1,
+        sc2: ctaSc2,
+        ctaLabel: product.ctaImage?.ctaLabelByLocale?.[locale] ?? product.ctaImage?.ctaLabel ?? null,
+      }),
+    });
+    if (res.ok) {
+      router.refresh();
+      return true;
+    }
+    return false;
+  }, [ctaHeadlineMap, product.id, product.ctaImage, product.name, locale, ctaSc1, ctaSc2, router]);
 
   // Navigate when productId changes (swap the [productId] segment)
   const setProductId = useCallback((id: string) => {
@@ -259,10 +306,14 @@ export function ProductProvider({
     metadataMap,
     setMetadataMap,
     ctaScMap,
+    ctaHeadlineMap,
     setCtaSc1,
     setCtaSc2,
+    setCtaHeadline,
+    saveCtaHeadline,
     ctaSc1,
     ctaSc2,
+    ctaHeadline,
     ready,
     regenLocaleCode,
     handleRegenLocale,

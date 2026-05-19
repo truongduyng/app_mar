@@ -12,14 +12,29 @@ type Props = {
   platform: AppPlatform;
   ctaSc1: string;
   ctaSc2: string;
+  ctaHeadline?: string;
   onSc1Change: (v: string) => void;
   onSc2Change: (v: string) => void;
+  onHeadlineChange?: (v: string) => void;
+  onHeadlineSave?: () => Promise<boolean>;
 };
 
-export function CtaSection({ product, locale, platform, ctaSc1, ctaSc2, onSc1Change, onSc2Change }: Props) {
+export function CtaSection({
+  product,
+  locale,
+  platform,
+  ctaSc1,
+  ctaSc2,
+  ctaHeadline,
+  onSc1Change,
+  onSc2Change,
+  onHeadlineChange,
+  onHeadlineSave,
+}: Props) {
   const T = product.theme;
   const offscreenRef = useRef<HTMLDivElement>(null);
   const [ratio, setRatio] = useState<CtaRatio>("4:5");
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const ctaH = ratio === "4:5" ? CTA_H_4x5 : CTA_H_1x1;
 
   const localizedSlides = product.slidesByLocale?.[locale] ?? product.slides;
@@ -29,7 +44,7 @@ export function CtaSection({ product, locale, platform, ctaSc1, ctaSc2, onSc1Cha
   const slideImagePaths = allSlides.map((s) => s.imagePath).filter(Boolean) as string[];
   const uniquePaths     = [...new Set(slideImagePaths)];
 
-  const headline    = product.ctaImage?.headlineByLocale?.[locale] ?? product.ctaImage?.headline ?? product.name;
+  const headline = ctaHeadline ?? product.ctaImage?.headlineByLocale?.[locale] ?? product.ctaImage?.headline ?? product.name;
   const subheadline = product.metadataByLocale?.[locale]?.subtitle ?? product.metadata?.subtitle;
   const ctaLabel    = product.ctaImage?.ctaLabelByLocale?.[locale] ?? product.ctaImage?.ctaLabel;
 
@@ -38,6 +53,18 @@ export function CtaSection({ product, locale, platform, ctaSc1, ctaSc2, onSc1Cha
     border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6,
     padding: "5px 10px", fontSize: 12, cursor: "pointer",
   };
+
+  async function handleSaveHeadline() {
+    if (!onHeadlineSave) return;
+    setSaveState("saving");
+    try {
+      const ok = await onHeadlineSave();
+      setSaveState(ok ? "saved" : "error");
+    } catch {
+      setSaveState("error");
+    }
+    window.setTimeout(() => setSaveState("idle"), 2000);
+  }
 
   return (
     <div style={{ padding: "24px 24px 32px", maxWidth: 620, margin: "0 auto" }}>
@@ -64,6 +91,48 @@ export function CtaSection({ product, locale, platform, ctaSc1, ctaSc2, onSc1Cha
           if (!offscreenRef.current) return;
           await exportCtaImage(offscreenRef.current, CTA_W, ctaH, `${product.id}-cta-${CTA_W}x${ctaH}.png`);
         }} />
+      </div>
+
+      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+        <input
+          type="text"
+          value={headline}
+          onChange={(e) => onHeadlineChange?.(e.target.value)}
+          placeholder="CTA headline"
+          style={{
+            flex: 1,
+            minWidth: 0,
+            background: "rgba(255,255,255,0.06)",
+            color: T.fg,
+            border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: 8,
+            padding: "10px 12px",
+            fontSize: 13,
+            outline: "none",
+            opacity: onHeadlineChange ? 1 : 0.6,
+          }}
+          disabled={!onHeadlineChange}
+        />
+        {onHeadlineSave && (
+          <button
+            onClick={handleSaveHeadline}
+            disabled={saveState === "saving"}
+            style={{
+              background: saveState === "saved" ? T.accent : "rgba(255,255,255,0.06)",
+              color: saveState === "saved" ? "#fff" : T.fg,
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 8,
+              padding: "10px 14px",
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: saveState === "saving" ? "default" : "pointer",
+              opacity: saveState === "saving" ? 0.7 : 1,
+              minWidth: 72,
+            }}
+          >
+            {saveState === "saving" ? "Saving..." : saveState === "saved" ? "Saved" : saveState === "error" ? "Retry" : "Save"}
+          </button>
+        )}
       </div>
 
       {/* Preview */}
