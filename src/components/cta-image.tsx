@@ -121,7 +121,6 @@ export function CtaImage({
   headline,
   subheadline,
   productName,
-  ctaLabel = "↑ link in bio",
   mockupPath = "/mockup.png",
   ratio = "1:1",
 }: {
@@ -132,7 +131,6 @@ export function CtaImage({
   headline: string;
   subheadline?: string;
   productName: string;
-  ctaLabel?: string;
   mockupPath?: string;
   ratio?: CtaRatio;
 }) {
@@ -141,9 +139,9 @@ export function CtaImage({
   /* Phone aspect ratio MK_W/MK_H ≈ 0.491 */
   const bottomBarH = ctaH * 0.22;
   const headlineH = ctaH * 0.18;
-  const headlineTop = ctaH * 0.03;
+  const headlineTop = ctaH * 0.035;
   /* Phones fill the middle — top of phone = bottom of headline zone */
-  const phoneTop = headlineTop + headlineH;
+  const phoneTop = headlineTop + headlineH + ctaH * 0.035;
   const phoneH = ctaH - bottomBarH - phoneTop;
   const phoneW = phoneH * (MK_W / MK_H);
 
@@ -250,7 +248,7 @@ export function CtaImage({
         }}
       />
 
-      {/* ── Bottom bar: app name + CTA button ── */}
+      {/* ── Bottom bar: app identity ── */}
       <div
         style={{
           position: "absolute",
@@ -263,8 +261,8 @@ export function CtaImage({
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          gap: ctaH * 0.022,
-          paddingBottom: ctaH * 0.03,
+          gap: ctaH * 0.012,
+          paddingBottom: ctaH * 0.04,
           background: `linear-gradient(transparent, ${T.bg}F0 28%)`,
         }}
       >
@@ -308,23 +306,6 @@ export function CtaImage({
             )}
           </div>
         </div>
-
-        {/* CTA pill */}
-        <div
-          style={{
-            background: T.accent,
-            borderRadius: 100,
-            padding: `${ctaH * 0.011}px ${CTA_W * 0.06}px`,
-            fontSize: CTA_W * 0.025,
-            fontWeight: 700,
-            color: T.bg,
-            letterSpacing: "-0.01em",
-            whiteSpace: "nowrap",
-            boxShadow: `0 4px 20px ${hexToRgba(T.accent, 0.4)}`,
-          }}
-        >
-          {ctaLabel}
-        </div>
       </div>
     </div>
   );
@@ -338,4 +319,3 @@ function hexToRgba(hex: string, alpha: number): string {
   const b = parseInt(hex.slice(5, 7), 16);
   return `rgba(${r},${g},${b},${alpha})`;
 }
-

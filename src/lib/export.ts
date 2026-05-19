@@ -83,7 +83,14 @@ export async function exportCtaImage(
   const el = container.children[0] as HTMLElement;
   if (!el) return;
 
-  el.style.left = "0px";
+  const prevLeft = el.style.left;
+  const prevOpacity = el.style.opacity;
+  const prevZIndex = el.style.zIndex;
+  const prevVisibility = el.style.visibility;
+  const prevPointerEvents = el.style.pointerEvents;
+
+  el.style.visibility = "visible";
+  el.style.pointerEvents = "none";
   el.style.opacity = "1";
   el.style.zIndex = "-1";
 
@@ -91,9 +98,11 @@ export async function exportCtaImage(
   await toPng(el, opts);
   const dataUrl = await toPng(el, opts);
 
-  el.style.left = "-9999px";
-  el.style.opacity = "";
-  el.style.zIndex = "";
+  el.style.left = prevLeft;
+  el.style.opacity = prevOpacity;
+  el.style.zIndex = prevZIndex;
+  el.style.visibility = prevVisibility;
+  el.style.pointerEvents = prevPointerEvents;
 
   downloadDataUrl(dataUrl, filename);
 }

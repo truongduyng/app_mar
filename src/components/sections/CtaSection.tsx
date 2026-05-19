@@ -140,7 +140,7 @@ export function CtaSection({
         <div style={{ position: "relative", width: "100%", aspectRatio: `${CTA_W}/${ctaH}`, overflow: "hidden" }}>
           <ScaledCtaImage theme={T} iconPath={product.iconPath}
             sc1Path={ctaSc1} sc2Path={ctaSc2} headline={headline} productName={product.name}
-            subheadline={subheadline} ctaLabel={ctaLabel} ratio={ratio} />
+            subheadline={subheadline} ratio={ratio} />
         </div>
       </div>
 
@@ -149,7 +149,7 @@ export function CtaSection({
         <div style={{ width: CTA_W, height: ctaH, position: "absolute", left: -9999, fontFamily: "inherit" }}>
           <CtaImage theme={T} iconPath={product.iconPath}
             sc1Path={ctaSc1} sc2Path={ctaSc2} headline={headline} productName={product.name}
-            subheadline={subheadline} ctaLabel={ctaLabel} ratio={ratio} />
+            subheadline={subheadline} ratio={ratio} />
         </div>
       </div>
     </div>
