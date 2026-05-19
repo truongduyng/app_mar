@@ -371,6 +371,8 @@ export function ScreenshotsSection({ product, locale, multiProduct, platform, on
     setCreating(false);
   }, [product.id, activeDevice, newStyleKey, newLabel, newHeadline, newSubtitle, newImageFile, onSlidesChanged]);
 
+  const [bulkGenOpen, setBulkGenOpen] = useState(false);
+
   const handleExport = async () => {
     if (!offscreenRef.current || exporting) return;
     setExporting(true);
@@ -445,6 +447,21 @@ export function ScreenshotsSection({ product, locale, multiProduct, platform, on
               : "Publish Screenshots"}
           </button>
         )}
+        <button
+          onClick={() => setBulkGenOpen(true)}
+          style={{
+            display: "flex", alignItems: "center", gap: 6,
+            background: "rgba(255,255,255,0.06)", color: T.fgMuted,
+            border: "1px solid rgba(255,255,255,0.1)", borderRadius: 7,
+            padding: "7px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer",
+            transition: "all 0.15s",
+          }}
+        >
+          <svg width={13} height={13} viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2L9.1 9.1 2 12l7.1 2.9L12 22l2.9-7.1L22 12l-7.1-2.9z"/>
+          </svg>
+          Generate Slides
+        </button>
         <button onClick={handleExport} disabled={exporting}
           style={{
             position: "relative", overflow: "hidden",
@@ -787,6 +804,20 @@ export function ScreenshotsSection({ product, locale, multiProduct, platform, on
         </div>
       )}
 
+      {bulkGenOpen && (
+        <BulkGenerateModal
+          theme={T}
+          productId={product.id}
+          productName={product.name}
+          productDescription={product.metadata?.description}
+          device={activeDevice}
+          locale={locale}
+          styleKey={defaultSlideStyleKey(activeDevice)}
+          onClose={() => setBulkGenOpen(false)}
+          onDone={() => { setBulkGenOpen(false); onSlidesChanged?.(); }}
+        />
+      )}
+
       {/* Offscreen export container */}
       <div ref={offscreenRef} style={{ position: "absolute", left: -9999, top: 0, fontFamily: "inherit" }}>
         {slides.map((slide) => {
@@ -800,6 +831,158 @@ export function ScreenshotsSection({ product, locale, multiProduct, platform, on
           );
         })}
       </div>
+    </div>
+  );
+}
+
+// ─── Bulk Generate Modal ──────────────────────────────────────────────────────
+
+function BulkGenerateModal({ theme: T, productId, productName, productDescription, device, locale, styleKey, onClose, onDone }: {
+  theme: ThemeTokens;
+  productId: string;
+  productName: string;
+  productDescription?: string;
+  device: "iphone" | "android";
+  locale: string;
+  styleKey: string;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const [description, setDescription] = useState(productDescription ?? "");
+  const [count, setCount] = useState(5);
+  const [running, setRunning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleGenerate() {
+    if (running) return;
+    setError(null);
+    setRunning(true);
+    try {
+      const res = await fetch("/api/slides/bulk-generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId, productName, productDescription: description, device, locale, styleKey, count }),
+      });
+      const data = await res.json() as { ok?: boolean; error?: string };
+      if (!res.ok || !data.ok) throw new Error(data.error ?? "Generation failed");
+      onDone();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Generation failed");
+      setRunning(false);
+    }
+  }
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    background: "rgba(0,0,0,0.3)",
+    border: "1px solid rgba(255,255,255,0.08)",
+    borderRadius: 8,
+    padding: "8px 12px",
+    fontSize: 13,
+    color: "#fff",
+    fontFamily: "inherit",
+    outline: "none",
+    boxSizing: "border-box",
+    resize: "vertical" as const,
+  };
+
+  return (
+    <div
+      style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center" }}
+      onClick={(e) => { if (e.target === e.currentTarget && !running) onClose(); }}
+    >
+      <div style={{ background: "#111114", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, width: "min(520px,calc(100vw - 48px))", boxShadow: "0 32px 80px rgba(0,0,0,0.8)", display: "flex", flexDirection: "column" }}>
+
+        {/* Header */}
+        <div style={{ padding: "18px 20px 14px", borderBottom: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 15, color: "#fff" }}>Generate Slides with AI</div>
+            <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>AI creates slide labels, headlines & subtitles — add images later</div>
+          </div>
+          <button onClick={onClose} disabled={running} style={{ background: "none", border: "none", color: "#666", cursor: running ? "not-allowed" : "pointer", fontSize: 20, lineHeight: 1, padding: 4 }}>×</button>
+        </div>
+
+        {/* Body */}
+        <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: 16 }}>
+
+          {/* App description */}
+          <div>
+            <div style={{ fontSize: 12, color: "#888", fontWeight: 600, marginBottom: 6 }}>App description</div>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              disabled={running}
+              rows={4}
+              placeholder="Describe your app's key features and benefits…"
+              style={{ ...inputStyle, lineHeight: 1.5 }}
+            />
+            <div style={{ fontSize: 11, color: "#555", marginTop: 4 }}>Used to generate relevant, on-brand copy for each slide.</div>
+          </div>
+
+          {/* Slide count */}
+          <div>
+            <div style={{ fontSize: 12, color: "#888", fontWeight: 600, marginBottom: 6 }}>Number of slides</div>
+            <div style={{ display: "flex", gap: 8 }}>
+              {[3, 5, 7, 10].map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setCount(n)}
+                  disabled={running}
+                  style={{
+                    flex: 1, padding: "8px 0", borderRadius: 8, fontSize: 13, fontWeight: 600,
+                    background: count === n ? `${T.accent}22` : "rgba(255,255,255,0.04)",
+                    color: count === n ? T.accent : "#666",
+                    border: `1px solid ${count === n ? T.accent + "66" : "rgba(255,255,255,0.08)"}`,
+                    cursor: running ? "not-allowed" : "pointer",
+                    transition: "all 0.15s",
+                  }}
+                >{n}</button>
+              ))}
+            </div>
+          </div>
+
+          {error && <div style={{ fontSize: 12, color: "#FCA5A5", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 8, padding: "8px 12px" }}>{error}</div>}
+        </div>
+
+        {/* Footer */}
+        <div style={{ padding: "12px 20px 20px", display: "flex", justifyContent: "flex-end", gap: 8 }}>
+          <button
+            onClick={onClose}
+            disabled={running}
+            style={{ background: "rgba(255,255,255,0.06)", color: "#999", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "8px 16px", fontSize: 13, fontWeight: 600, cursor: running ? "not-allowed" : "pointer" }}
+          >Cancel</button>
+          <button
+            onClick={handleGenerate}
+            disabled={running || !description.trim()}
+            style={{
+              background: (running || !description.trim()) ? "rgba(255,255,255,0.08)" : `linear-gradient(135deg, ${T.accent}, ${T.accent}dd)`,
+              color: (running || !description.trim()) ? "#555" : "#fff",
+              border: "none", borderRadius: 8, padding: "8px 20px",
+              fontSize: 13, fontWeight: 700, cursor: (running || !description.trim()) ? "not-allowed" : "pointer",
+              boxShadow: (running || !description.trim()) ? "none" : `0 4px 16px ${T.accentGlow}`,
+              transition: "all 0.15s", minWidth: 160,
+              display: "flex", alignItems: "center", gap: 7,
+            }}
+          >
+            {running ? (
+              <>
+                <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} style={{ animation: "spin 1s linear infinite" }}>
+                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                </svg>
+                Generating {count} slides…
+              </>
+            ) : (
+              <>
+                <svg width={11} height={11} viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2L9.1 9.1 2 12l7.1 2.9L12 22l2.9-7.1L22 12l-7.1-2.9z"/>
+                </svg>
+                Generate {count} slides
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
