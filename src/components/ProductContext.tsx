@@ -79,7 +79,13 @@ export function ProductProvider({
   );
 
   const [productId, setProductIdState] = useState(initialProductId);
-  const [locale, setLocaleState] = useState(initialLocale);
+  const [locale, setLocaleState] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(`selectedLocale_${initialProductId}`);
+      if (saved) return saved;
+    }
+    return initialLocale;
+  });
   const [platform, setPlatform] = useState<AppPlatform>("iphone");
   const [ready, setReady] = useState(false);
   const [extraLocales, setExtraLocales] = useState<Record<string, LocaleDef[]>>({});
@@ -151,7 +157,8 @@ export function ProductProvider({
 
   const setLocale = useCallback((code: string) => {
     setLocaleState(code);
-  }, []);
+    localStorage.setItem(`selectedLocale_${productId}`, code);
+  }, [productId]);
 
   // Preload images when productId changes
   useEffect(() => {

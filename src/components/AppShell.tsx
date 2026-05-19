@@ -7,6 +7,7 @@ import { useProduct } from "@/components/ProductContext";
 import type { LocaleDef, MetadataConfig } from "@/lib/types";
 import { segmentsToMarkup } from "@/lib/rich-text";
 import type { RichTextSegment } from "@/lib/rich-text";
+import { ChevronDown, RefreshCw, Plus, Check, Smartphone, Image, Share2, MousePointerClick, AlignLeft } from "lucide-react";
 
 // Common App Store / Play Store locales
 const COMMON_LOCALES: LocaleDef[] = [
@@ -76,7 +77,6 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const T = product.theme;
 
-  // Active section derived from pathname
   const activeSection = ((): Section => {
     const seg = pathname.split("/")[2] as Section;
     return SECTIONS.find((s) => s.id === seg) ? seg : "screenshots";
@@ -92,81 +92,65 @@ export function AppShell({ children }: { children: ReactNode }) {
     return () => document.removeEventListener("mousedown", handler);
   }, [productMenuOpen]);
 
-  const SIDEBAR_W = 200;
-  const TOPBAR_H  = 57;
-
   if (!ready) {
     return (
-      <div style={{ minHeight: "100vh", background: "#09090B", display: "flex", alignItems: "center", justifyContent: "center", color: "#8A8A94", fontSize: 16, fontFamily: "inherit" }}>
+      <div className="min-h-screen bg-[#09090B] flex items-center justify-center text-[#8A8A94] text-base">
         Loading images…
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#09090B", color: T.fg, fontFamily: "inherit" }}>
+    <div className="min-h-screen bg-[#09090B]" style={{ color: T.fg }}>
 
       {/* ── Top bar ── */}
-      <div style={{
-        position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-        height: TOPBAR_H,
-        background: "rgba(9,9,11,0.92)", backdropFilter: "blur(16px)",
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
-        padding: "0 16px",
-        display: "flex", alignItems: "center", gap: 12,
-      }}>
+      <div className="fixed top-0 left-0 right-0 z-100 h-14.25 bg-[rgba(9,9,11,0.92)] backdrop-blur-md border-b border-white/6 px-4 flex items-center gap-3">
+
         {/* Product picker */}
-        <div ref={productMenuRef} style={{ position: "relative" }}>
+        <div ref={productMenuRef} className="relative">
           <button
             onClick={() => setProductMenuOpen((o) => !o)}
-            style={{
-              display: "flex", alignItems: "center", gap: 10,
-              background: productMenuOpen ? "rgba(255,255,255,0.08)" : "transparent",
-              border: "1px solid", borderColor: productMenuOpen ? "rgba(255,255,255,0.14)" : "transparent",
-              borderRadius: 10, padding: "6px 10px 6px 6px",
-              cursor: "pointer", transition: "all 0.15s",
-            }}
+            className={`flex items-center gap-2.5 border rounded-[10px] px-2.5 py-1.5 cursor-pointer transition-all duration-150 ${
+              productMenuOpen
+                ? "bg-white/8 border-white/[0.14]"
+                : "bg-transparent border-transparent"
+            }`}
           >
-            <img src={img(product.iconPath)} alt={product.name}
-              style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0 }}
-              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-            <span style={{ fontWeight: 700, fontSize: 15, color: T.fg, whiteSpace: "nowrap" }}>{product.name}</span>
-            <svg width={13} height={13} viewBox="0 0 14 14" fill="none"
-              style={{ marginLeft: 2, opacity: 0.5, flexShrink: 0, transform: productMenuOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
-              <path d="M3 5l4 4 4-4" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <img
+              src={img(product.iconPath)}
+              alt={product.name}
+              className="w-7.5 h-7.5 rounded-lg shrink-0"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+            />
+            <span className="font-bold text-[15px] whitespace-nowrap" style={{ color: T.fg }}>{product.name}</span>
+            <ChevronDown
+              size={13}
+              className={`ml-0.5 opacity-50 shrink-0 transition-transform duration-200 ${productMenuOpen ? "rotate-180" : ""}`}
+            />
           </button>
+
           {productMenuOpen && (
-            <div style={{
-              position: "absolute", top: "calc(100% + 8px)", left: 0, zIndex: 200,
-              background: "rgba(24,24,28,0.97)", backdropFilter: "blur(20px)",
-              border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12,
-              padding: 6, minWidth: 220, boxShadow: "0 16px 60px rgba(0,0,0,0.6)",
-              display: "flex", flexDirection: "column", gap: 2,
-            }}>
+            <div className="absolute top-[calc(100%+8px)] left-0 z-200 bg-[rgba(24,24,28,0.97)] backdrop-blur-xl border border-white/10 rounded-xl p-1.5 min-w-55 shadow-[0_16px_60px_rgba(0,0,0,0.6)] flex flex-col gap-0.5">
               {PRODUCTS.map((p) => {
                 const active = p.id === productId;
                 return (
-                  <button key={p.id}
+                  <button
+                    key={p.id}
                     onClick={() => { setProductId(p.id); setProductMenuOpen(false); }}
-                    style={{
-                      display: "flex", alignItems: "center", gap: 10,
-                      background: active ? "rgba(255,255,255,0.08)" : "transparent",
-                      border: "none", borderRadius: 8, padding: "8px 10px",
-                      cursor: "pointer", transition: "background 0.12s", width: "100%", textAlign: "left",
-                    }}
-                    onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.05)"; }}
-                    onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                    className={`flex items-center gap-2.5 border-none rounded-lg px-2.5 py-2 cursor-pointer transition-colors duration-120 w-full text-left hover:bg-white/5 ${
+                      active ? "bg-white/8" : "bg-transparent"
+                    }`}
                   >
-                    <img src={img(p.iconPath)} alt={p.name}
-                      style={{ width: 28, height: 28, borderRadius: 6, flexShrink: 0 }}
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                    <span style={{ fontSize: 14, fontWeight: active ? 700 : 500, color: active ? T.fg : "#9999a8", flex: 1 }}>{p.name}</span>
-                    {active && (
-                      <svg width={14} height={14} viewBox="0 0 14 14" fill="none">
-                        <path d="M3 7l3 3 5-5" stroke={T.accent} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    )}
+                    <img
+                      src={img(p.iconPath)}
+                      alt={p.name}
+                      className="w-7 h-7 rounded-md shrink-0"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    />
+                    <span className={`text-sm flex-1 ${active ? "font-bold" : "font-medium text-[#9999a8]"}`} style={active ? { color: T.fg } : undefined}>
+                      {p.name}
+                    </span>
+                    {active && <Check size={14} color={T.accent} />}
                   </button>
                 );
               })}
@@ -188,37 +172,27 @@ export function AppShell({ children }: { children: ReactNode }) {
       </div>
 
       {/* ── Body: sidebar + main ── */}
-      <div style={{ display: "flex", paddingTop: TOPBAR_H }}>
+      <div className="flex pt-14.25">
 
         {/* Left sidebar */}
-        <aside style={{
-          position: "fixed", top: TOPBAR_H, left: 0, bottom: 0,
-          width: SIDEBAR_W, zIndex: 90,
-          background: "rgba(13,13,15,0.95)", backdropFilter: "blur(12px)",
-          borderRight: "1px solid rgba(255,255,255,0.06)",
-          display: "flex", flexDirection: "column",
-          padding: "16px 10px",
-          gap: 2,
-          overflowY: "auto",
-        }}>
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: T.fgMuted, textTransform: "uppercase", padding: "2px 8px 8px" }}>
+        <aside className="fixed top-14.25 left-0 bottom-0 w-50 z-90 bg-[rgba(13,13,15,0.95)] backdrop-blur-md border-r border-white/6 flex flex-col p-4 gap-0.5 overflow-y-auto">
+          <div className="text-[10px] font-bold tracking-widest uppercase px-2 pb-2" style={{ color: T.fgMuted }}>
             Assets
           </div>
           {SECTIONS.map((s) => {
             const active = activeSection === s.id;
             return (
-              <button key={s.id} onClick={() => router.push(`/${productId}/${s.id}`)}
+              <button
+                key={s.id}
+                onClick={() => router.push(`/${productId}/${s.id}`)}
+                className={`flex items-center gap-2 border rounded-lg px-2.5 py-2 text-[13px] cursor-pointer transition-all duration-150 text-left w-full hover:bg-white/4 ${
+                  active ? "font-semibold" : "font-normal"
+                }`}
                 style={{
-                  display: "flex", alignItems: "center", gap: 9,
-                  background: active ? T.accentSoft : "transparent",
-                  border: active ? `1px solid ${T.accent}33` : "1px solid transparent",
-                  borderRadius: 8, padding: "8px 10px",
-                  fontSize: 13, fontWeight: active ? 600 : 400,
+                  background: active ? T.accentSoft : undefined,
+                  borderColor: active ? `${T.accent}33` : "transparent",
                   color: active ? T.fg : T.fgMuted,
-                  cursor: "pointer", transition: "all 0.15s", textAlign: "left", width: "100%",
                 }}
-                onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.04)"; }}
-                onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
               >
                 <SectionIcon id={s.id} active={active} color={active ? T.accent : T.fgMuted} />
                 {s.label}
@@ -228,7 +202,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </aside>
 
         {/* Main content */}
-        <main style={{ marginLeft: SIDEBAR_W, flex: 1, minWidth: 0 }}>
+        <main className="ml-50 flex-1 min-w-0">
           {children}
         </main>
       </div>
@@ -292,126 +266,80 @@ function LocaleDropdown({ locales, locale, regenLocaleCode, theme: T, onSelect, 
   }, [open]);
 
   return (
-    <div ref={ref} style={{ position: "relative", display: "flex", alignItems: "center", gap: 6, marginLeft: "auto" }}>
+    <div ref={ref} className="relative flex items-center gap-1.5 ml-auto">
       <button
         onClick={() => setOpen((v) => !v)}
-        style={{
-          display: "flex", alignItems: "center", gap: 6,
-          background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
-          borderRadius: 8, padding: "5px 10px", cursor: "pointer",
-          color: "#fff", fontSize: 13, fontWeight: 600, transition: "all 0.15s",
-        }}
+        className="flex items-center gap-1.5 bg-white/6 border border-white/10 rounded-lg px-2.5 py-1.25 cursor-pointer text-white text-[13px] font-semibold transition-all duration-150"
       >
-        {active.flag && <span style={{ fontSize: 15 }}>{active.flag}</span>}
+        {active.flag && <span className="text-[15px]">{active.flag}</span>}
         <span>{active.label}</span>
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5, marginLeft: 2 }}>
-          <path d="M2 4l4 4 4-4"/>
-        </svg>
+        <ChevronDown size={12} className="opacity-50 ml-0.5" />
       </button>
 
       <button
         onClick={() => onRegen(locale)}
         disabled={!!regenLocaleCode}
         title="Re-generate with AI"
-        className={isRegen ? "animate-spin" : ""}
-        style={{
-          display: "flex", alignItems: "center", justifyContent: "center",
-          width: 28, height: 28, borderRadius: 7,
-          background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
-          color: isRegen ? "rgba(255,255,255,0.35)" : T.fgMuted,
-          cursor: regenLocaleCode ? "not-allowed" : "pointer", transition: "all 0.15s",
-        }}
+        className="flex items-center justify-center w-7 h-7 rounded-[7px] bg-white/6 border border-white/10 transition-all duration-150 disabled:cursor-not-allowed"
+        style={{ color: isRegen ? "rgba(255,255,255,0.35)" : T.fgMuted }}
       >
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
-          <path d="M21 3v5h-5"/>
-        </svg>
+        <RefreshCw size={12} className={isRegen ? "animate-spin" : ""} />
       </button>
 
       <button
         onClick={onAdd}
         title="Add language with AI"
-        style={{
-          display: "flex", alignItems: "center", justifyContent: "center",
-          width: 28, height: 28, borderRadius: 7,
-          background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
-          color: T.fgMuted, cursor: "pointer", fontSize: 16, lineHeight: 1, transition: "all 0.15s",
-        }}
-      >+</button>
+        className="flex items-center justify-center w-7 h-7 rounded-[7px] bg-white/6 border border-white/10 cursor-pointer transition-all duration-150"
+        style={{ color: T.fgMuted }}
+      >
+        <Plus size={14} />
+      </button>
 
       {open && (
-        <div style={{
-          position: "absolute", top: "calc(100% + 6px)", right: 0, zIndex: 300,
-          background: "#111114", border: "1px solid rgba(255,255,255,0.1)",
-          borderRadius: 10, padding: "4px", minWidth: 180,
-          boxShadow: "0 16px 48px rgba(0,0,0,0.7)",
-        }}>
+        <div className="absolute top-[calc(100%+6px)] right-0 z-300 bg-[#111114] border border-white/10 rounded-[10px] p-1 min-w-45 shadow-[0_16px_48px_rgba(0,0,0,0.7)]">
           {locales.map((loc) => {
             const isCurrent = loc.code === locale;
             const canRemove = locales.length > 1;
             const isPendingDelete = confirmDelete === loc.code;
             return (
-              <div key={loc.code} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <div key={loc.code} className="flex items-center gap-1">
                 <button
                   onClick={() => { if (!isPendingDelete) { onSelect(loc.code); setOpen(false); } }}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 10, flex: 1,
-                    background: isPendingDelete ? "rgba(255,80,80,0.1)" : isCurrent ? T.accentSoft : "transparent",
-                    border: isPendingDelete ? "1px solid rgba(255,80,80,0.3)" : "none",
-                    borderRadius: 7, padding: "7px 10px",
-                    cursor: isPendingDelete ? "default" : "pointer", textAlign: "left", transition: "background 0.1s",
-                  }}
-                  onMouseEnter={(e) => { if (!isCurrent && !isPendingDelete) (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.05)"; }}
-                  onMouseLeave={(e) => { if (!isCurrent && !isPendingDelete) (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                  className={`flex items-center gap-2.5 flex-1 border rounded-[7px] px-2.5 py-1.75 text-left transition-colors duration-100 ${
+                    isPendingDelete
+                      ? "bg-red-500/10 border-red-500/30 cursor-default"
+                      : isCurrent
+                      ? "border-transparent cursor-pointer hover:bg-white/5"
+                      : "bg-transparent border-transparent cursor-pointer hover:bg-white/5"
+                  }`}
+                  style={isCurrent && !isPendingDelete ? { background: T.accentSoft } : undefined}
                 >
-                  <span style={{ fontSize: 16 }}>{loc.flag}</span>
+                  <span className="text-base">{loc.flag}</span>
                   {isPendingDelete
-                    ? <span style={{ fontSize: 12, color: "#f87171", flex: 1 }}>Delete {loc.label}?</span>
-                    : <span style={{ fontSize: 13, color: isCurrent ? "#fff" : "#ccc", fontWeight: isCurrent ? 600 : 400, flex: 1 }}>{loc.label}</span>
+                    ? <span className="text-xs text-red-400 flex-1">Delete {loc.label}?</span>
+                    : <span className={`text-[13px] flex-1 ${isCurrent ? "text-white font-semibold" : "text-[#ccc] font-normal"}`}>{loc.label}</span>
                   }
-                  {isCurrent && !isPendingDelete && (
-                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke={T.accent} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M3 8l3.5 3.5L13 4.5"/>
-                    </svg>
-                  )}
+                  {isCurrent && !isPendingDelete && <Check size={13} color={T.accent} />}
                 </button>
                 {canRemove && (
                   isPendingDelete ? (
-                    <div style={{ display: "flex", gap: 2 }}>
+                    <div className="flex gap-0.5">
                       <button
                         onClick={(e) => { e.stopPropagation(); onRemove(loc.code); setConfirmDelete(null); }}
                         title="Confirm delete"
-                        style={{
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          width: 22, height: 22, borderRadius: 5, flexShrink: 0,
-                          background: "rgba(255,80,80,0.2)", border: "none",
-                          color: "#f87171", cursor: "pointer", fontSize: 13, lineHeight: 1,
-                        }}
+                        className="flex items-center justify-center w-5.5 h-5.5 rounded-[5px] shrink-0 bg-red-500/20 border-none text-red-400 cursor-pointer text-[13px]"
                       >✓</button>
                       <button
                         onClick={(e) => { e.stopPropagation(); setConfirmDelete(null); }}
                         title="Cancel"
-                        style={{
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          width: 22, height: 22, borderRadius: 5, flexShrink: 0,
-                          background: "transparent", border: "none",
-                          color: "#555", cursor: "pointer", fontSize: 14, lineHeight: 1,
-                        }}
+                        className="flex items-center justify-center w-5.5 h-5.5 rounded-[5px] shrink-0 bg-transparent border-none text-[#555] cursor-pointer text-sm"
                       >×</button>
                     </div>
                   ) : (
                     <button
                       onClick={(e) => { e.stopPropagation(); setConfirmDelete(loc.code); }}
                       title="Remove language"
-                      style={{
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        width: 22, height: 22, borderRadius: 5, flexShrink: 0,
-                        background: "transparent", border: "none",
-                        color: "#555", cursor: "pointer", fontSize: 14, lineHeight: 1,
-                        transition: "all 0.1s",
-                      }}
-                      onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,80,80,0.15)"; (e.currentTarget as HTMLButtonElement).style.color = "#f87171"; }}
-                      onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = "#555"; }}
+                      className="flex items-center justify-center w-5.5 h-5.5 rounded-[5px] shrink-0 bg-transparent border-none text-[#555] cursor-pointer text-sm transition-all duration-100 hover:bg-red-500/15 hover:text-red-400"
                     >×</button>
                   )
                 )}
@@ -512,93 +440,79 @@ function AddLocaleModal({ theme: T, productId, existingCodes, sourceLoc, sourceM
 
   return (
     <div
-      style={{
-        position: "fixed", inset: 0, zIndex: 500,
-        background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-      }}
+      className="fixed inset-0 z-500 bg-black/70 backdrop-blur-md flex items-center justify-center"
       onClick={(e) => { if (e.target === e.currentTarget && !generating) onClose(); }}
     >
-      <div style={{
-        background: "#111114", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16,
-        width: 380, maxHeight: "80vh", display: "flex", flexDirection: "column",
-        boxShadow: "0 32px 80px rgba(0,0,0,0.8)",
-      }}>
-        <div style={{ padding: "18px 20px 14px", borderBottom: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div className="bg-[#111114] border border-white/10 rounded-2xl w-95 max-h-[80vh] flex flex-col shadow-[0_32px_80px_rgba(0,0,0,0.8)]">
+        <div className="px-5 pt-4.5 pb-3.5 border-b border-white/7 flex items-center justify-between">
           <div>
-            <div style={{ fontWeight: 700, fontSize: 15, color: "#fff" }}>Add language</div>
-            <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>AI generates ASO-optimised copy</div>
+            <div className="font-bold text-[15px] text-white">Add language</div>
+            <div className="text-xs text-[#666] mt-0.5">AI generates ASO-optimised copy</div>
           </div>
-          <button onClick={onClose} disabled={generating} style={{ background: "none", border: "none", color: "#666", cursor: generating ? "not-allowed" : "pointer", fontSize: 20, lineHeight: 1, padding: 4 }}>×</button>
+          <button
+            onClick={onClose}
+            disabled={generating}
+            className="bg-transparent border-none text-[#666] text-xl leading-none p-1 disabled:cursor-not-allowed cursor-pointer"
+          >×</button>
         </div>
 
-        <div style={{ padding: "12px 16px 8px" }}>
+        <div className="px-4 pt-3 pb-2">
           <input
             autoFocus
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search language…"
-            style={{
-              width: "100%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
-              borderRadius: 8, padding: "7px 12px", fontSize: 13, color: "#fff",
-              outline: "none", boxSizing: "border-box",
-            }}
+            className="w-full bg-white/6 border border-white/10 rounded-lg px-3 py-1.75 text-[13px] text-white outline-none box-border"
           />
         </div>
 
-        <div style={{ flex: 1, overflowY: "auto", padding: "4px 8px 8px" }}>
+        <div className="flex-1 overflow-y-auto px-2 pb-2">
           {filtered.length === 0 && (
-            <div style={{ color: "#555", fontSize: 13, textAlign: "center", padding: "20px 0" }}>No languages found</div>
+            <div className="text-[#555] text-[13px] text-center py-5">No languages found</div>
           )}
           {filtered.map((loc) => {
             const exists  = existingCodes.includes(loc.code);
-            const active  = selected.has(loc.code);
+            const isActive = selected.has(loc.code);
             const blocked = generating || exists;
             return (
-              <button key={loc.code} onClick={() => !exists && toggleLocale(loc)} disabled={blocked}
+              <button
+                key={loc.code}
+                onClick={() => !exists && toggleLocale(loc)}
+                disabled={blocked}
+                className={`flex items-center gap-2.5 w-full border rounded-lg px-3 py-2 text-left transition-all duration-120 ${
+                  blocked ? "cursor-default" : "cursor-pointer"
+                } ${exists ? "opacity-40" : ""} ${
+                  isActive ? "border-opacity-[0.27]" : "border-transparent"
+                } ${!isActive && !blocked ? "hover:bg-white/4" : ""}`}
                 style={{
-                  display: "flex", alignItems: "center", gap: 10,
-                  width: "100%",
-                  background: active ? T.accentSoft : "transparent",
-                  border: active ? `1px solid ${T.accent}44` : "1px solid transparent",
-                  borderRadius: 8, padding: "8px 12px",
-                  cursor: blocked ? "default" : "pointer",
-                  opacity: exists ? 0.4 : 1,
-                  transition: "all 0.12s", textAlign: "left",
+                  background: isActive ? T.accentSoft : undefined,
+                  borderColor: isActive ? `${T.accent}44` : undefined,
                 }}
-                onMouseEnter={(e) => { if (!active && !blocked) (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.04)"; }}
-                onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
               >
-                <span style={{ fontSize: 18, lineHeight: 1 }}>{loc.flag}</span>
-                <span style={{ fontSize: 13, color: active ? "#fff" : "#ccc", fontWeight: active ? 600 : 400 }}>{loc.label}</span>
-                <span style={{ fontSize: 11, color: "#555", marginLeft: "auto" }}>{loc.code}</span>
-                {exists && <span style={{ fontSize: 10, color: "#555", background: "rgba(255,255,255,0.06)", borderRadius: 4, padding: "2px 6px" }}>Added</span>}
-                {active && !exists && (
-                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke={T.accent} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 8l3.5 3.5L13 4.5"/>
-                  </svg>
-                )}
+                <span className="text-lg leading-none">{loc.flag}</span>
+                <span className={`text-[13px] ${isActive ? "text-white font-semibold" : "text-[#ccc] font-normal"}`}>{loc.label}</span>
+                <span className="text-[11px] text-[#555] ml-auto">{loc.code}</span>
+                {exists && <span className="text-[10px] text-[#555] bg-white/6 rounded px-1.5 py-0.5">Added</span>}
+                {isActive && !exists && <Check size={14} color={T.accent} />}
               </button>
             );
           })}
         </div>
 
-        <div style={{ padding: "12px 16px", borderTop: "1px solid rgba(255,255,255,0.07)" }}>
-          {error && <div style={{ fontSize: 12, color: "#f87171", marginBottom: 8 }}>{error}</div>}
+        <div className="px-4 py-3 border-t border-white/7">
+          {error && <div className="text-xs text-red-400 mb-2">{error}</div>}
           {progress && (
-            <div style={{ fontSize: 12, color: "#999", marginBottom: 8 }}>
+            <div className="text-xs text-[#999] mb-2">
               Generating {progress.current} ({progress.done + 1}/{progress.total})…
             </div>
           )}
           <button
             onClick={handleGenerate}
             disabled={!hasSelected || generating}
+            className="w-full py-2.25 px-4 rounded-[9px] border-none font-bold text-[13px] transition-all duration-150 disabled:cursor-not-allowed"
             style={{
-              width: "100%", padding: "9px 16px", borderRadius: 9, border: "none",
               background: hasSelected && !generating ? T.accent : "rgba(255,255,255,0.08)",
               color: hasSelected && !generating ? "#fff" : "#555",
-              fontWeight: 700, fontSize: 13, cursor: hasSelected && !generating ? "pointer" : "not-allowed",
-              transition: "all 0.15s",
               boxShadow: hasSelected && !generating ? `0 2px 14px ${T.accentGlow}` : "none",
             }}
           >
@@ -615,14 +529,13 @@ function AddLocaleModal({ theme: T, productId, existingCodes, sourceLoc, sourceM
 }
 
 function SectionIcon({ id, color }: { id: string; active: boolean; color: string }) {
-  const s = { stroke: color, strokeWidth: 1.5, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, fill: "none" };
-  const size = 15;
+  const props = { size: 15, color };
   switch (id) {
-    case "screenshots":     return <svg width={size} height={size} viewBox="0 0 16 16"><rect x="2" y="1" width="8" height="14" rx="1.5" {...s}/><line x1="4" y1="13.5" x2="8" y2="13.5" {...s}/></svg>;
-    case "feature-graphic": return <svg width={size} height={size} viewBox="0 0 16 16"><rect x="1" y="4" width="14" height="8" rx="1.5" {...s}/><circle cx="5" cy="8" r="1.5" {...s}/><path d="M8 10l2-2 3 2" {...s}/></svg>;
-    case "social-og":       return <svg width={size} height={size} viewBox="0 0 16 16"><rect x="1" y="3" width="14" height="10" rx="1.5" {...s}/><circle cx="5.5" cy="7" r="1.5" {...s}/><path d="M9 10l2-3 3 3" {...s}/></svg>;
-    case "cta":             return <svg width={size} height={size} viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="12" rx="1.5" {...s}/><path d="M5 8h6M8 5v6" {...s}/></svg>;
-    case "metadata":        return <svg width={size} height={size} viewBox="0 0 16 16"><path d="M3 4h10M3 8h7M3 12h5" {...s}/></svg>;
+    case "screenshots":     return <Smartphone {...props} />;
+    case "feature-graphic": return <Image {...props} />;
+    case "social-og":       return <Share2 {...props} />;
+    case "cta":             return <MousePointerClick {...props} />;
+    case "metadata":        return <AlignLeft {...props} />;
     default:                return null;
   }
 }
