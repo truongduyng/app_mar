@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import Together from "together-ai";
 import { db } from "@/db/client";
 import { productMetadata } from "@/db/schema";
 import type { MetadataConfig } from "@/lib/types";
-
-const TOGETHER_MODEL = "zai-org/GLM-5.1";
-const together = new Together();
+import { togetherComplete } from "@/lib/together";
 
 const LOCALE_NAMES: Record<string, string> = {
   ar: "Arabic", cs: "Czech", da: "Danish", de: "German", el: "Greek",
@@ -57,21 +54,13 @@ Output only the translation — no explanations, no extra content.
 SOURCE TEXT:
 ${sourceValue}`;
 
-  let response;
+  let raw: string;
   try {
-    response = await together.chat.completions.create({
-      model: TOGETHER_MODEL,
-      messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_schema", json_schema: schema },
-      temperature: 0.2,
-      max_tokens: 4096,
-    }) as { choices: Array<{ message: { content: string } }> };
+    raw = await togetherComplete({ prompt, jsonSchema: schema });
   } catch (e) {
     console.error("[translate-field] Together AI error:", e);
     return NextResponse.json({ error: String(e) }, { status: 502 });
   }
-
-  const raw = response.choices[0]?.message.content ?? "{}";
   let translations: Record<string, string>;
   try {
     translations = JSON.parse(raw) as Record<string, string>;

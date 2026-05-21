@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import Together from "together-ai";
 import { LOCALE_NAMES } from "@/lib/locale-names";
-
-const MODEL = "Qwen/Qwen3.5-397B-A17B";
-const together = new Together();
+import { togetherComplete } from "@/lib/together";
 
 export async function POST(req: NextRequest) {
   const { productName, productDescription, label, currentHeadline, currentSubtitle, locale, screenshotBase64 } = await req.json() as {
@@ -44,26 +41,7 @@ RULES:
 - Write in ${language}. Sound native, not translated."}`;
 
   try {
-    const messages: Parameters<typeof together.chat.completions.create>[0]["messages"] = screenshotBase64
-      ? [
-          {
-            role: "user" as const,
-            content: [
-              { type: "text" as const, text: promptText },
-              { type: "image_url" as const, image_url: { url: screenshotBase64 } },
-            ],
-          },
-        ]
-      : [{ role: "user", content: promptText }];
-
-    const response = await together.chat.completions.create({
-      model: MODEL,
-      messages,
-      response_format: { type: "json_object" },
-      max_tokens: 8192,
-    });
-
-    const raw = response.choices[0]?.message?.content ?? "{}";
+    const raw = await togetherComplete({ prompt: promptText, imageBase64: screenshotBase64, maxTokens: 8192 });
 
     let result: { headline?: string; subtitle?: string };
     try {

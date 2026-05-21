@@ -22,6 +22,13 @@
       "when": 1778917681000,
       "tag": "0002_migrate_slide_styles",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1779343428970,
+      "tag": "0003_typical_alex_wilder",
+      "breakpoints": true
     }
   ]
 }

@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import Together from "together-ai";
 import { db } from "@/db/client";
 import { slideGroups, productSlides, slideCopy, productLocales } from "@/db/schema";
 import { eq, and, max } from "drizzle-orm";
 import { LOCALE_NAMES } from "@/lib/locale-names";
-
-const MODEL = "moonshotai/Kimi-K2.6";
-const together = new Together();
+import { togetherComplete } from "@/lib/together";
 
 export async function POST(req: NextRequest) {
   const { productId, productName, productDescription, device, locale, styleKey, count } =
@@ -44,13 +41,7 @@ Respond with only the JSON object.`;
 
   let slides: { label: string; headline: string; subtitle: string }[];
   try {
-    const response = await together.chat.completions.create({
-      model: MODEL,
-      messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
-      max_tokens: 4096,
-    });
-    const raw = response.choices[0]?.message?.content ?? "{}";
+    const raw = await togetherComplete({ prompt });
     let parsed: { slides?: unknown[] };
     try {
       parsed = JSON.parse(raw);

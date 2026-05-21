@@ -8,7 +8,7 @@ import type { LocaleDef, MetadataConfig } from "@/lib/types";
 import { COMMON_LOCALES } from "@/lib/locale-names";
 import { segmentsToMarkup } from "@/lib/rich-text";
 import type { RichTextSegment } from "@/lib/rich-text";
-import { ChevronDown, RefreshCw, Plus, Check, Smartphone, Image, Share2, MousePointerClick, AlignLeft, Settings } from "lucide-react";
+import { Archive, ChevronDown, RefreshCw, Plus, Check, Smartphone, Image, Share2, MousePointerClick, AlignLeft, Settings } from "lucide-react";
 
 
 type Section = "screenshots" | "feature-graphic" | "social-og" | "cta" | "metadata";
@@ -200,6 +200,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           product={product}
           onClose={() => setEditProductOpen(false)}
           onSaved={() => { setEditProductOpen(false); router.refresh(); }}
+          onArchived={() => {
+            setEditProductOpen(false);
+            router.push("/");
+            router.refresh();
+          }}
         />
       )}
 
@@ -667,11 +672,12 @@ function AddProductModal({ theme: T, onClose, onCreated }: {
 
 // ─── Edit Product Modal ───────────────────────────────────────────────────────
 
-function EditProductModal({ theme: T, product, onClose, onSaved }: {
+function EditProductModal({ theme: T, product, onClose, onSaved, onArchived }: {
   theme: HydratedProduct["theme"];
   product: HydratedProduct;
   onClose: () => void;
   onSaved: () => void;
+  onArchived: () => void;
 }) {
   const [name, setName] = useState(product.name);
   const [accent, setAccent] = useState(T.accent);
@@ -682,6 +688,8 @@ function EditProductModal({ theme: T, product, onClose, onSaved }: {
   const [iconFile, setIconFile] = useState<File | null>(null);
   const [iconPreview, setIconPreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [archiving, setArchiving] = useState(false);
+  const [confirmArchive, setConfirmArchive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -726,13 +734,35 @@ function EditProductModal({ theme: T, product, onClose, onSaved }: {
     }
   }
 
+  async function handleArchive() {
+    setArchiving(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/product-settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId: product.id, archived: true }),
+      });
+      const data = await res.json() as { ok?: boolean; error?: string };
+      if (res.ok && data.ok) {
+        onArchived();
+      } else {
+        setError(data.error ?? "Failed to archive");
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Network error");
+    } finally {
+      setArchiving(false);
+    }
+  }
+
   const inputCls = "w-full bg-white/6 border border-white/10 rounded-lg px-3 py-2 text-[13px] text-white outline-none focus:border-white/25 box-border transition-colors font-[inherit]";
   const labelCls = "text-[12px] font-medium text-[#999]";
 
   return (
     <div
       className="fixed inset-0 z-500 bg-black/70 backdrop-blur-md flex items-center justify-center"
-      onClick={(e) => { if (e.target === e.currentTarget && !saving) onClose(); }}
+      onClick={(e) => { if (e.target === e.currentTarget && !saving && !archiving) onClose(); }}
     >
       <div className="bg-[#111114] border border-white/10 rounded-2xl w-110 max-h-[90vh] overflow-y-auto flex flex-col shadow-[0_32px_80px_rgba(0,0,0,0.8)]">
         {/* Header */}
@@ -744,7 +774,7 @@ function EditProductModal({ theme: T, product, onClose, onSaved }: {
           <button
             type="button"
             onClick={onClose}
-            disabled={saving}
+            disabled={saving || archiving}
             className="bg-transparent border-none text-[#666] text-xl leading-none p-1 disabled:cursor-not-allowed cursor-pointer"
           >×</button>
         </div>
@@ -834,7 +864,7 @@ function EditProductModal({ theme: T, product, onClose, onSaved }: {
 
           <button
             type="submit"
-            disabled={!name.trim() || saving}
+            disabled={!name.trim() || saving || archiving}
             className="w-full py-2.25 px-4 rounded-[9px] border-none font-bold text-[13px] transition-all duration-150 disabled:cursor-not-allowed mt-1"
             style={{
               background: name.trim() && !saving ? accent : "rgba(255,255,255,0.08)",
@@ -844,6 +874,40 @@ function EditProductModal({ theme: T, product, onClose, onSaved }: {
           >
             {saving ? "Saving…" : "Save changes"}
           </button>
+
+          <div className="border-t border-white/7 pt-4 flex flex-col gap-2">
+            {confirmArchive ? (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleArchive}
+                  disabled={archiving || saving}
+                  className="flex items-center justify-center gap-1.5 rounded-lg border border-red-400/30 bg-red-400/12 px-3 py-2 text-[13px] font-semibold text-red-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Archive size={14} />
+                  {archiving ? "Archiving..." : "Confirm archive"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmArchive(false)}
+                  disabled={archiving}
+                  className="rounded-lg border border-white/10 bg-white/4 px-3 py-2 text-[13px] font-semibold text-[#999] cursor-pointer disabled:cursor-not-allowed"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirmArchive(true)}
+                disabled={saving}
+                className="flex items-center justify-center gap-1.5 self-start rounded-lg border border-white/10 bg-white/4 px-3 py-2 text-[13px] font-semibold text-[#999] cursor-pointer transition-colors hover:border-red-400/30 hover:text-red-300 disabled:cursor-not-allowed"
+              >
+                <Archive size={14} />
+                Archive product
+              </button>
+            )}
+          </div>
         </form>
       </div>
     </div>

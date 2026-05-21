@@ -4,6 +4,7 @@ import {
   productSlides, slideCopy, productMetadata, productFeatureGraphics,
   productSocialOgs, productCtaImages,
 } from "./schema";
+import { eq } from "drizzle-orm";
 import type { SerializableProductConfig, SerializableSlideDef, SerializableSlideCopy, ThemeTokens, MetadataConfig, LocaleDef } from "@/lib/types";
 import type { RichTextSegment } from "@/lib/rich-text";
 
@@ -21,7 +22,7 @@ export async function getSerializableProducts(): Promise<SerializableProductConf
     allSocialOgs,
     allCtaImages,
   ] = await Promise.all([
-    db.select().from(products),
+    db.select().from(products).where(eq(products.archived, false)),
     db.select().from(productThemes),
     db.select().from(productLocales),
     db.select().from(slideGroups),

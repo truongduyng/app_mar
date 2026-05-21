@@ -9,7 +9,8 @@ export async function POST(req: NextRequest) {
   const contentType = req.headers.get("content-type") ?? "";
   let productId: string, name: string | undefined, bundleId: string | undefined,
     packageName: string | undefined, privacyPolicyUrl: string | undefined,
-    supportUrl: string | undefined, accent: string | undefined, iconFile: File | undefined | null;
+    supportUrl: string | undefined, accent: string | undefined,
+    archived: boolean | undefined, iconFile: File | undefined | null;
 
   if (contentType.includes("multipart/form-data")) {
     const form = await req.formData();
@@ -22,14 +23,15 @@ export async function POST(req: NextRequest) {
     accent           = (form.get("accent") as string | null) ?? undefined;
     iconFile         = form.get("icon") as File | null;
   } else {
-    const body = await req.json() as Record<string, string>;
-    productId        = body.productId ?? "";
-    name             = body.name;
-    bundleId         = body.bundleId;
-    packageName      = body.packageName;
-    privacyPolicyUrl = body.privacyPolicyUrl;
-    supportUrl       = body.supportUrl;
-    accent           = body.accent;
+    const body = await req.json() as Record<string, unknown>;
+    productId        = typeof body.productId === "string" ? body.productId : "";
+    name             = typeof body.name === "string" ? body.name : undefined;
+    bundleId         = typeof body.bundleId === "string" ? body.bundleId : undefined;
+    packageName      = typeof body.packageName === "string" ? body.packageName : undefined;
+    privacyPolicyUrl = typeof body.privacyPolicyUrl === "string" ? body.privacyPolicyUrl : undefined;
+    supportUrl       = typeof body.supportUrl === "string" ? body.supportUrl : undefined;
+    accent           = typeof body.accent === "string" ? body.accent : undefined;
+    archived         = typeof body.archived === "boolean" ? body.archived : undefined;
   }
 
   if (!productId) return NextResponse.json({ error: "productId required" }, { status: 400 });
@@ -52,6 +54,7 @@ export async function POST(req: NextRequest) {
     packageName?: string | null;
     privacyPolicyUrl?: string | null;
     supportUrl?: string | null;
+    archived?: boolean;
   };
   const productUpdate: ProductUpdate = {};
   if (name?.trim())               productUpdate.name             = name.trim();
@@ -60,6 +63,7 @@ export async function POST(req: NextRequest) {
   if (packageName !== undefined)  productUpdate.packageName      = packageName || null;
   if (privacyPolicyUrl !== undefined) productUpdate.privacyPolicyUrl = privacyPolicyUrl || null;
   if (supportUrl !== undefined)   productUpdate.supportUrl       = supportUrl || null;
+  if (archived !== undefined)     productUpdate.archived         = archived;
 
   if (Object.keys(productUpdate).length > 0) {
     await db.update(products).set(productUpdate).where(eq(products.id, productId));

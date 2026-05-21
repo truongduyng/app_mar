@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import Together from "together-ai";
 import { db } from "@/db/client";
 import { productLocales, slideCopy, productMetadata } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import type { RichTextSegment } from "@/lib/rich-text";
 import type { MetadataConfig } from "@/lib/types";
-
-const TOGETHER_MODEL = "zai-org/GLM-5.1";
-const together = new Together();
+import { togetherComplete } from "@/lib/together";
 
 // Map locale code → country/market context for ASO optimisation
 const LOCALE_CONTEXT: Record<string, { language: string; country: string; marketNotes: string }> = {
@@ -69,16 +66,9 @@ type GenerateBody = {
 
 type JsonSchema = { name: string; strict: boolean; schema: Record<string, unknown> };
 
-async function callTogether<T>(prompt: string, json_schema: JsonSchema): Promise<T> {
-  const response = await together.chat.completions.create({
-    model: TOGETHER_MODEL,
-    messages: [{ role: "user", content: prompt }],
-    response_format: { type: "json_schema", json_schema },
-    temperature: 0.4,
-    max_tokens: 4096,
-  });
-  const completion = response as { choices: Array<{ message: { content: string } }> };
-  return JSON.parse(completion.choices[0]?.message.content ?? "{}") as T;
+async function callTogether<T>(prompt: string, jsonSchema: JsonSchema): Promise<T> {
+  const raw = await togetherComplete({ prompt, jsonSchema });
+  return JSON.parse(raw) as T;
 }
 
 const s = <T extends Record<string, unknown>>(v: T): T => v;
