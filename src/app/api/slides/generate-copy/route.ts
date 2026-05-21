@@ -41,7 +41,7 @@ RULES:
 - Write in ${language}. Sound native, not translated."}`;
 
   try {
-    const raw = await togetherComplete({ prompt: promptText, imageBase64: screenshotBase64, maxTokens: 8192 });
+    const raw = await togetherComplete({ prompt: promptText, imageBase64: screenshotBase64 });
 
     let result: { headline?: string; subtitle?: string };
     try {
