@@ -170,8 +170,6 @@ subtitle: ${sourceMetadata.subtitle}
 promoText: ${sourceMetadata.promoText}
 shortDescription: ${sourceMetadata.shortDescription}
 description: ${sourceMetadata.description}
-keywords: ${sourceMetadata.keywords}
-whatsNew: ${sourceMetadata.whatsNew}
 
 IMPORTANT: Do not use any emoji in any field — the App Store will reject them.
 
