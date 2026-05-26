@@ -37,6 +37,8 @@ export function MetadataPanel({
   privacyPolicyUrl,
   supportUrl,
   onUpdate,
+  onUpdateLocale,
+  onUpdateLocales,
   allLocaleData,
 }: {
   theme: ThemeTokens;
@@ -50,6 +52,8 @@ export function MetadataPanel({
   privacyPolicyUrl?: string;
   supportUrl?: string;
   onUpdate: (updated: MetadataConfig) => void;
+  onUpdateLocale?: (locale: string, updated: MetadataConfig) => void;
+  onUpdateLocales?: (fieldId: keyof MetadataConfig, translations: Record<string, string>) => void;
   /** All locale data for JSON export - { [locale]: MetadataConfig } */
   allLocaleData: Record<string, MetadataConfig>;
 }) {
@@ -109,18 +113,27 @@ export function MetadataPanel({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ productId, fieldId, sourceLocale: activeLocale, sourceValue, targetLocales }),
       });
-      if (res.ok) {
+      const data = await res.json() as { ok?: boolean; translations?: Record<string, string>; error?: string };
+      if (res.ok && data.ok) {
+        if (data.translations && onUpdateLocales) {
+          onUpdateLocales(fieldId, data.translations);
+        } else if (data.translations && onUpdateLocale) {
+          Object.entries(data.translations).forEach(([locale, translated]) => {
+            const existing = allLocaleData[locale] ?? metadata;
+            onUpdateLocale(locale, { ...existing, [fieldId]: translated });
+          });
+        }
         setTranslateAllState("done");
       } else {
-        const data = await res.json();
         setTranslateAllError(data.error ?? "Failed");
         setTranslateAllState("error");
       }
-    } catch {
+    } catch (e: unknown) {
+      setTranslateAllError(e instanceof Error ? e.message : "Failed");
       setTranslateAllState("error");
     }
     setTimeout(() => { setTranslateAllState("idle"); setTranslateAllError(null); }, 4000);
-  }, [productId, locales, allLocaleData]);
+  }, [activeLocale, allLocaleData, locales, metadata, onUpdateLocale, onUpdateLocales, productId]);
 
   const handleSave = useCallback(async () => {
     setSaveState("saving");

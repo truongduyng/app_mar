@@ -89,6 +89,9 @@ export async function exportCtaImage(
   const prevVisibility = el.style.visibility;
   const prevPointerEvents = el.style.pointerEvents;
 
+  // The CTA export tree is parked offscreen. html-to-image captures an empty
+  // canvas when the target itself remains translated outside the viewport.
+  el.style.left = "0px";
   el.style.visibility = "visible";
   el.style.pointerEvents = "none";
   el.style.opacity = "1";

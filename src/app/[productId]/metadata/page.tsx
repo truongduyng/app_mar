@@ -28,6 +28,27 @@ export default function MetadataPage() {
       onUpdate={(updated) =>
         setMetadataMap((prev) => ({ ...prev, [product.id]: { ...prev[product.id], [locale]: updated } }))
       }
+      onUpdateLocale={(localeCode, updated) =>
+        setMetadataMap((prev) => ({ ...prev, [product.id]: { ...prev[product.id], [localeCode]: updated } }))
+      }
+      onUpdateLocales={(fieldId, translations) =>
+        setMetadataMap((prev) => {
+          const productMetadata = prev[product.id] ?? {};
+          return {
+            ...prev,
+            [product.id]: Object.entries(translations).reduce(
+              (next, [localeCode, translated]) => ({
+                ...next,
+                [localeCode]: {
+                  ...(productMetadata[localeCode] ?? { name: product.name, subtitle: "", promoText: "", shortDescription: "", description: "", keywords: "", whatsNew: "" }),
+                  [fieldId]: translated,
+                },
+              }),
+              productMetadata,
+            ),
+          };
+        })
+      }
       allLocaleData={metadataMap[product.id] ?? {}}
     />
   );

@@ -61,17 +61,39 @@ ${sourceValue}`;
     console.error("[translate-field] Together AI error:", e);
     return NextResponse.json({ error: String(e) }, { status: 502 });
   }
-  let translations: Record<string, string>;
+  let parsed: unknown;
   try {
-    translations = JSON.parse(raw) as Record<string, string>;
+    parsed = JSON.parse(raw);
   } catch {
     console.error("[translate-field] Failed to parse JSON:", raw);
     return NextResponse.json({ error: "Invalid JSON from model", raw }, { status: 502 });
   }
 
+  const maybeTranslations =
+    parsed &&
+    typeof parsed === "object" &&
+    "translations" in parsed &&
+    typeof (parsed as { translations?: unknown }).translations === "object" &&
+    (parsed as { translations?: unknown }).translations !== null
+      ? (parsed as { translations: Record<string, unknown> }).translations
+      : parsed;
+
+  if (!maybeTranslations || typeof maybeTranslations !== "object") {
+    return NextResponse.json({ error: "Invalid translations from model", raw }, { status: 502 });
+  }
+
+  const translations = Object.fromEntries(
+    targetLocales
+      .map((locale) => [locale, (maybeTranslations as Record<string, unknown>)[locale]])
+      .filter((entry): entry is [string, string] => typeof entry[1] === "string" && entry[1].trim().length > 0)
+  );
+
+  if (!Object.keys(translations).length) {
+    return NextResponse.json({ error: "Model returned no translations", raw }, { status: 502 });
+  }
+
   await Promise.all(
     Object.entries(translations).map(([locale, translated]) => {
-      if (!translated) return Promise.resolve();
       return db
         .insert(productMetadata)
         .values({ productId, locale, name: "", subtitle: "", promoText: "", shortDescription: "", description: "", keywords: "", whatsNew: "", [fieldId]: translated })
