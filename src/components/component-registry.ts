@@ -43,10 +43,9 @@ function GenericCenteredSlide({ theme: T, imagePath, copy }: SlideProps) {
     decoration: React.createElement(DotGrid, { color: "rgba(255,255,255,0.05)", gap: "48px" }),
     label: copy.label,
     headline: copy.headline,
-    subtitle: copy.subtitle,
     alt: copy.label,
-    phoneWidth: "84%",
-    phoneTy: "4%",
+    phoneWidth: "80%",
+    phoneTy: "-5%",
   });
 }
 
@@ -63,8 +62,9 @@ function GenericAndroidCenteredSlide({ theme: T, imagePath, copy }: SlideProps) 
     decoration: React.createElement(DotGrid, { color: "rgba(255,255,255,0.05)", gap: "44px" }),
     label: copy.label,
     headline: copy.headline,
-    subtitle: copy.subtitle,
     alt: copy.label,
+    phoneWidth: "56%",
+    phoneTy: "-7%",
   });
 }
 
@@ -79,15 +79,14 @@ function GenericSideSlide({ theme: T, imagePath, copy }: SlideProps) {
     ],
     label: copy.label,
     headline: copy.headline,
-    subtitle: copy.subtitle,
     phones: React.createElement(React.Fragment, null,
       React.createElement("div", {
         style: {
           position: "absolute",
-          bottom: 0,
+          bottom: "6%",
           left: "-4%",
-          transform: "translateY(4%) rotate(-3deg)",
-          width: "76%",
+          transform: "rotate(-3deg)",
+          width: "74%",
           zIndex: 2,
           opacity: 0.35,
           filter: "brightness(0.65)",
@@ -96,10 +95,9 @@ function GenericSideSlide({ theme: T, imagePath, copy }: SlideProps) {
       React.createElement("div", {
         style: {
           position: "absolute",
-          bottom: 0,
+          bottom: "6%",
           right: "-4%",
-          transform: "translateY(4%)",
-          width: "83%",
+          width: "80%",
           zIndex: 3,
         },
       }, React.createElement(PhoneFrame, { platform: "iphone", src: imagePath, alt: copy.label })),
@@ -119,15 +117,14 @@ function GenericAndroidSideSlide({ theme: T, imagePath, copy }: SlideProps) {
     ],
     label: copy.label,
     headline: copy.headline,
-    subtitle: copy.subtitle,
     phones: React.createElement(React.Fragment, null,
       React.createElement("div", {
         style: {
           position: "absolute",
-          bottom: 0,
+          bottom: "6%",
           left: "-3%",
-          transform: "translateY(3%) rotate(-3deg)",
-          width: "50%",
+          transform: "rotate(-3deg)",
+          width: "48%",
           zIndex: 2,
           opacity: 0.35,
           filter: "brightness(0.65)",
@@ -136,10 +133,9 @@ function GenericAndroidSideSlide({ theme: T, imagePath, copy }: SlideProps) {
       React.createElement("div", {
         style: {
           position: "absolute",
-          bottom: 0,
+          bottom: "6%",
           right: "-3%",
-          transform: "translateY(2%)",
-          width: "58%",
+          width: "56%",
           zIndex: 3,
         },
       }, React.createElement(PhoneFrame, { platform: "android", src: imagePath, alt: copy.label })),

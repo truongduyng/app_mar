@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import type { AppPlatform, ThemeTokens, MetadataConfig, LocaleDef } from "@/lib/types";
+import { toast } from "sonner";
 
 type FieldDef = {
   id: keyof MetadataConfig;
@@ -79,10 +80,33 @@ export function MetadataPanel({
     [platform]
   );
   const visibleFields = FIELDS.filter(isFieldVisible);
+  const isLight = T.bg === "#F6F7FB" || T.fg === "#17171C";
+  const surfaceStyle = {
+    background: isLight ? "#FFFFFF" : "rgba(255,255,255,0.03)",
+    border: `1px solid ${isLight ? "rgba(15,23,42,0.08)" : "rgba(255,255,255,0.07)"}`,
+    boxShadow: isLight ? "0 10px 28px rgba(15,23,42,0.06)" : "none",
+  };
+  const controlStyle = {
+    background: isLight ? "#FFFFFF" : "rgba(0,0,0,0.25)",
+    borderColor: isLight ? "rgba(15,23,42,0.13)" : "rgba(255,255,255,0.06)",
+    color: T.fg,
+  };
+  const mutedButtonStyle = {
+    background: isLight ? "rgba(15,23,42,0.04)" : "rgba(255,255,255,0.06)",
+    border: `1px solid ${isLight ? "rgba(15,23,42,0.1)" : "rgba(255,255,255,0.08)"}`,
+    color: T.fgMuted,
+  };
+  const idlePublishButtonStyle = {
+    background: isLight ? "rgba(15,23,42,0.045)" : "rgba(255,255,255,0.07)",
+    border: `1px solid ${isLight ? "rgba(15,23,42,0.1)" : "rgba(255,255,255,0.12)"}`,
+  };
+  const progressTrack = isLight ? "rgba(15,23,42,0.08)" : "rgba(255,255,255,0.06)";
+  const warningText = isLight ? "#B45309" : "#FCD34D";
 
   const handleCopy = useCallback(async (id: string, value: string) => {
     await navigator.clipboard.writeText(value);
     setCopiedId(id);
+    toast.success("Copied");
     setTimeout(() => setCopiedId(null), 1500);
   }, []);
 
@@ -97,6 +121,7 @@ export function MetadataPanel({
     const text = visibleFields.map((f) => `${f.label}:\n${metadata[f.id]}`).join("\n\n---\n\n");
     await navigator.clipboard.writeText(text);
     setCopiedId("__all__");
+    toast.success("Copied metadata");
     setTimeout(() => setCopiedId(null), 1500);
   }, [metadata, visibleFields]);
 
@@ -124,13 +149,18 @@ export function MetadataPanel({
           });
         }
         setTranslateAllState("done");
+        toast.success("Translations generated");
       } else {
-        setTranslateAllError(data.error ?? "Failed");
+        const message = data.error ?? "Failed";
+        setTranslateAllError(message);
         setTranslateAllState("error");
+        toast.error(message);
       }
     } catch (e: unknown) {
-      setTranslateAllError(e instanceof Error ? e.message : "Failed");
+      const message = e instanceof Error ? e.message : "Failed";
+      setTranslateAllError(message);
       setTranslateAllState("error");
+      toast.error(message);
     }
     setTimeout(() => { setTranslateAllState("idle"); setTranslateAllError(null); }, 4000);
   }, [activeLocale, allLocaleData, locales, metadata, onUpdateLocale, onUpdateLocales, productId]);
@@ -150,9 +180,16 @@ export function MetadataPanel({
           body: JSON.stringify({ productId, bundleId: localBundleId, packageName: localPackageName, privacyPolicyUrl: localPrivacyUrl, supportUrl: localSupportUrl }),
         }),
       ]);
-      setSaveState(metaRes.ok && idsRes.ok ? "saved" : "error");
-    } catch {
+      const ok = metaRes.ok && idsRes.ok;
+      setSaveState(ok ? "saved" : "error");
+      if (ok) {
+        toast.success("Metadata saved");
+      } else {
+        toast.error("Failed to save metadata");
+      }
+    } catch (e) {
       setSaveState("error");
+      toast.error(e instanceof Error ? e.message : "Failed to save metadata");
     }
     setTimeout(() => setSaveState("idle"), 2000);
   }, [productId, activeLocale, metadata, localBundleId, localPackageName, localPrivacyUrl, localSupportUrl]);
@@ -174,13 +211,18 @@ export function MetadataPanel({
       if (data.warnings?.length) setPublishWarnings(data.warnings);
       if (res.ok && data.ok) {
         setState("published");
+        toast.success(`${store === "apple" ? "Apple" : "Google"} metadata published`);
       } else {
-        setPublishErrors(data.errors ?? [data.error ?? "Unknown error"]);
+        const messages = data.errors ?? [data.error ?? "Unknown error"];
+        setPublishErrors(messages);
         setState("error");
+        toast.error(messages[0]);
       }
     } catch (e: unknown) {
-      setPublishErrors([e instanceof Error ? e.message : String(e)]);
+      const message = e instanceof Error ? e.message : String(e);
+      setPublishErrors([message]);
       setState("error");
+      toast.error(message);
     }
     setTimeout(() => setState("idle"), 4000);
   }, [productId, activeLocale]);
@@ -204,6 +246,7 @@ export function MetadataPanel({
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    toast.success("Metadata JSON exported");
   }, [metadata, allLocaleData, activeLocale, visibleFields]);
 
   return (
@@ -231,9 +274,8 @@ export function MetadataPanel({
           <button
             onClick={handleCopyAll}
             style={{
-              background: "rgba(255,255,255,0.06)",
+              ...mutedButtonStyle,
               color: copiedId === "__all__" ? T.accent : T.fgMuted,
-              border: "1px solid rgba(255,255,255,0.08)",
               borderRadius: 8,
               padding: "8px 16px",
               fontSize: 13,
@@ -265,9 +307,7 @@ export function MetadataPanel({
           <button
             onClick={handleExportJson}
             style={{
-              background: "rgba(255,255,255,0.06)",
-              color: T.fgMuted,
-              border: "1px solid rgba(255,255,255,0.08)",
+              ...mutedButtonStyle,
               borderRadius: 8,
               padding: "8px 16px",
               fontSize: 13,
@@ -306,9 +346,9 @@ export function MetadataPanel({
               disabled={appleState === "publishing"}
               title="Publish current locale to App Store Connect"
               style={{
-                background: appleState === "error" ? "#EF4444" : appleState === "published" ? "#22C55E" : "rgba(255,255,255,0.07)",
+                background: appleState === "error" ? "#EF4444" : appleState === "published" ? "#22C55E" : idlePublishButtonStyle.background,
                 color: appleState === "idle" ? T.fgMuted : "#fff",
-                border: "1px solid rgba(255,255,255,0.12)",
+                border: idlePublishButtonStyle.border,
                 borderRadius: 8,
                 padding: "8px 14px",
                 fontSize: 13,
@@ -331,9 +371,9 @@ export function MetadataPanel({
               disabled={appleAllState === "publishing"}
               title="Publish all locales to App Store Connect"
               style={{
-                background: appleAllState === "error" ? "#EF4444" : appleAllState === "published" ? "#22C55E" : "rgba(255,255,255,0.07)",
+                background: appleAllState === "error" ? "#EF4444" : appleAllState === "published" ? "#22C55E" : idlePublishButtonStyle.background,
                 color: appleAllState === "idle" ? T.fgMuted : "#fff",
-                border: "1px solid rgba(255,255,255,0.12)",
+                border: idlePublishButtonStyle.border,
                 borderRadius: 8,
                 padding: "8px 14px",
                 fontSize: 13,
@@ -359,9 +399,9 @@ export function MetadataPanel({
               disabled={googleState === "publishing"}
               title="Publish current locale to Google Play"
               style={{
-                background: googleState === "error" ? "#EF4444" : googleState === "published" ? "#22C55E" : "rgba(255,255,255,0.07)",
+                background: googleState === "error" ? "#EF4444" : googleState === "published" ? "#22C55E" : idlePublishButtonStyle.background,
                 color: googleState === "idle" ? T.fgMuted : "#fff",
-                border: "1px solid rgba(255,255,255,0.12)",
+                border: idlePublishButtonStyle.border,
                 borderRadius: 8,
                 padding: "8px 14px",
                 fontSize: 13,
@@ -384,9 +424,9 @@ export function MetadataPanel({
               disabled={googleAllState === "publishing"}
               title="Publish all locales to Google Play"
               style={{
-                background: googleAllState === "error" ? "#EF4444" : googleAllState === "published" ? "#22C55E" : "rgba(255,255,255,0.07)",
+                background: googleAllState === "error" ? "#EF4444" : googleAllState === "published" ? "#22C55E" : idlePublishButtonStyle.background,
                 color: googleAllState === "idle" ? T.fgMuted : "#fff",
-                border: "1px solid rgba(255,255,255,0.12)",
+                border: idlePublishButtonStyle.border,
                 borderRadius: 8,
                 padding: "8px 14px",
                 fontSize: 13,
@@ -423,7 +463,7 @@ export function MetadataPanel({
             Publishing errors:
           </div>
           {publishErrors.map((e, i) => (
-            <div key={i} style={{ fontSize: 12, color: "#FCA5A5", fontFamily: "monospace", lineHeight: 1.6 }}>
+            <div key={i} style={{ fontSize: 12, color: isLight ? "#B91C1C" : "#FCA5A5", fontFamily: "monospace", lineHeight: 1.6 }}>
               {e}
             </div>
           ))}
@@ -445,7 +485,7 @@ export function MetadataPanel({
             Published with warnings:
           </div>
           {publishWarnings.map((w, i) => (
-            <div key={i} style={{ fontSize: 12, color: "#FCD34D", lineHeight: 1.6 }}>
+            <div key={i} style={{ fontSize: 12, color: warningText, lineHeight: 1.6 }}>
               {w}
             </div>
           ))}
@@ -455,8 +495,7 @@ export function MetadataPanel({
       {/* Store ID config */}
       <div
         style={{
-          background: "rgba(255,255,255,0.03)",
-          border: "1px solid rgba(255,255,255,0.07)",
+          ...surfaceStyle,
           borderRadius: 14,
           padding: "18px 22px",
           marginBottom: 24,
@@ -477,12 +516,12 @@ export function MetadataPanel({
               placeholder="com.example.myapp"
               style={{
                 width: "100%",
-                background: "rgba(0,0,0,0.25)",
-                border: "1px solid rgba(255,255,255,0.06)",
+                background: controlStyle.background,
+                border: `1px solid ${controlStyle.borderColor}`,
                 borderRadius: 8,
                 padding: "8px 12px",
                 fontSize: 13,
-                color: T.fg,
+                color: controlStyle.color,
                 fontFamily: "monospace",
                 outline: "none",
                 boxSizing: "border-box",
@@ -500,12 +539,12 @@ export function MetadataPanel({
               placeholder="com.example.myapp"
               style={{
                 width: "100%",
-                background: "rgba(0,0,0,0.25)",
-                border: "1px solid rgba(255,255,255,0.06)",
+                background: controlStyle.background,
+                border: `1px solid ${controlStyle.borderColor}`,
                 borderRadius: 8,
                 padding: "8px 12px",
                 fontSize: 13,
-                color: T.fg,
+                color: controlStyle.color,
                 fontFamily: "monospace",
                 outline: "none",
                 boxSizing: "border-box",
@@ -526,12 +565,12 @@ export function MetadataPanel({
               placeholder="https://example.com/privacy"
               style={{
                 width: "100%",
-                background: "rgba(0,0,0,0.25)",
-                border: "1px solid rgba(255,255,255,0.06)",
+                background: controlStyle.background,
+                border: `1px solid ${controlStyle.borderColor}`,
                 borderRadius: 8,
                 padding: "8px 12px",
                 fontSize: 13,
-                color: T.fg,
+                color: controlStyle.color,
                 fontFamily: "monospace",
                 outline: "none",
                 boxSizing: "border-box",
@@ -550,12 +589,12 @@ export function MetadataPanel({
               placeholder="https://example.com/support"
               style={{
                 width: "100%",
-                background: "rgba(0,0,0,0.25)",
-                border: "1px solid rgba(255,255,255,0.06)",
+                background: controlStyle.background,
+                border: `1px solid ${controlStyle.borderColor}`,
                 borderRadius: 8,
                 padding: "8px 12px",
                 fontSize: 13,
-                color: T.fg,
+                color: controlStyle.color,
                 fontFamily: "monospace",
                 outline: "none",
                 boxSizing: "border-box",
@@ -577,8 +616,7 @@ export function MetadataPanel({
             <div
               key={field.id}
               style={{
-                background: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(255,255,255,0.07)",
+                ...surfaceStyle,
                 borderRadius: 14,
                 padding: "20px 22px",
                 transition: "border-color 0.15s",
@@ -608,8 +646,8 @@ export function MetadataPanel({
                       display: "flex",
                       alignItems: "center",
                       gap: 4,
-                      background: translateAllState === "done" ? "rgba(34,197,94,0.15)" : translateAllState === "error" ? "rgba(239,68,68,0.15)" : "rgba(255,255,255,0.06)",
-                      border: "1px solid rgba(255,255,255,0.08)",
+                      background: translateAllState === "done" ? "rgba(34,197,94,0.15)" : translateAllState === "error" ? "rgba(239,68,68,0.15)" : mutedButtonStyle.background,
+                      border: mutedButtonStyle.border,
                       borderRadius: 6,
                       padding: "3px 10px",
                       fontSize: 11,
@@ -631,8 +669,7 @@ export function MetadataPanel({
                     display: "flex",
                     alignItems: "center",
                     gap: 4,
-                    background: "rgba(255,255,255,0.06)",
-                    border: "1px solid rgba(255,255,255,0.08)",
+                    ...mutedButtonStyle,
                     borderRadius: 6,
                     padding: "3px 10px",
                     fontSize: 11,
@@ -671,12 +708,12 @@ export function MetadataPanel({
                   rows={field.id === "description" ? 8 : 3}
                   style={{
                     width: "100%",
-                    background: "rgba(0,0,0,0.25)",
-                    border: `1px solid ${isOver ? "#EF4444" : "rgba(255,255,255,0.06)"}`,
+                    background: controlStyle.background,
+                    border: `1px solid ${isOver ? "#EF4444" : controlStyle.borderColor}`,
                     borderRadius: 8,
                     padding: "10px 14px",
                     fontSize: 14,
-                    color: T.fg,
+                    color: controlStyle.color,
                     fontFamily: "inherit",
                     resize: "vertical",
                     outline: "none",
@@ -691,7 +728,7 @@ export function MetadataPanel({
                   onBlur={(e) => {
                     if (!isOver)
                       (e.target as HTMLTextAreaElement).style.borderColor =
-                        "rgba(255,255,255,0.06)";
+                        controlStyle.borderColor;
                   }}
                 />
               ) : (
@@ -703,12 +740,12 @@ export function MetadataPanel({
                   placeholder={field.placeholder}
                   style={{
                     width: "100%",
-                    background: "rgba(0,0,0,0.25)",
-                    border: `1px solid ${isOver ? "#EF4444" : "rgba(255,255,255,0.06)"}`,
+                    background: controlStyle.background,
+                    border: `1px solid ${isOver ? "#EF4444" : controlStyle.borderColor}`,
                     borderRadius: 8,
                     padding: "10px 14px",
                     fontSize: 14,
-                    color: T.fg,
+                    color: controlStyle.color,
                     fontFamily: "inherit",
                     outline: "none",
                     transition: "border-color 0.15s",
@@ -721,7 +758,7 @@ export function MetadataPanel({
                   onBlur={(e) => {
                     if (!isOver)
                       (e.target as HTMLInputElement).style.borderColor =
-                        "rgba(255,255,255,0.06)";
+                        controlStyle.borderColor;
                   }}
                 />
               )}
@@ -740,7 +777,7 @@ export function MetadataPanel({
                   style={{
                     flex: 1,
                     height: 3,
-                    background: "rgba(255,255,255,0.06)",
+                    background: progressTrack,
                     borderRadius: 2,
                     overflow: "hidden",
                     marginRight: 12,

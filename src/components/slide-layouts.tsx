@@ -143,7 +143,7 @@ export function AccentLine({
 ───────────────────────────────────────────────────────────────── */
 
 /**
- * Centered layout: caption + subtitle centered at top, single phone at bottom.
+ * Centered layout: caption centered at top, single phone below.
  * Used for hero, detail, and single-phone showcase slides.
  */
 export function CenteredSlide({
@@ -155,12 +155,10 @@ export function CenteredSlide({
   decoration,
   label,
   headline,
-  subtitle,
   alt,
   phoneWidth,
   phoneTy,
   captionMt,
-  subtitleMaxW,
   extras,
   fadeH = "8%",
 }: {
@@ -172,20 +170,18 @@ export function CenteredSlide({
   decoration?: ReactNode;
   label: string;
   headline: ReactNode;
-  subtitle: ReactNode;
   alt: string;
   phoneWidth?: string;
   phoneTy?: string;
   captionMt?: number;
-  subtitleMaxW?: number;
   extras?: ReactNode;
   fadeH?: string;
 }) {
   const { W, H } = dims(platform);
   const isIP = platform === "iphone";
   const scaled = scaleOrbs(orbs, platform);
-  const pw = phoneWidth ?? (isIP ? "84%" : "58%");
-  const ty = phoneTy ?? (isIP ? "4%" : "-2%");
+  const pw = phoneWidth ?? (isIP ? "82%" : "58%");
+  const ty = phoneTy ?? (isIP ? "-5%" : "-7%");
   const mt = 0.05;
 
   return (
@@ -209,21 +205,6 @@ export function CenteredSlide({
 
       <div style={{ zIndex: 2, position: "relative", marginTop: H * mt }}>
         <Caption label={label} headline={headline} canvasW={W} theme={T} />
-      </div>
-      <div
-        style={{
-          zIndex: 2,
-          position: "relative",
-          marginTop: H * 0.012,
-          fontSize: W * (isIP ? 0.035 : 0.038),
-          color: T.fgMuted,
-          textAlign: "center",
-          fontWeight: 400,
-          lineHeight: 1.55,
-          maxWidth: W * (subtitleMaxW ?? (isIP ? 0.72 : 0.78)),
-        }}
-      >
-        {subtitle}
       </div>
 
       <div
@@ -260,7 +241,7 @@ export function CenteredSlide({
 }
 
 /**
- * Side layout: caption + subtitle left-aligned, phone(s) passed as children.
+ * Side layout: caption left-aligned, phone(s) passed as children.
  * Used for dual-phone and side-phone slides.
  */
 export function SideSlide({
@@ -271,11 +252,8 @@ export function SideSlide({
   decoration,
   label,
   headline,
-  subtitle,
   phones,
   captionMt,
-  subtitleMt,
-  subtitleMaxW,
   fadeH = "6%",
 }: {
   theme: ThemeTokens;
@@ -286,11 +264,8 @@ export function SideSlide({
   decoration?: ReactNode;
   label: string;
   headline: ReactNode;
-  subtitle: ReactNode;
   phones: ReactNode;
   captionMt?: number;
-  subtitleMt?: number;
-  subtitleMaxW?: number;
   fadeH?: string;
 }) {
   const { W, H } = dims(platform);
@@ -333,21 +308,6 @@ export function SideSlide({
           align="left"
           theme={T}
         />
-      </div>
-      <div
-        style={{
-          zIndex: 5,
-          position: "relative",
-          marginTop: H * (subtitleMt ?? (isIP ? 0.013 : 0.012)),
-          paddingLeft: px,
-          fontSize: W * (isIP ? 0.035 : 0.038),
-          color: T.fgMuted,
-          fontWeight: 400,
-          lineHeight: 1.55,
-          maxWidth: W * (subtitleMaxW ?? (isIP ? 0.68 : 0.65)),
-        }}
-      >
-        {subtitle}
       </div>
       <div
         style={{

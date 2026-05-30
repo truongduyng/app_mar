@@ -8,7 +8,8 @@ import type { LocaleDef, MetadataConfig } from "@/lib/types";
 import { COMMON_LOCALES } from "@/lib/locale-names";
 import { segmentsToMarkup } from "@/lib/rich-text";
 import type { RichTextSegment } from "@/lib/rich-text";
-import { Archive, ChevronDown, RefreshCw, Plus, Check, Smartphone, Image, Share2, MousePointerClick, AlignLeft, Settings } from "lucide-react";
+import { Archive, ChevronDown, RefreshCw, Plus, Check, Smartphone, Image, Share2, MousePointerClick, AlignLeft, Settings, Moon, Sun } from "lucide-react";
+import { toast } from "sonner";
 
 
 type Section = "screenshots" | "feature-graphic" | "social-og" | "cta" | "metadata";
@@ -32,6 +33,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     metadataMap, setMetadataMap, regenLocaleCode, handleRegenLocale,
     removeLocale,
     ready,
+    uiMode, setUiMode,
   } = useProduct();
 
   const pathname = usePathname();
@@ -44,6 +46,18 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [editProductOpen, setEditProductOpen] = useState(false);
 
   const T = product.theme;
+  const isLight = uiMode === "light";
+  const chrome = {
+    appBg: isLight ? "#F6F7FB" : "#09090B",
+    topBg: isLight ? "rgba(255,255,255,0.9)" : "rgba(9,9,11,0.92)",
+    sideBg: isLight ? "rgba(255,255,255,0.92)" : "rgba(13,13,15,0.95)",
+    panelBg: isLight ? "rgba(255,255,255,0.97)" : "rgba(24,24,28,0.97)",
+    border: isLight ? "rgba(15,23,42,0.1)" : "rgba(255,255,255,0.1)",
+    subtleBorder: isLight ? "rgba(15,23,42,0.08)" : "rgba(255,255,255,0.06)",
+    controlBg: isLight ? "rgba(15,23,42,0.05)" : "rgba(255,255,255,0.06)",
+    muted: isLight ? "#667085" : "#9999a8",
+    shadow: isLight ? "0 16px 48px rgba(15,23,42,0.12)" : "0 16px 60px rgba(0,0,0,0.6)",
+  };
 
   const activeSection = ((): Section => {
     const seg = pathname.split("/")[2] as Section;
@@ -62,17 +76,23 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   if (!ready) {
     return (
-      <div className="min-h-screen bg-[#09090B] flex items-center justify-center text-[#8A8A94] text-base">
+      <div
+        className="min-h-screen flex items-center justify-center text-base"
+        style={{ background: chrome.appBg, color: T.fgMuted }}
+      >
         Loading images…
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#09090B]" style={{ color: T.fg }}>
+    <div className="min-h-screen" style={{ color: T.fg, background: chrome.appBg }}>
 
       {/* ── Top bar ── */}
-      <div className="fixed top-0 left-0 right-0 z-100 h-14.25 bg-[rgba(9,9,11,0.92)] backdrop-blur-md border-b border-white/6 px-4 flex items-center gap-3">
+      <div
+        className="fixed top-0 left-0 right-0 z-100 h-14.25 backdrop-blur-md border-b px-4 flex items-center gap-3"
+        style={{ background: chrome.topBg, borderColor: chrome.subtleBorder }}
+      >
 
         {/* Product picker */}
         <div ref={productMenuRef} className="relative">
@@ -98,7 +118,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           </button>
 
           {productMenuOpen && (
-            <div className="absolute top-[calc(100%+8px)] left-0 z-200 bg-[rgba(24,24,28,0.97)] backdrop-blur-xl border border-white/10 rounded-xl p-1.5 min-w-55 shadow-[0_16px_60px_rgba(0,0,0,0.6)] flex flex-col gap-0.5">
+            <div
+              className="absolute top-[calc(100%+8px)] left-0 z-200 backdrop-blur-xl border rounded-xl p-1.5 min-w-55 flex flex-col gap-0.5"
+              style={{ background: chrome.panelBg, borderColor: chrome.border, boxShadow: chrome.shadow }}
+            >
               {PRODUCTS.map((p) => {
                 const active = p.id === productId;
                 return (
@@ -115,7 +138,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                         className="w-7 h-7 rounded-md shrink-0"
                         onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                       />
-                      <span className={`text-sm flex-1 ${active ? "font-bold" : "font-medium text-[#9999a8]"}`} style={active ? { color: T.fg } : undefined}>
+                      <span className={`text-sm flex-1 ${active ? "font-bold" : "font-medium"}`} style={{ color: active ? T.fg : chrome.muted }}>
                         {p.name}
                       </span>
                       {active && <Check size={14} color={T.accent} />}
@@ -130,12 +153,13 @@ export function AppShell({ children }: { children: ReactNode }) {
                   </div>
                 );
               })}
-              <div className="border-t border-white/8 mt-0.5 pt-0.5">
+              <div className="border-t mt-0.5 pt-0.5" style={{ borderColor: chrome.subtleBorder }}>
                 <button
                   onClick={() => { setProductMenuOpen(false); setAddProductOpen(true); }}
-                  className="flex items-center gap-2.5 border-none rounded-lg px-2.5 py-2 cursor-pointer transition-colors duration-120 w-full text-left hover:bg-white/5 bg-transparent text-[#9999a8]"
+                  className="flex items-center gap-2.5 border-none rounded-lg px-2.5 py-2 cursor-pointer transition-colors duration-120 w-full text-left hover:bg-white/5 bg-transparent"
+                  style={{ color: chrome.muted }}
                 >
-                  <div className="w-7 h-7 rounded-md shrink-0 flex items-center justify-center bg-white/6 border border-white/10">
+                  <div className="w-7 h-7 rounded-md shrink-0 flex items-center justify-center border" style={{ background: chrome.controlBg, borderColor: chrome.border }}>
                     <Plus size={13} />
                   </div>
                   <span className="text-sm font-medium">Add product</span>
@@ -151,18 +175,30 @@ export function AppShell({ children }: { children: ReactNode }) {
           locale={locale}
           regenLocaleCode={regenLocaleCode}
           theme={T}
+          uiMode={uiMode}
           onSelect={setLocale}
           onRegen={handleRegenLocale}
           onAdd={() => setAddLocaleOpen(true)}
           onRemove={removeLocale}
         />
+        <button
+          onClick={() => setUiMode(isLight ? "dark" : "light")}
+          title={isLight ? "Switch to dark mode" : "Switch to light mode"}
+          className="flex items-center justify-center w-7 h-7 rounded-[7px] border cursor-pointer transition-all duration-150"
+          style={{ background: chrome.controlBg, borderColor: chrome.border, color: T.fgMuted }}
+        >
+          {isLight ? <Moon size={13} /> : <Sun size={13} />}
+        </button>
       </div>
 
       {/* ── Body: sidebar + main ── */}
       <div className="flex pt-14.25">
 
         {/* Left sidebar */}
-        <aside className="fixed top-14.25 left-0 bottom-0 w-50 z-90 bg-[rgba(13,13,15,0.95)] backdrop-blur-md border-r border-white/6 flex flex-col p-4 gap-0.5 overflow-y-auto">
+        <aside
+          className="fixed top-14.25 left-0 bottom-0 w-50 z-90 backdrop-blur-md border-r flex flex-col p-4 gap-0.5 overflow-y-auto"
+          style={{ background: chrome.sideBg, borderColor: chrome.subtleBorder }}
+        >
           <div className="text-[10px] font-bold tracking-widest uppercase px-2 pb-2" style={{ color: T.fgMuted }}>
             Assets
           </div>
@@ -199,9 +235,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           theme={T}
           product={product}
           onClose={() => setEditProductOpen(false)}
-          onSaved={() => { setEditProductOpen(false); router.refresh(); }}
+          onSaved={() => { setEditProductOpen(false); toast.success("Product updated"); router.refresh(); }}
           onArchived={() => {
             setEditProductOpen(false);
+            toast.success("Product archived");
             router.push("/");
             router.refresh();
           }}
@@ -214,6 +251,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           onClose={() => setAddProductOpen(false)}
           onCreated={(id: string) => {
             setAddProductOpen(false);
+            toast.success("Product created");
             router.push(`/${id}/screenshots`);
             router.refresh();
           }}
@@ -242,6 +280,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               [product.id]: { ...prev[product.id], [newLoc.code]: metadata },
             }));
             setLocale(newLoc.code);
+            toast.success(`${newLoc.label} added`);
           }}
         />
       )}
@@ -253,11 +292,12 @@ export function AppShell({ children }: { children: ReactNode }) {
 
 import type { HydratedProduct } from "@/components/ProductContext";
 
-function LocaleDropdown({ locales, locale, regenLocaleCode, theme: T, onSelect, onRegen, onAdd, onRemove }: {
+function LocaleDropdown({ locales, locale, regenLocaleCode, theme: T, uiMode, onSelect, onRegen, onAdd, onRemove }: {
   locales: LocaleDef[];
   locale: string;
   regenLocaleCode: string | null;
   theme: HydratedProduct["theme"];
+  uiMode: "dark" | "light";
   onSelect: (code: string) => void;
   onRegen: (code: string) => Promise<void>;
   onAdd: () => void;
@@ -268,6 +308,11 @@ function LocaleDropdown({ locales, locale, regenLocaleCode, theme: T, onSelect, 
   const ref = useRef<HTMLDivElement>(null);
   const active = locales.find((l) => l.code === locale) ?? locales[0];
   const isRegen = regenLocaleCode === locale;
+  const isLight = uiMode === "light";
+  const controlBg = isLight ? "rgba(15,23,42,0.05)" : "rgba(255,255,255,0.06)";
+  const border = isLight ? "rgba(15,23,42,0.1)" : "rgba(255,255,255,0.1)";
+  const panelBg = isLight ? "#FFFFFF" : "#111114";
+  const shadow = isLight ? "0 16px 48px rgba(15,23,42,0.14)" : "0 16px 48px rgba(0,0,0,0.7)";
 
   useEffect(() => {
     if (!open) return;
@@ -282,7 +327,8 @@ function LocaleDropdown({ locales, locale, regenLocaleCode, theme: T, onSelect, 
     <div ref={ref} className="relative flex items-center gap-1.5 ml-auto">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 bg-white/6 border border-white/10 rounded-lg px-2.5 py-1.25 cursor-pointer text-white text-[13px] font-semibold transition-all duration-150"
+        className="flex items-center gap-1.5 border rounded-lg px-2.5 py-1.25 cursor-pointer text-[13px] font-semibold transition-all duration-150"
+        style={{ background: controlBg, borderColor: border, color: T.fg }}
       >
         {active.flag && <span className="text-[15px]">{active.flag}</span>}
         <span>{active.label}</span>
@@ -293,8 +339,8 @@ function LocaleDropdown({ locales, locale, regenLocaleCode, theme: T, onSelect, 
         onClick={() => onRegen(locale)}
         disabled={!!regenLocaleCode}
         title="Re-generate with AI"
-        className="flex items-center justify-center w-7 h-7 rounded-[7px] bg-white/6 border border-white/10 transition-all duration-150 disabled:cursor-not-allowed"
-        style={{ color: isRegen ? "rgba(255,255,255,0.35)" : T.fgMuted }}
+        className="flex items-center justify-center w-7 h-7 rounded-[7px] border transition-all duration-150 disabled:cursor-not-allowed"
+        style={{ background: controlBg, borderColor: border, color: isRegen ? (isLight ? "rgba(15,23,42,0.3)" : "rgba(255,255,255,0.35)") : T.fgMuted }}
       >
         <RefreshCw size={12} className={isRegen ? "animate-spin" : ""} />
       </button>
@@ -302,14 +348,17 @@ function LocaleDropdown({ locales, locale, regenLocaleCode, theme: T, onSelect, 
       <button
         onClick={onAdd}
         title="Add language with AI"
-        className="flex items-center justify-center w-7 h-7 rounded-[7px] bg-white/6 border border-white/10 cursor-pointer transition-all duration-150"
-        style={{ color: T.fgMuted }}
+        className="flex items-center justify-center w-7 h-7 rounded-[7px] border cursor-pointer transition-all duration-150"
+        style={{ background: controlBg, borderColor: border, color: T.fgMuted }}
       >
         <Plus size={14} />
       </button>
 
       {open && (
-        <div className="absolute top-[calc(100%+6px)] right-0 z-300 bg-[#111114] border border-white/10 rounded-[10px] p-1 min-w-45 shadow-[0_16px_48px_rgba(0,0,0,0.7)]">
+        <div
+          className="absolute top-[calc(100%+6px)] right-0 z-300 border rounded-[10px] p-1 min-w-45"
+          style={{ background: panelBg, borderColor: border, boxShadow: shadow }}
+        >
           {locales.map((loc) => {
             const isCurrent = loc.code === locale;
             const canRemove = locales.length > 1;
@@ -330,7 +379,7 @@ function LocaleDropdown({ locales, locale, regenLocaleCode, theme: T, onSelect, 
                   <span className="text-base">{loc.flag}</span>
                   {isPendingDelete
                     ? <span className="text-xs text-red-400 flex-1">Delete {loc.label}?</span>
-                    : <span className={`text-[13px] flex-1 ${isCurrent ? "text-white font-semibold" : "text-[#ccc] font-normal"}`}>{loc.label}</span>
+                    : <span className={`text-[13px] flex-1 ${isCurrent ? "font-semibold" : "font-normal"}`} style={{ color: isCurrent ? T.fg : T.fgMuted }}>{loc.label}</span>
                   }
                   {isCurrent && !isPendingDelete && <Check size={13} color={T.accent} />}
                 </button>
@@ -436,10 +485,14 @@ function AddLocaleModal({ theme: T, productId, existingCodes, sourceLoc, sourceM
         if (res.ok && data.ok && data.metadata) {
           onAdded(loc, data.metadata);
         } else {
-          setError(`${loc.label}: ${data.error ?? "failed"}`);
+          const message = `${loc.label}: ${data.error ?? "failed"}`;
+          setError(message);
+          toast.error(message);
         }
       } catch (e) {
-        setError(`${loc.label}: ${e instanceof Error ? e.message : "Network error"}`);
+        const message = `${loc.label}: ${e instanceof Error ? e.message : "Network error"}`;
+        setError(message);
+        toast.error(message);
       }
       done++;
     }
@@ -581,10 +634,14 @@ function AddProductModal({ theme: T, onClose, onCreated }: {
       if (res.ok && data.ok && data.id) {
         onCreated(data.id);
       } else {
-        setError(data.error ?? "Failed to create product");
+        const message = data.error ?? "Failed to create product";
+        setError(message);
+        toast.error(message);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Network error");
+      const message = e instanceof Error ? e.message : "Network error";
+      setError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -725,10 +782,14 @@ function EditProductModal({ theme: T, product, onClose, onSaved, onArchived }: {
       if (res.ok && data.ok) {
         onSaved();
       } else {
-        setError(data.error ?? "Failed to save");
+        const message = data.error ?? "Failed to save";
+        setError(message);
+        toast.error(message);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Network error");
+      const message = e instanceof Error ? e.message : "Network error";
+      setError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -747,10 +808,14 @@ function EditProductModal({ theme: T, product, onClose, onSaved, onArchived }: {
       if (res.ok && data.ok) {
         onArchived();
       } else {
-        setError(data.error ?? "Failed to archive");
+        const message = data.error ?? "Failed to archive";
+        setError(message);
+        toast.error(message);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Network error");
+      const message = e instanceof Error ? e.message : "Network error";
+      setError(message);
+      toast.error(message);
     } finally {
       setArchiving(false);
     }

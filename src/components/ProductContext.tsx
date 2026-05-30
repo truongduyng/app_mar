@@ -5,9 +5,11 @@ import { useRouter, usePathname } from "next/navigation";
 import { hydrateProducts } from "@/lib/product-hydration";
 import { COMPONENT_REGISTRY } from "@/components/component-registry";
 import { preloadImages, getImagePathsForProduct } from "@/lib/images";
-import type { SerializableProductConfig, MetadataConfig, LocaleDef, AppPlatform } from "@/lib/types";
+import type { SerializableProductConfig, MetadataConfig, LocaleDef, AppPlatform, ThemeTokens } from "@/lib/types";
+import { toast } from "sonner";
 
 export type HydratedProduct = ReturnType<typeof hydrateProducts>[number];
+export type UiMode = "dark" | "light";
 
 type ProductContextValue = {
   PRODUCTS: HydratedProduct[];
@@ -39,6 +41,8 @@ type ProductContextValue = {
   removeLocale: (code: string) => Promise<void>;
   baseLocaleCodes: Set<string>;
   multiProduct: boolean;
+  uiMode: UiMode;
+  setUiMode: (mode: UiMode) => void;
 };
 
 const ProductContext = createContext<ProductContextValue | null>(null);
@@ -54,6 +58,29 @@ function getProductLocales(product: HydratedProduct, extraLocales: Record<string
   const extra = extraLocales[product.id] ?? [];
   const seen = new Set(base.map((l) => l.code));
   return [...base, ...extra.filter((l) => !seen.has(l.code))];
+}
+
+function withUiModeTheme(product: HydratedProduct, uiMode: UiMode): HydratedProduct {
+  if (uiMode === "dark") return product;
+
+  const lightTheme: ThemeTokens = {
+    ...product.theme,
+    bg: "#F6F7FB",
+    bgAlt: "#FFFFFF",
+    fg: "#17171C",
+    fgMuted: "#667085",
+    accentSoft: `${product.theme.accent}1A`,
+    surface: "rgba(17,24,39,0.05)",
+    gradients: {
+      ...product.theme.gradients,
+      dark: "linear-gradient(180deg, #FFFFFF 0%, #F6F7FB 52%, #EEF1F7 100%)",
+      deep: "linear-gradient(180deg, #FFFFFF 0%, #F4F6FA 100%)",
+      hero: `linear-gradient(180deg, #FFFFFF 0%, ${product.theme.accent}12 45%, #F6F7FB 100%)`,
+      accent: `linear-gradient(135deg, #FFFFFF 0%, ${product.theme.accent}16 48%, #F6F7FB 100%)`,
+    },
+  };
+
+  return { ...product, theme: lightTheme };
 }
 
 import { segmentsToMarkup } from "@/lib/rich-text";
@@ -83,19 +110,21 @@ export function ProductProvider({
   );
 
   const [productId, setProductIdState] = useState(initialProductId);
-  const [locale, setLocaleState] = useState(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem(`selectedLocale_${initialProductId}`);
-      if (saved) return saved;
-    }
-    return initialLocale;
-  });
+  const [locale, setLocaleState] = useState(initialLocale);
   const [platform, setPlatform] = useState<AppPlatform>("iphone");
+  const [uiMode, setUiModeState] = useState<UiMode>("dark");
   const [ready, setReady] = useState(false);
   const [extraLocales, setExtraLocales] = useState<Record<string, LocaleDef[]>>({});
   const [regenLocaleCode, setRegenLocaleCode] = useState<string | null>(null);
 
-  const product = PRODUCTS.find((p) => p.id === productId) ?? PRODUCTS[0];
+  const rawProduct = PRODUCTS.find((p) => p.id === productId) ?? PRODUCTS[0];
+  const product = useMemo(() => withUiModeTheme(rawProduct, uiMode), [rawProduct, uiMode]);
+  const displayProducts = useMemo(() => PRODUCTS.map((p) => withUiModeTheme(p, uiMode)), [PRODUCTS, uiMode]);
+
+  const setUiMode = useCallback((mode: UiMode) => {
+    setUiModeState(mode);
+    localStorage.setItem("uiMode", mode);
+  }, []);
 
   const [metadataMap, setMetadataMap] = useState<Record<string, Record<string, MetadataConfig>>>(() => {
     const empty: MetadataConfig = { name: "", subtitle: "", promoText: "", shortDescription: "", description: "", keywords: "", whatsNew: "" };
@@ -122,10 +151,6 @@ export function ProductProvider({
     for (const p of PRODUCTS) {
       if (p.ctaImage) defaults[p.id] = { sc1: p.ctaImage.sc1, sc2: p.ctaImage.sc2 };
     }
-    try {
-      const saved = typeof window !== "undefined" ? localStorage.getItem("ctaScMap") : null;
-      if (saved) return { ...defaults, ...JSON.parse(saved) };
-    } catch { /* ignore */ }
     return defaults;
   });
 
@@ -153,6 +178,23 @@ export function ProductProvider({
     product.ctaImage?.headlineByLocale?.[locale] ??
     product.ctaImage?.headline ??
     product.name;
+
+  useEffect(() => {
+    const savedLocale = localStorage.getItem(`selectedLocale_${initialProductId}`);
+    if (savedLocale) setLocaleState(savedLocale);
+
+    const savedUiMode = localStorage.getItem("uiMode");
+    if (savedUiMode === "light" || savedUiMode === "dark") {
+      setUiModeState(savedUiMode);
+    }
+
+    try {
+      const savedCtaScMap = localStorage.getItem("ctaScMap");
+      if (savedCtaScMap) {
+        setCtaScMap((prev) => ({ ...prev, ...JSON.parse(savedCtaScMap) }));
+      }
+    } catch { /* ignore */ }
+  }, [initialProductId]);
 
   const setCtaSc1 = useCallback((v: string) => setCtaScMap((m) => {
     const next = { ...m, [product.id]: { ...m[product.id], sc1: v } };
@@ -262,7 +304,12 @@ export function ProductProvider({
           ...prev,
           [productId]: { ...prev[productId], [locCode]: data.metadata! },
         }));
+        toast.success(`${locDef.label} regenerated`);
+      } else {
+        toast.error(data.error ?? `Failed to regenerate ${locDef.label}`);
       }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : `Failed to regenerate ${locDef.label}`);
     } finally {
       setRegenLocaleCode(null);
     }
@@ -274,11 +321,15 @@ export function ProductProvider({
   );
 
   const removeLocale = useCallback(async (code: string) => {
-    await fetch("/api/locale", {
+    const res = await fetch("/api/locale", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ productId, locale: code }),
     });
+    if (!res.ok) {
+      toast.error("Failed to remove language");
+      return;
+    }
     const remaining = productLocales.filter((l) => l.code !== code);
     if (locale === code) {
       setLocaleState(remaining[0]?.code ?? "en");
@@ -287,11 +338,12 @@ export function ProductProvider({
       ...prev,
       [productId]: (prev[productId] ?? []).filter((l) => l.code !== code),
     }));
+    toast.success("Language removed");
     router.refresh();
   }, [productId, locale, productLocales, router]);
 
   const value: ProductContextValue = {
-    PRODUCTS,
+    PRODUCTS: displayProducts,
     rawProducts,
     product,
     productId,
@@ -320,6 +372,8 @@ export function ProductProvider({
     removeLocale,
     baseLocaleCodes,
     multiProduct: PRODUCTS.length > 1,
+    uiMode,
+    setUiMode,
   };
 
   return <ProductContext.Provider value={value}>{children}</ProductContext.Provider>;
