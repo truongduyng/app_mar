@@ -33,6 +33,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     metadataMap, setMetadataMap, regenLocaleCode, handleRegenLocale,
     removeLocale,
     ready,
+    platform, setPlatform,
     uiMode, setUiMode,
   } = useProduct();
 
@@ -63,6 +64,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     const seg = pathname.split("/")[2] as Section;
     return SECTIONS.find((s) => s.id === seg) ? seg : "screenshots";
   })();
+  const activeSlides = product.slidesByLocale?.[locale] ?? product.slides;
+  const hasAndroidSlides = Boolean(activeSlides.android?.length);
 
   useEffect(() => {
     if (!productMenuOpen) return;
@@ -181,6 +184,33 @@ export function AppShell({ children }: { children: ReactNode }) {
           onAdd={() => setAddLocaleOpen(true)}
           onRemove={removeLocale}
         />
+        <div
+          className="flex items-center rounded-[9px] border p-0.75"
+          style={{ background: chrome.controlBg, borderColor: chrome.border }}
+        >
+          {(["iphone", "android"] as const).map((device) => {
+            const active = platform === device;
+            const disabled = device === "android" && !hasAndroidSlides;
+            return (
+              <button
+                key={device}
+                type="button"
+                onClick={() => { if (!disabled) setPlatform(device); }}
+                disabled={disabled}
+                title={disabled ? "No Android screenshots for this product/language" : `Switch to ${device === "iphone" ? "iPhone" : "Android"}`}
+                className="rounded-[7px] border-none px-2.5 py-1.25 text-[12px] font-semibold transition-all duration-150 disabled:cursor-not-allowed"
+                style={{
+                  background: active ? T.accentSoft : "transparent",
+                  color: disabled ? "#555" : active ? T.fg : T.fgMuted,
+                  cursor: disabled ? "not-allowed" : "pointer",
+                  opacity: disabled ? 0.55 : 1,
+                }}
+              >
+                {device === "iphone" ? "iPhone" : "Android"}
+              </button>
+            );
+          })}
+        </div>
         <button
           onClick={() => setUiMode(isLight ? "dark" : "light")}
           title={isLight ? "Switch to dark mode" : "Switch to light mode"}
