@@ -74,6 +74,7 @@ function withUiModeTheme(product: HydratedProduct, uiMode: UiMode): HydratedProd
     gradients: {
       ...product.theme.gradients,
       dark: "linear-gradient(180deg, #FFFFFF 0%, #F6F7FB 52%, #EEF1F7 100%)",
+      warm: `linear-gradient(180deg, #FFFFFF 0%, ${product.theme.accent}10 42%, #F6F7FB 100%)`,
       deep: "linear-gradient(180deg, #FFFFFF 0%, #F4F6FA 100%)",
       hero: `linear-gradient(180deg, #FFFFFF 0%, ${product.theme.accent}12 45%, #F6F7FB 100%)`,
       accent: `linear-gradient(135deg, #FFFFFF 0%, ${product.theme.accent}16 48%, #F6F7FB 100%)`,

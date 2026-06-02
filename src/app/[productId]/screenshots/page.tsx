@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useEffect, useState, useCallback } from "react";
+import React, { useRef, useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useProduct } from "@/components/ProductContext";
 import {
@@ -16,6 +16,7 @@ import type { ThemeTokens, SlideCopy } from "@/lib/types";
 import { SLIDE_STYLE_OPTIONS, defaultSlideStyleKey } from "@/components/component-registry";
 import { sectionChrome } from "@/components/sections/shared";
 import { toast } from "sonner";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 type CopyEdit = { label: string; headline: string; subtitle: string };
 type SaveState = "idle" | "saving" | "saved" | "error";
@@ -163,6 +164,16 @@ export default function ScreenshotsPage() {
   const activeSlides = product.slidesByLocale?.[locale] ?? product.slides;
   const activeDevice = platform === "android" && activeSlides.android?.length ? "android" : "iphone";
   const slides       = (activeDevice === "android" ? activeSlides.android : activeSlides.iphone) ?? [];
+  const [orderOverride, setOrderOverride] = useState<number[] | null>(null);
+  const orderedSlides = useMemo(() => {
+    if (!orderOverride) return slides;
+    const byId = new Map(slides.map((slide) => [slide.dbId, slide]));
+    const ordered = orderOverride
+      .map((id) => byId.get(id))
+      .filter((slide): slide is typeof slides[number] => Boolean(slide));
+    const seen = new Set(ordered.map((slide) => slide.dbId));
+    return [...ordered, ...slides.filter((slide) => !seen.has(slide.dbId))];
+  }, [slides, orderOverride]);
   const sizes        = activeDevice === "android" ? ANDROID_SIZES : IPHONE_SIZES;
   const canvasW      = activeDevice === "android" ? ANDROID_W : IPHONE_W;
   const canvasH      = activeDevice === "android" ? ANDROID_H : IPHONE_H;
@@ -173,12 +184,12 @@ export default function ScreenshotsPage() {
     imagePathOverrides[slide.dbId] ?? slide.imagePath ?? "";
 
   // Reset selections when product/locale/device changes
-  useEffect(() => { setSelectedSize(0); setSelectedSlideId(null); }, [activeDevice]);
+  useEffect(() => { setSelectedSize(0); setSelectedSlideId(null); setOrderOverride(null); }, [activeDevice]);
   useEffect(() => { setNewStyleKey(defaultSlideStyleKey(activeDevice)); }, [activeDevice]);
-  useEffect(() => { setSelectedSlideId(null); setCopyEdits({}); }, [product.id, locale]);
+  useEffect(() => { setSelectedSlideId(null); setCopyEdits({}); setOrderOverride(null); }, [product.id, locale]);
 
-  const selectedSlide = selectedSlideId ? slides.find((s) => s.id === selectedSlideId) : null;
-  const selectedIndex = selectedSlideId ? slides.findIndex((s) => s.id === selectedSlideId) : -1;
+  const selectedSlide = selectedSlideId ? orderedSlides.find((s) => s.id === selectedSlideId) : null;
+  const selectedIndex = selectedSlideId ? orderedSlides.findIndex((s) => s.id === selectedSlideId) : -1;
 
   /** Get the effective copy for a slide (edited > locale > default) */
   const getEffectiveCopy = useCallback((slideId: string, baseCopy: SlideCopy): SlideCopy => {
@@ -256,7 +267,7 @@ export default function ScreenshotsPage() {
     if (!offscreenRef.current || publishState !== "idle") return;
     setPublishError(null);
     setPublishState("capturing");
-    const resolvedSlides = slides.map((s) => {
+    const resolvedSlides = orderedSlides.map((s) => {
       const base = s.copyByLocale?.[locale] ?? s.copy;
       return { ...s, copy: getEffectiveCopy(s.id, base) };
     });
@@ -335,6 +346,34 @@ export default function ScreenshotsPage() {
     }
   }, []);
 
+  const handleMoveSlide = useCallback(async (fromIndex: number, direction: -1 | 1) => {
+    const toIndex = fromIndex + direction;
+    if (toIndex < 0 || toIndex >= orderedSlides.length) return;
+
+    const currentOrder = orderedSlides.map((slide) => slide.dbId);
+    const nextOrder = [...currentOrder];
+    [nextOrder[fromIndex], nextOrder[toIndex]] = [nextOrder[toIndex], nextOrder[fromIndex]];
+
+    setOrderOverride(nextOrder);
+    try {
+      const res = await fetch("/api/slides/reorder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId: product.id, device: activeDevice, slideIds: nextOrder }),
+      });
+      const data = await res.json() as { ok?: boolean; error?: string };
+      if (!res.ok || !data.ok) throw new Error(data.error ?? "Reorder failed");
+      if (selectedSlideId === orderedSlides[fromIndex]?.id) {
+        setSelectedSlideId(orderedSlides[toIndex]?.id ?? selectedSlideId);
+      }
+      toast.success("Slide order updated");
+      onSlidesChanged?.();
+    } catch (e) {
+      setOrderOverride(currentOrder);
+      toast.error(e instanceof Error ? e.message : "Reorder failed");
+    }
+  }, [activeDevice, onSlidesChanged, orderedSlides, product.id, selectedSlideId]);
+
   const handleUpload = useCallback(async (dbId: number, file: File) => {
     setUploadError(null);
     setUploadSuccess(null);
@@ -402,9 +441,9 @@ export default function ScreenshotsPage() {
   const handleExport = async () => {
     if (!offscreenRef.current || exporting) return;
     setExporting(true);
-    setProgress({ done: 0, total: slides.length });
+    setProgress({ done: 0, total: orderedSlides.length });
     const exportSizes    = selectedSize === -1 ? [...sizes] : [sizes[selectedSize]];
-    const resolvedSlides = slides.map((s) => {
+    const resolvedSlides = orderedSlides.map((s) => {
       const base = s.copyByLocale?.[locale] ?? s.copy;
       return { ...s, copy: getEffectiveCopy(s.id, base) };
     });
@@ -524,7 +563,7 @@ export default function ScreenshotsPage() {
         justifyContent: "center",
         gap: 24,
       }}>
-        {slides.map((slide, i) => {
+        {orderedSlides.map((slide, i) => {
           const baseCopy  = slide.copyByLocale?.[locale] ?? slide.copy;
           const copy      = getEffectiveCopy(slide.id, baseCopy);
           const isSelected = selectedSlideId === slide.id;
@@ -552,22 +591,66 @@ export default function ScreenshotsPage() {
                 </ScreenshotPreview>
               </div>
               {slide.dbId && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleDeleteSlide(slide.dbId, slide.id); }}
-                  title="Delete slide"
-                  style={{
-                    position: "absolute", top: 6, right: 6,
-                    width: 22, height: 22, borderRadius: "50%",
-                    background: "rgba(239,68,68,0.85)", color: "#fff",
-                    border: "none", fontSize: 13, lineHeight: 1,
-                    cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                    opacity: 0.7, transition: "opacity 0.15s",
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
-                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.7")}
-                >
-                  ×
-                </button>
+                <>
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 6,
+                      left: 6,
+                      display: "flex",
+                      gap: 4,
+                      zIndex: 2,
+                    }}
+                  >
+                    {[
+                      { direction: -1 as const, title: "Move slide earlier", Icon: ChevronUp, disabled: i === 0 },
+                      { direction: 1 as const, title: "Move slide later", Icon: ChevronDown, disabled: i === orderedSlides.length - 1 },
+                    ].map((action) => (
+                      <button
+                        key={action.direction}
+                        onClick={(e) => { e.stopPropagation(); handleMoveSlide(i, action.direction); }}
+                        disabled={action.disabled}
+                        title={action.title}
+                        style={{
+                          width: 22,
+                          height: 22,
+                          borderRadius: "50%",
+                          background: action.disabled ? "rgba(0,0,0,0.22)" : "rgba(0,0,0,0.58)",
+                          color: "#fff",
+                          border: "1px solid rgba(255,255,255,0.18)",
+                          fontSize: 13,
+                          lineHeight: 1,
+                          cursor: action.disabled ? "not-allowed" : "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          opacity: action.disabled ? 0.35 : 0.75,
+                          transition: "opacity 0.15s",
+                        }}
+                        onMouseEnter={(e) => { if (!action.disabled) e.currentTarget.style.opacity = "1"; }}
+                        onMouseLeave={(e) => { if (!action.disabled) e.currentTarget.style.opacity = "0.75"; }}
+                      >
+                        <action.Icon size={14} strokeWidth={2.4} />
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDeleteSlide(slide.dbId, slide.id); }}
+                    title="Delete slide"
+                    style={{
+                      position: "absolute", top: 6, right: 6,
+                      width: 22, height: 22, borderRadius: "50%",
+                      background: "rgba(239,68,68,0.85)", color: "#fff",
+                      border: "none", fontSize: 13, lineHeight: 1,
+                      cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                      opacity: 0.7, transition: "opacity 0.15s",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+                    onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.7")}
+                  >
+                    ×
+                  </button>
+                </>
               )}
             </div>
           );
@@ -846,7 +929,7 @@ export default function ScreenshotsPage() {
 
       {/* Offscreen export container */}
       <div ref={offscreenRef} style={{ position: "absolute", left: -9999, top: 0, fontFamily: "inherit" }}>
-        {slides.map((slide) => {
+        {orderedSlides.map((slide) => {
           const baseCopy = slide.copyByLocale?.[locale] ?? slide.copy;
           const copy = getEffectiveCopy(slide.id, baseCopy);
           return (
