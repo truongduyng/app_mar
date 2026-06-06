@@ -60,7 +60,7 @@ function editToCopy(edit: CopyEdit, accentColor: string): SlideCopy {
 }
 
 export default function ScreenshotsPage() {
-  const { product, locale, platform, multiProduct } = useProduct();
+  const { product, locale, platform, multiProduct, productLocales } = useProduct();
   const router = useRouter();
   const onSlidesChanged = useCallback(() => router.refresh(), [router]);
   const T: ThemeTokens = product.theme;
@@ -69,6 +69,7 @@ export default function ScreenshotsPage() {
   const ctrlBorder = chrome.light ? "#C4CAD4" : "rgba(255,255,255,0.14)";
   const ctrlColor = chrome.light ? "#1D2939" : T.fgMuted;
   const offscreenRef = useRef<HTMLDivElement>(null);
+  const publishAllRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const [selectedSize, setSelectedSize] = useState(0);
   const [exporting, setExporting]       = useState(false);
@@ -76,6 +77,7 @@ export default function ScreenshotsPage() {
 
   type PublishState = "idle" | "capturing" | "uploading" | "done" | "error";
   const [publishState, setPublishState] = useState<PublishState>("idle");
+  const [publishAllState, setPublishAllState] = useState<PublishState>("idle");
   const [publishError, setPublishError] = useState<string | null>(null);
 
   // Copy editing state
@@ -178,6 +180,11 @@ export default function ScreenshotsPage() {
   const canvasW      = activeDevice === "android" ? ANDROID_W : IPHONE_W;
   const canvasH      = activeDevice === "android" ? ANDROID_H : IPHONE_H;
 
+  const getSlidesForLocale = useCallback((localeCode: string) => {
+    const localizedSlides = product.slidesByLocale?.[localeCode] ?? product.slides;
+    return (activeDevice === "android" ? localizedSlides.android : localizedSlides.iphone) ?? [];
+  }, [activeDevice, product.slides, product.slidesByLocale]);
+
   // imagePath overrides applied after upload, keyed by dbId
   const [imagePathOverrides, setImagePathOverrides] = useState<Record<number, string>>({});
   const getImagePath = (slide: typeof slides[number]) =>
@@ -263,45 +270,61 @@ export default function ScreenshotsPage() {
     }
   }, [copyEdits, product.id, locale]);
 
-  const handlePublishScreenshots = async () => {
-    if (!offscreenRef.current || publishState !== "idle") return;
+  const handlePublishScreenshots = async (all = false) => {
+    const localesToPublish = all ? productLocales.map((l) => l.code) : [locale];
+    const isBusy = publishState !== "idle" || publishAllState !== "idle";
+    const containerForCurrentLocale = all ? publishAllRefs.current[locale] : offscreenRef.current;
+    if (!localesToPublish.length || !containerForCurrentLocale || isBusy) return;
+
+    const setState = all ? setPublishAllState : setPublishState;
     setPublishError(null);
-    setPublishState("capturing");
-    const resolvedSlides = orderedSlides.map((s) => {
-      const base = s.copyByLocale?.[locale] ?? s.copy;
-      return { ...s, copy: getEffectiveCopy(s.id, base) };
-    });
+    setState("capturing");
     try {
-      const captured = await captureAllAsBase64(
-        offscreenRef.current,
-        resolvedSlides.map((s) => ({ label: s.copy.label || s.id })),
-        activeDevice,
-        (done, total) => setProgress({ done, total }),
-      );
-      setProgress(null);
-      setPublishState("uploading");
-      const res = await fetch("/api/publish/apple/screenshots", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId: product.id, locale, slides: captured }),
-      });
-      const data = await res.json();
-      if (res.ok && data.ok) {
-        setPublishState("done");
-        toast.success("Screenshots uploaded to App Store Connect");
-      } else {
-        const message = data.error ?? data.detail ?? "Upload failed";
-        setPublishError(message);
-        setPublishState("error");
-        toast.error(message);
+      let completed = 0;
+      const totalSlides = localesToPublish.reduce((sum, localeCode) => sum + getSlidesForLocale(localeCode).length, 0);
+      setProgress({ done: 0, total: totalSlides });
+
+      for (const localeCode of localesToPublish) {
+        const container = all ? publishAllRefs.current[localeCode] : offscreenRef.current;
+        if (!container) throw new Error(`Missing screenshot renderer for ${localeCode}`);
+
+        const sourceSlides = all ? getSlidesForLocale(localeCode) : orderedSlides;
+        const resolvedSlides = sourceSlides.map((s) => {
+          const base = s.copyByLocale?.[localeCode] ?? s.copy;
+          return { ...s, copy: localeCode === locale ? getEffectiveCopy(s.id, base) : base };
+        });
+
+        const captured = await captureAllAsBase64(
+          container,
+          resolvedSlides.map((s) => ({ label: s.copy.label || s.id })),
+          activeDevice,
+          (done) => setProgress({ done: completed + done, total: totalSlides }),
+        );
+        completed += resolvedSlides.length;
+
+        setState("uploading");
+        const res = await fetch("/api/publish/apple/screenshots", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ productId: product.id, locale: localeCode, slides: captured }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          const messages = data.errors ?? [data.error ?? data.detail ?? "Upload failed"];
+          throw new Error(`${localeCode}: ${messages.join("; ")}`);
+        }
       }
+
+      setProgress(null);
+      setState("done");
+      toast.success(all ? "All screenshots uploaded to App Store Connect" : "Screenshots uploaded to App Store Connect");
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : String(e);
       setPublishError(message);
-      setPublishState("error");
+      setState("error");
       toast.error(message);
     }
-    setTimeout(() => { setPublishState("idle"); setProgress(null); }, 5000);
+    setTimeout(() => { setState("idle"); setProgress(null); }, 5000);
   };
 
   const handleDeleteSlide = useCallback(async (dbId: number, slideKey: string) => {
@@ -488,8 +511,8 @@ export default function ScreenshotsPage() {
         </select>
         {activeDevice === "iphone" && product.bundleId && (
           <button
-            onClick={handlePublishScreenshots}
-            disabled={publishState !== "idle" || exporting}
+            onClick={() => handlePublishScreenshots()}
+            disabled={publishState !== "idle" || publishAllState !== "idle" || exporting}
             title="Capture slides and upload to App Store Connect"
             style={{
               background: publishState === "error" ? "#EF4444" : publishState === "done" ? "#22C55E" : ctrlBg,
@@ -510,6 +533,32 @@ export default function ScreenshotsPage() {
               : publishState === "done" ? "Uploaded!"
               : publishState === "error" ? "Failed"
               : "Publish Screenshots"}
+          </button>
+        )}
+        {activeDevice === "iphone" && product.bundleId && productLocales.length > 1 && (
+          <button
+            onClick={() => handlePublishScreenshots(true)}
+            disabled={publishState !== "idle" || publishAllState !== "idle" || exporting}
+            title="Capture and upload screenshots for all locales"
+            style={{
+              background: publishAllState === "error" ? "#EF4444" : publishAllState === "done" ? "#22C55E" : ctrlBg,
+              color: publishAllState === "idle" ? ctrlColor : "#fff",
+              border: `1px solid ${publishAllState === "idle" ? ctrlBorder : "transparent"}`,
+              borderRadius: 7, padding: "7px 14px", fontSize: 13, fontWeight: 600,
+              cursor: publishAllState !== "idle" ? "not-allowed" : "pointer",
+              display: "flex", alignItems: "center", gap: 6,
+              opacity: publishAllState !== "idle" && publishAllState !== "done" && publishAllState !== "error" ? 0.7 : 1,
+              transition: "all 0.15s",
+            }}
+          >
+            <svg width={13} height={13} viewBox="0 0 814 1000" fill="currentColor">
+              <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105.6-57.8-155.5-127.4C46 790.7 0 663 0 541.8c0-207.8 133.4-317.7 264.8-317.7 60.5 0 110.8 39.7 148.2 39.7 35.5 0 91.7-42.1 160.9-42.1 28.7 0 108.2 2.6 168.7 100.5zm-234.5-191.1c31.1-36.9 53.1-88.1 53.1-139.3 0-7.1-.6-14.3-1.9-20.1-50.6 1.9-110.8 33.7-147.1 75.8-28.5 32.4-55.1 83.6-55.1 135.5 0 7.8 1.3 15.6 1.9 18.1 3.2.6 8.4 1.3 13.6 1.3 45.4 0 102.5-30.4 135.5-71.3z"/>
+            </svg>
+            {publishAllState === "capturing" ? `Capturing ${progress ? `${progress.done}/${progress.total}` : ""}…`
+              : publishAllState === "uploading" ? "Uploading…"
+              : publishAllState === "done" ? "All Uploaded!"
+              : publishAllState === "error" ? "Failed"
+              : "Publish All"}
           </button>
         )}
         <button
@@ -940,6 +989,28 @@ export default function ScreenshotsPage() {
           );
         })}
       </div>
+      {productLocales.length > 1 && (
+        <div style={{ position: "absolute", left: -9999, top: 0, fontFamily: "inherit" }}>
+          {productLocales.map((loc) => (
+            <div
+              key={`publish-all-${product.id}-${activeDevice}-${loc.code}`}
+              ref={(el) => { publishAllRefs.current[loc.code] = el; }}
+              style={{ position: "absolute", left: -9999, top: 0, fontFamily: "inherit" }}
+            >
+              {getSlidesForLocale(loc.code).map((slide) => {
+                const baseCopy = slide.copyByLocale?.[loc.code] ?? slide.copy;
+                const copy = loc.code === locale ? getEffectiveCopy(slide.id, baseCopy) : baseCopy;
+                return (
+                  <div key={`publish-all-slide-${product.id}-${activeDevice}-${loc.code}-${slide.id}`}
+                    style={{ width: canvasW, height: canvasH, position: "absolute", left: -9999, fontFamily: "inherit" }}>
+                    <slide.Component theme={T} imagePath={getImagePath(slide)} copy={copy} />
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
