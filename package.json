@@ -4,13 +4,14 @@
   "private": true,
   "packageManager": "bun@1.2.8",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3001",
     "build": "next build",
     "start": "next start"
   },
   "dependencies": {
     "@types/jszip": "^3.4.0",
     "drizzle-orm": "^0.45.2",
+    "geist": "^1.7.2",
     "googleapis": "^171.4.0",
     "html-to-image": "^1.11.13",
     "jszip": "^3.10.1",

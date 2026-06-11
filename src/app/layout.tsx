@@ -1,16 +1,12 @@
-import { Be_Vietnam_Pro } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
 import { ToastProvider } from "@/components/ToastProvider";
 import "./globals.css";
 
-const font = Be_Vietnam_Pro({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
-});
-
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html>
-      <body className={font.className}>
+    <html className={`${GeistSans.variable} ${GeistMono.variable}`}>
+      <body>
         {children}
         <ToastProvider />
       </body>
