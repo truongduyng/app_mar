@@ -113,7 +113,7 @@ export function Caption({
     <div style={{ textAlign: align, ...style }}>
       <div
         style={{
-          fontSize: canvasW * 0.088,
+          fontSize: canvasW * 0.1,
           fontWeight: 700,
           color: theme.fg,
           lineHeight: 1.2,

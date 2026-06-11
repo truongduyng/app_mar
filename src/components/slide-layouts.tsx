@@ -182,7 +182,7 @@ export function CenteredSlide({
   const scaled = scaleOrbs(orbs, platform);
   const pw = phoneWidth ?? (isIP ? "82%" : "58%");
   const ty = phoneTy ?? (isIP ? "-5%" : "-7%");
-  const mt = 0.05;
+  const mt = 0.06;
 
   return (
     <div
