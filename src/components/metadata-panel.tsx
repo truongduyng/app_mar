@@ -1,6 +1,16 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import type { CSSProperties } from "react";
+import {
+  Apple,
+  Check,
+  Copy,
+  Download,
+  Languages,
+  Play,
+  Save,
+} from "lucide-react";
 import type {
   AppPlatform,
   ThemeTokens,
@@ -8,6 +18,7 @@ import type {
   LocaleDef,
 } from "@/lib/types";
 import { toast } from "sonner";
+import styles from "./metadata-panel.module.css";
 
 type FieldDef = {
   id: keyof MetadataConfig;
@@ -80,6 +91,20 @@ const FIELDS: FieldDef[] = [
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 type PublishState = "idle" | "publishing" | "published" | "error";
+type TranslateAllState = "idle" | "loading" | "done" | "error";
+type ButtonTone = "idle" | "success" | "error";
+
+function getPublishTone(state: PublishState): ButtonTone {
+  if (state === "published") return "success";
+  if (state === "error") return "error";
+  return "idle";
+}
+
+function getTranslateTone(state: TranslateAllState): ButtonTone {
+  if (state === "done") return "success";
+  if (state === "error") return "error";
+  return "idle";
+}
 
 export function MetadataPanel({
   theme: T,
@@ -130,9 +155,8 @@ export function MetadataPanel({
     privacyPolicyUrl ?? "",
   );
   const [localSupportUrl, setLocalSupportUrl] = useState(supportUrl ?? "");
-  const [translateAllState, setTranslateAllState] = useState<
-    "idle" | "loading" | "done" | "error"
-  >("idle");
+  const [translateAllState, setTranslateAllState] =
+    useState<TranslateAllState>("idle");
   const isFieldVisible = useCallback(
     (field: FieldDef) =>
       field.platform === "Both" ||
@@ -142,29 +166,41 @@ export function MetadataPanel({
   );
   const visibleFields = FIELDS.filter(isFieldVisible);
   const isLight = T.bg === "#F6F7FB" || T.fg === "#17171C";
-  const surfaceStyle = {
-    background: isLight ? "#FFFFFF" : "rgba(255,255,255,0.03)",
-    border: `1px solid ${isLight ? "rgba(15,23,42,0.08)" : "rgba(255,255,255,0.07)"}`,
-    boxShadow: isLight ? "0 10px 28px rgba(15,23,42,0.06)" : "none",
-  };
-  const controlStyle = {
-    background: isLight ? "#FFFFFF" : "rgba(0,0,0,0.25)",
-    borderColor: isLight ? "rgba(15,23,42,0.13)" : "rgba(255,255,255,0.06)",
-    color: T.fg,
-  };
-  const mutedButtonStyle = {
-    background: isLight ? "rgba(15,23,42,0.04)" : "rgba(255,255,255,0.06)",
-    border: `1px solid ${isLight ? "rgba(15,23,42,0.1)" : "rgba(255,255,255,0.08)"}`,
-    color: T.fgMuted,
-  };
-  const idlePublishButtonStyle = {
-    background: isLight ? "rgba(15,23,42,0.045)" : "rgba(255,255,255,0.07)",
-    border: `1px solid ${isLight ? "rgba(15,23,42,0.1)" : "rgba(255,255,255,0.12)"}`,
-  };
-  const progressTrack = isLight
-    ? "rgba(15,23,42,0.08)"
+  const controlBorder = isLight
+    ? "rgba(15,23,42,0.13)"
     : "rgba(255,255,255,0.06)";
-  const warningText = isLight ? "#B45309" : "#FCD34D";
+  const panelStyle = {
+    "--metadata-fg": T.fg,
+    "--metadata-muted": T.fgMuted,
+    "--metadata-accent": T.accent,
+    "--metadata-accent-glow": T.accentGlow,
+    "--metadata-surface": isLight ? "#FFFFFF" : "rgba(255,255,255,0.03)",
+    "--metadata-surface-border": isLight
+      ? "rgba(15,23,42,0.08)"
+      : "rgba(255,255,255,0.07)",
+    "--metadata-surface-shadow": isLight
+      ? "0 10px 28px rgba(15,23,42,0.06)"
+      : "none",
+    "--metadata-control-bg": isLight ? "#FFFFFF" : "rgba(0,0,0,0.25)",
+    "--metadata-control-border": controlBorder,
+    "--metadata-button-bg": isLight
+      ? "rgba(15,23,42,0.04)"
+      : "rgba(255,255,255,0.06)",
+    "--metadata-button-border": isLight
+      ? "rgba(15,23,42,0.1)"
+      : "rgba(255,255,255,0.08)",
+    "--metadata-publish-bg": isLight
+      ? "rgba(15,23,42,0.045)"
+      : "rgba(255,255,255,0.07)",
+    "--metadata-publish-border": isLight
+      ? "rgba(15,23,42,0.1)"
+      : "rgba(255,255,255,0.12)",
+    "--metadata-progress-track": isLight
+      ? "rgba(15,23,42,0.08)"
+      : "rgba(255,255,255,0.06)",
+    "--metadata-warning-text": isLight ? "#B45309" : "#FCD34D",
+    "--metadata-error-text": isLight ? "#B91C1C" : "#FCA5A5",
+  } as CSSProperties;
 
   const handleCopy = useCallback(async (id: string, value: string) => {
     await navigator.clipboard.writeText(value);
@@ -384,114 +420,37 @@ export function MetadataPanel({
   }, [metadata, allLocaleData, activeLocale, visibleFields]);
 
   return (
-    <div style={{ maxWidth: 900, margin: "0 auto", padding: "32px 24px" }}>
-      {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          marginBottom: 24,
-          gap: 16,
-          flexWrap: "wrap",
-        }}
-      >
+    <div className={styles.panel} style={panelStyle}>
+      <div className={styles.header}>
         <div>
-          <div style={{ fontSize: 22, fontWeight: 700, color: T.fg }}>
-            Store Metadata
-          </div>
-          <div style={{ fontSize: 14, color: T.fgMuted, marginTop: 4 }}>
+          <h1 className={styles.title}>Store Metadata</h1>
+          <p className={styles.subtitle}>
             Edit your app listing text. Changes are saved per session.
-          </div>
+          </p>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+
+        <div className={styles.toolbar}>
           <button
+            className={styles.secondaryButton}
+            data-active={copiedId === "__all__"}
             onClick={handleCopyAll}
-            style={{
-              ...mutedButtonStyle,
-              color: copiedId === "__all__" ? T.accent : T.fgMuted,
-              borderRadius: 8,
-              padding: "8px 16px",
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: "pointer",
-              transition: "all 0.15s",
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-            }}
           >
-            {copiedId === "__all__" ? (
-              <>
-                <svg width={13} height={13} viewBox="0 0 12 12" fill="none">
-                  <path
-                    d="M2 6l3 3 5-5"
-                    stroke="currentColor"
-                    strokeWidth={1.6}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                Copied All
-              </>
-            ) : (
-              <>
-                <svg width={13} height={13} viewBox="0 0 12 12" fill="none">
-                  <rect
-                    x="3"
-                    y="3"
-                    width="7"
-                    height="7"
-                    rx="1.5"
-                    stroke="currentColor"
-                    strokeWidth={1.2}
-                  />
-                  <path
-                    d="M9 3V2.5A1.5 1.5 0 0 0 7.5 1H2.5A1.5 1.5 0 0 0 1 2.5V7.5A1.5 1.5 0 0 0 2.5 9H3"
-                    stroke="currentColor"
-                    strokeWidth={1.2}
-                  />
-                </svg>
-                Copy All
-              </>
-            )}
+            {copiedId === "__all__" ? <Check size={13} /> : <Copy size={13} />}
+            {copiedId === "__all__" ? "Copied All" : "Copy All"}
           </button>
-          <button
-            onClick={handleExportJson}
-            style={{
-              ...mutedButtonStyle,
-              borderRadius: 8,
-              padding: "8px 16px",
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: "pointer",
-              transition: "all 0.15s",
-            }}
-          >
+          <button className={styles.secondaryButton} onClick={handleExportJson}>
+            <Download size={13} />
             Export JSON
           </button>
           <button
+            className={styles.saveButton}
+            data-state={saveState}
             onClick={handleSave}
             disabled={saveState === "saving"}
-            style={{
-              background:
-                saveState === "error"
-                  ? "#EF4444"
-                  : `linear-gradient(135deg, ${T.accent}, ${T.accent}dd)`,
-              color: "#fff",
-              border: "none",
-              borderRadius: 8,
-              padding: "8px 18px",
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: saveState === "saving" ? "not-allowed" : "pointer",
-              boxShadow: `0 4px 16px ${T.accentGlow}`,
-              opacity: saveState === "saving" ? 0.7 : 1,
-              transition: "all 0.15s",
-            }}
           >
+            <Save size={13} />
             {saveState === "saving"
-              ? "Saving…"
+              ? "Saving..."
               : saveState === "saved"
                 ? "Saved"
                 : saveState === "error"
@@ -502,41 +461,15 @@ export function MetadataPanel({
           {localBundleId && (
             <>
               <button
+                className={styles.publishButton}
+                data-tone={getPublishTone(appleState)}
                 onClick={() => handlePublish("apple")}
                 disabled={appleState === "publishing"}
                 title="Publish current locale to App Store Connect"
-                style={{
-                  background:
-                    appleState === "error"
-                      ? "#EF4444"
-                      : appleState === "published"
-                        ? "#22C55E"
-                        : idlePublishButtonStyle.background,
-                  color: appleState === "idle" ? T.fgMuted : "#fff",
-                  border: idlePublishButtonStyle.border,
-                  borderRadius: 8,
-                  padding: "8px 14px",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor:
-                    appleState === "publishing" ? "not-allowed" : "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  opacity: appleState === "publishing" ? 0.7 : 1,
-                  transition: "all 0.15s",
-                }}
               >
-                <svg
-                  width={13}
-                  height={13}
-                  viewBox="0 0 814 1000"
-                  fill="currentColor"
-                >
-                  <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105.6-57.8-155.5-127.4C46 790.7 0 663 0 541.8c0-207.8 133.4-317.7 264.8-317.7 60.5 0 110.8 39.7 148.2 39.7 35.5 0 91.7-42.1 160.9-42.1 28.7 0 108.2 2.6 168.7 100.5zm-234.5-191.1c31.1-36.9 53.1-88.1 53.1-139.3 0-7.1-.6-14.3-1.9-20.1-50.6 1.9-110.8 33.7-147.1 75.8-28.5 32.4-55.1 83.6-55.1 135.5 0 7.8 1.3 15.6 1.9 18.1 3.2.6 8.4 1.3 13.6 1.3 45.4 0 102.5-30.4 135.5-71.3z" />
-                </svg>
+                <Apple size={13} />
                 {appleState === "publishing"
-                  ? "Publishing…"
+                  ? "Publishing..."
                   : appleState === "published"
                     ? "Published!"
                     : appleState === "error"
@@ -544,41 +477,15 @@ export function MetadataPanel({
                       : "Publish"}
               </button>
               <button
+                className={styles.publishButton}
+                data-tone={getPublishTone(appleAllState)}
                 onClick={() => handlePublish("apple", true)}
                 disabled={appleAllState === "publishing"}
                 title="Publish all locales to App Store Connect"
-                style={{
-                  background:
-                    appleAllState === "error"
-                      ? "#EF4444"
-                      : appleAllState === "published"
-                        ? "#22C55E"
-                        : idlePublishButtonStyle.background,
-                  color: appleAllState === "idle" ? T.fgMuted : "#fff",
-                  border: idlePublishButtonStyle.border,
-                  borderRadius: 8,
-                  padding: "8px 14px",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor:
-                    appleAllState === "publishing" ? "not-allowed" : "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  opacity: appleAllState === "publishing" ? 0.7 : 1,
-                  transition: "all 0.15s",
-                }}
               >
-                <svg
-                  width={13}
-                  height={13}
-                  viewBox="0 0 814 1000"
-                  fill="currentColor"
-                >
-                  <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105.6-57.8-155.5-127.4C46 790.7 0 663 0 541.8c0-207.8 133.4-317.7 264.8-317.7 60.5 0 110.8 39.7 148.2 39.7 35.5 0 91.7-42.1 160.9-42.1 28.7 0 108.2 2.6 168.7 100.5zm-234.5-191.1c31.1-36.9 53.1-88.1 53.1-139.3 0-7.1-.6-14.3-1.9-20.1-50.6 1.9-110.8 33.7-147.1 75.8-28.5 32.4-55.1 83.6-55.1 135.5 0 7.8 1.3 15.6 1.9 18.1 3.2.6 8.4 1.3 13.6 1.3 45.4 0 102.5-30.4 135.5-71.3z" />
-                </svg>
+                <Apple size={13} />
                 {appleAllState === "publishing"
-                  ? "Publishing…"
+                  ? "Publishing..."
                   : appleAllState === "published"
                     ? "All Published!"
                     : appleAllState === "error"
@@ -591,41 +498,15 @@ export function MetadataPanel({
           {localPackageName && (
             <>
               <button
+                className={styles.publishButton}
+                data-tone={getPublishTone(googleState)}
                 onClick={() => handlePublish("google")}
                 disabled={googleState === "publishing"}
                 title="Publish current locale to Google Play"
-                style={{
-                  background:
-                    googleState === "error"
-                      ? "#EF4444"
-                      : googleState === "published"
-                        ? "#22C55E"
-                        : idlePublishButtonStyle.background,
-                  color: googleState === "idle" ? T.fgMuted : "#fff",
-                  border: idlePublishButtonStyle.border,
-                  borderRadius: 8,
-                  padding: "8px 14px",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor:
-                    googleState === "publishing" ? "not-allowed" : "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  opacity: googleState === "publishing" ? 0.7 : 1,
-                  transition: "all 0.15s",
-                }}
               >
-                <svg
-                  width={13}
-                  height={13}
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                >
-                  <path d="M3 20.5v-17c0-.83 1-.83 1.5-.5l14 8.5c.5.3.5 1.2 0 1.5l-14 8.5c-.5.3-1.5.3-1.5-.5z" />
-                </svg>
+                <Play size={13} fill="currentColor" />
                 {googleState === "publishing"
-                  ? "Publishing…"
+                  ? "Publishing..."
                   : googleState === "published"
                     ? "Published!"
                     : googleState === "error"
@@ -633,41 +514,15 @@ export function MetadataPanel({
                       : "Publish Google"}
               </button>
               <button
+                className={styles.publishButton}
+                data-tone={getPublishTone(googleAllState)}
                 onClick={() => handlePublish("google", true)}
                 disabled={googleAllState === "publishing"}
                 title="Publish all locales to Google Play"
-                style={{
-                  background:
-                    googleAllState === "error"
-                      ? "#EF4444"
-                      : googleAllState === "published"
-                        ? "#22C55E"
-                        : idlePublishButtonStyle.background,
-                  color: googleAllState === "idle" ? T.fgMuted : "#fff",
-                  border: idlePublishButtonStyle.border,
-                  borderRadius: 8,
-                  padding: "8px 14px",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor:
-                    googleAllState === "publishing" ? "not-allowed" : "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  opacity: googleAllState === "publishing" ? 0.7 : 1,
-                  transition: "all 0.15s",
-                }}
               >
-                <svg
-                  width={13}
-                  height={13}
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                >
-                  <path d="M3 20.5v-17c0-.83 1-.83 1.5-.5l14 8.5c.5.3.5 1.2 0 1.5l-14 8.5c-.5.3-1.5.3-1.5-.5z" />
-                </svg>
+                <Play size={13} fill="currentColor" />
                 {googleAllState === "publishing"
-                  ? "Publishing…"
+                  ? "Publishing..."
                   : googleAllState === "published"
                     ? "All Published!"
                     : googleAllState === "error"
@@ -679,466 +534,146 @@ export function MetadataPanel({
         </div>
       </div>
 
-      {/* Publish error details */}
       {publishErrors.length > 0 && (
-        <div
-          style={{
-            background: "rgba(239,68,68,0.08)",
-            border: "1px solid rgba(239,68,68,0.3)",
-            borderRadius: 10,
-            padding: "12px 16px",
-            marginBottom: 20,
-          }}
-        >
-          <div
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: "#EF4444",
-              marginBottom: 6,
-            }}
-          >
-            Publishing errors:
-          </div>
+        <div className={styles.alert} data-tone="error">
+          <div className={styles.alertTitle}>Publishing errors:</div>
           {publishErrors.map((e, i) => (
-            <div
-              key={i}
-              style={{
-                fontSize: 12,
-                color: isLight ? "#B91C1C" : "#FCA5A5",
-                fontFamily: "monospace",
-                lineHeight: 1.6,
-              }}
-            >
+            <div className={styles.alertCode} key={i}>
               {e}
             </div>
           ))}
         </div>
       )}
 
-      {/* Publish warnings */}
       {publishWarnings.length > 0 && (
-        <div
-          style={{
-            background: "rgba(245,158,11,0.08)",
-            border: "1px solid rgba(245,158,11,0.3)",
-            borderRadius: 10,
-            padding: "12px 16px",
-            marginBottom: 20,
-          }}
-        >
-          <div
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: "#F59E0B",
-              marginBottom: 6,
-            }}
-          >
-            Published with warnings:
-          </div>
+        <div className={styles.alert} data-tone="warning">
+          <div className={styles.alertTitle}>Published with warnings:</div>
           {publishWarnings.map((w, i) => (
-            <div
-              key={i}
-              style={{ fontSize: 12, color: warningText, lineHeight: 1.6 }}
-            >
+            <div className={styles.alertLine} key={i}>
               {w}
             </div>
           ))}
         </div>
       )}
 
-      {/* Store ID config */}
-      <div
-        style={{
-          ...surfaceStyle,
-          borderRadius: 14,
-          padding: "18px 22px",
-          marginBottom: 24,
-        }}
-      >
-        <div
-          style={{
-            fontSize: 13,
-            fontWeight: 600,
-            color: T.fgMuted,
-            marginBottom: 14,
-            letterSpacing: "0.04em",
-            textTransform: "uppercase",
-          }}
-        >
-          Store Identifiers
-        </div>
-        <div
-          style={{
-            display: "flex",
-            gap: 12,
-            alignItems: "flex-end",
-            flexWrap: "wrap",
-          }}
-        >
-          <div style={{ flex: 1, minWidth: 200 }}>
-            <div style={{ fontSize: 12, color: T.fgMuted, marginBottom: 6 }}>
-              Apple Bundle ID
-            </div>
+      <section className={styles.card}>
+        <div className={styles.sectionTitle}>Store Identifiers</div>
+        <div className={styles.settingsGrid}>
+          <label className={styles.settingField}>
+            <span>Apple Bundle ID</span>
             <input
+              className={`${styles.input} ${styles.monoInput}`}
               type="text"
               value={localBundleId}
               onChange={(e) => setLocalBundleId(e.target.value)}
               placeholder="com.example.myapp"
-              style={{
-                width: "100%",
-                background: controlStyle.background,
-                border: `1px solid ${controlStyle.borderColor}`,
-                borderRadius: 8,
-                padding: "8px 12px",
-                fontSize: 13,
-                color: controlStyle.color,
-                fontFamily: "monospace",
-                outline: "none",
-                boxSizing: "border-box",
-              }}
             />
-          </div>
-          <div style={{ flex: 1, minWidth: 200 }}>
-            <div style={{ fontSize: 12, color: T.fgMuted, marginBottom: 6 }}>
-              Google Play Package Name
-            </div>
+          </label>
+          <label className={styles.settingField}>
+            <span>Google Play Package Name</span>
             <input
+              className={`${styles.input} ${styles.monoInput}`}
               type="text"
               value={localPackageName}
               onChange={(e) => setLocalPackageName(e.target.value)}
               placeholder="com.example.myapp"
-              style={{
-                width: "100%",
-                background: controlStyle.background,
-                border: `1px solid ${controlStyle.borderColor}`,
-                borderRadius: 8,
-                padding: "8px 12px",
-                fontSize: 13,
-                color: controlStyle.color,
-                fontFamily: "monospace",
-                outline: "none",
-                boxSizing: "border-box",
-              }}
             />
-          </div>
-        </div>
-        <div
-          style={{
-            display: "flex",
-            gap: 12,
-            alignItems: "flex-end",
-            flexWrap: "wrap",
-            marginTop: 12,
-          }}
-        >
-          <div style={{ flex: 1, minWidth: 200 }}>
-            <div style={{ fontSize: 12, color: T.fgMuted, marginBottom: 6 }}>
-              Privacy Policy URL
-            </div>
+          </label>
+          <label className={styles.settingField}>
+            <span>Privacy Policy URL</span>
             <input
+              className={`${styles.input} ${styles.monoInput}`}
               type="text"
               autoComplete="off"
               value={localPrivacyUrl}
               onChange={(e) => setLocalPrivacyUrl(e.target.value)}
               placeholder="https://example.com/privacy"
-              style={{
-                width: "100%",
-                background: controlStyle.background,
-                border: `1px solid ${controlStyle.borderColor}`,
-                borderRadius: 8,
-                padding: "8px 12px",
-                fontSize: 13,
-                color: controlStyle.color,
-                fontFamily: "monospace",
-                outline: "none",
-                boxSizing: "border-box",
-              }}
             />
-          </div>
-          <div style={{ flex: 1, minWidth: 200 }}>
-            <div style={{ fontSize: 12, color: T.fgMuted, marginBottom: 6 }}>
-              Support URL
-            </div>
+          </label>
+          <label className={styles.settingField}>
+            <span>Support URL</span>
             <input
+              className={`${styles.input} ${styles.monoInput}`}
               type="text"
               autoComplete="off"
               value={localSupportUrl}
               onChange={(e) => setLocalSupportUrl(e.target.value)}
               placeholder="https://example.com/support"
-              style={{
-                width: "100%",
-                background: controlStyle.background,
-                border: `1px solid ${controlStyle.borderColor}`,
-                borderRadius: 8,
-                padding: "8px 12px",
-                fontSize: 13,
-                color: controlStyle.color,
-                fontFamily: "monospace",
-                outline: "none",
-                boxSizing: "border-box",
-              }}
             />
-          </div>
+          </label>
         </div>
-      </div>
+      </section>
 
-      {/* Field cards */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <div className={styles.fieldList}>
         {visibleFields.map((field) => {
           const value = metadata[field.id] ?? "";
           const charCount = value.length;
           const isOver = charCount > field.maxLength;
           const pct = Math.min(100, (charCount / field.maxLength) * 100);
+          const InputComponent = field.multiline ? "textarea" : "input";
 
           return (
-            <div
-              key={field.id}
-              style={{
-                ...surfaceStyle,
-                borderRadius: 14,
-                padding: "20px 22px",
-                transition: "border-color 0.15s",
-              }}
-            >
-              {/* Label row */}
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  marginBottom: 10,
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: T.fg }}>
-                    {field.label}
-                  </span>
-                </div>
-
-                {/* Translate all button — whatsNew only */}
-                {field.id === "whatsNew" && locales.length > 1 && (
-                  <button
-                    onClick={() => handleTranslateAll("whatsNew")}
-                    disabled={translateAllState === "loading"}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 4,
-                      background:
-                        translateAllState === "done"
-                          ? "rgba(34,197,94,0.15)"
+            <section className={styles.card} key={field.id}>
+              <div className={styles.fieldHeader}>
+                <span className={styles.fieldLabel}>{field.label}</span>
+                <div className={styles.fieldActions}>
+                  {field.id === "whatsNew" && locales.length > 1 && (
+                    <button
+                      className={styles.smallButton}
+                      data-tone={getTranslateTone(translateAllState)}
+                      onClick={() => handleTranslateAll("whatsNew")}
+                      disabled={translateAllState === "loading"}
+                    >
+                      <Languages size={11} />
+                      {translateAllState === "loading"
+                        ? "Translating..."
+                        : translateAllState === "done"
+                          ? "Done!"
                           : translateAllState === "error"
-                            ? "rgba(239,68,68,0.15)"
-                            : mutedButtonStyle.background,
-                      border: mutedButtonStyle.border,
-                      borderRadius: 6,
-                      padding: "3px 10px",
-                      fontSize: 11,
-                      fontWeight: 600,
-                      color:
-                        translateAllState === "done"
-                          ? "#22C55E"
-                          : translateAllState === "error"
-                            ? "#EF4444"
-                            : T.accent,
-                      cursor:
-                        translateAllState === "loading"
-                          ? "not-allowed"
-                          : "pointer",
-                      opacity: translateAllState === "loading" ? 0.6 : 1,
-                      transition: "all 0.15s",
-                    }}
-                  >
-                    {translateAllState === "loading"
-                      ? "Translating…"
-                      : translateAllState === "done"
-                        ? "Done!"
-                        : translateAllState === "error"
-                          ? (translateAllError ?? "Failed")
-                          : "Translate for all langs"}
-                  </button>
-                )}
-
-                {/* Copy button */}
-                <button
-                  onClick={() => handleCopy(field.id, value)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 4,
-                    ...mutedButtonStyle,
-                    borderRadius: 6,
-                    padding: "3px 10px",
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color: copiedId === field.id ? T.accent : T.fgMuted,
-                    cursor: "pointer",
-                    transition: "all 0.15s",
-                  }}
-                >
-                  {copiedId === field.id ? (
-                    <>
-                      <svg
-                        width={11}
-                        height={11}
-                        viewBox="0 0 12 12"
-                        fill="none"
-                      >
-                        <path
-                          d="M2 6l3 3 5-5"
-                          stroke="currentColor"
-                          strokeWidth={1.6}
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                      Copied
-                    </>
-                  ) : (
-                    <>
-                      <svg
-                        width={11}
-                        height={11}
-                        viewBox="0 0 12 12"
-                        fill="none"
-                      >
-                        <rect
-                          x="3"
-                          y="3"
-                          width="7"
-                          height="7"
-                          rx="1.5"
-                          stroke="currentColor"
-                          strokeWidth={1.2}
-                        />
-                        <path
-                          d="M9 3V2.5A1.5 1.5 0 0 0 7.5 1H2.5A1.5 1.5 0 0 0 1 2.5V7.5A1.5 1.5 0 0 0 2.5 9H3"
-                          stroke="currentColor"
-                          strokeWidth={1.2}
-                        />
-                      </svg>
-                      Copy
-                    </>
+                            ? (translateAllError ?? "Failed")
+                            : "Translate for all langs"}
+                    </button>
                   )}
-                </button>
+                  <button
+                    className={styles.smallButton}
+                    data-active={copiedId === field.id}
+                    onClick={() => handleCopy(field.id, value)}
+                  >
+                    {copiedId === field.id ? (
+                      <Check size={11} />
+                    ) : (
+                      <Copy size={11} />
+                    )}
+                    {copiedId === field.id ? "Copied" : "Copy"}
+                  </button>
+                </div>
               </div>
 
-              {/* Input */}
-              {field.multiline ? (
-                <textarea
-                  autoComplete="off"
-                  value={value}
-                  onChange={(e) => handleChange(field.id, e.target.value)}
-                  placeholder={field.placeholder}
-                  rows={field.id === "description" ? 8 : 3}
-                  style={{
-                    width: "100%",
-                    background: controlStyle.background,
-                    border: `1px solid ${isOver ? "#EF4444" : controlStyle.borderColor}`,
-                    borderRadius: 8,
-                    padding: "10px 14px",
-                    fontSize: 14,
-                    color: controlStyle.color,
-                    fontFamily: "inherit",
-                    resize: "vertical",
-                    outline: "none",
-                    transition: "border-color 0.15s",
-                    lineHeight: 1.6,
-                    boxSizing: "border-box",
-                  }}
-                  onFocus={(e) => {
-                    if (!isOver)
-                      (e.target as HTMLTextAreaElement).style.borderColor =
-                        `${T.accent}66`;
-                  }}
-                  onBlur={(e) => {
-                    if (!isOver)
-                      (e.target as HTMLTextAreaElement).style.borderColor =
-                        controlStyle.borderColor;
-                  }}
-                />
-              ) : (
-                <input
-                  type="text"
-                  autoComplete="off"
-                  value={value}
-                  onChange={(e) => handleChange(field.id, e.target.value)}
-                  placeholder={field.placeholder}
-                  style={{
-                    width: "100%",
-                    background: controlStyle.background,
-                    border: `1px solid ${isOver ? "#EF4444" : controlStyle.borderColor}`,
-                    borderRadius: 8,
-                    padding: "10px 14px",
-                    fontSize: 14,
-                    color: controlStyle.color,
-                    fontFamily: "inherit",
-                    outline: "none",
-                    transition: "border-color 0.15s",
-                    boxSizing: "border-box",
-                  }}
-                  onFocus={(e) => {
-                    if (!isOver)
-                      (e.target as HTMLInputElement).style.borderColor =
-                        `${T.accent}66`;
-                  }}
-                  onBlur={(e) => {
-                    if (!isOver)
-                      (e.target as HTMLInputElement).style.borderColor =
-                        controlStyle.borderColor;
-                  }}
-                />
-              )}
+              <InputComponent
+                className={styles.input}
+                data-invalid={isOver}
+                type={field.multiline ? undefined : "text"}
+                autoComplete="off"
+                value={value}
+                onChange={(e) => handleChange(field.id, e.target.value)}
+                placeholder={field.placeholder}
+                rows={field.multiline ? (field.id === "description" ? 8 : 3) : undefined}
+              />
 
-              {/* Character counter bar */}
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  marginTop: 8,
-                }}
-              >
-                {/* Progress bar */}
-                <div
-                  style={{
-                    flex: 1,
-                    height: 3,
-                    background: progressTrack,
-                    borderRadius: 2,
-                    overflow: "hidden",
-                    marginRight: 12,
-                  }}
-                >
+              <div className={styles.counterRow}>
+                <div className={styles.progressTrack}>
                   <div
-                    style={{
-                      width: `${pct}%`,
-                      height: "100%",
-                      background: isOver
-                        ? "#EF4444"
-                        : pct > 85
-                          ? "#F59E0B"
-                          : T.accent,
-                      borderRadius: 2,
-                      transition: "width 0.2s, background 0.2s",
-                    }}
+                    className={styles.progressBar}
+                    data-over={isOver}
+                    data-warning={!isOver && pct > 85}
+                    style={{ width: `${pct}%` }}
                   />
                 </div>
-                <span
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 500,
-                    color: isOver ? "#EF4444" : T.fgMuted,
-                    fontVariantNumeric: "tabular-nums",
-                    flexShrink: 0,
-                  }}
-                >
+                <span className={styles.counter} data-over={isOver}>
                   {charCount}/{field.maxLength}
                 </span>
               </div>
-            </div>
+            </section>
           );
         })}
       </div>
