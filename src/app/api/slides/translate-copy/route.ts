@@ -10,6 +10,8 @@ type LocaleTarget = { code: string; label: string };
 type LocaleTranslation = { locale: string; label: string; headline: string; subtitle: string };
 type TranslationResult = { slideKey: string; translations: LocaleTranslation[] };
 
+const nonEmptyString = { type: "string", minLength: 1 };
+
 function markupToSegments(markup: string): RichTextSegment[] {
   const segments: RichTextSegment[] = [];
   const normalised = markup.replace(/\n/g, "\\n");
@@ -25,6 +27,47 @@ function markupToSegments(markup: string): RichTextSegment[] {
     }
   }
   return segments.length ? segments : [{ t: "text", v: "" }];
+}
+
+function extractJsonObject(raw: string): unknown {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+    if (fenced) {
+      return JSON.parse(fenced[1]);
+    }
+
+    const firstBrace = raw.indexOf("{");
+    const lastBrace = raw.lastIndexOf("}");
+    if (firstBrace === -1 || lastBrace <= firstBrace) {
+      throw new Error("No JSON object found");
+    }
+
+    return JSON.parse(raw.slice(firstBrace, lastBrace + 1));
+  }
+}
+
+function isTranslationResult(value: unknown): value is TranslationResult {
+  if (!value || typeof value !== "object") return false;
+  const result = value as Partial<TranslationResult>;
+  return (
+    typeof result.slideKey === "string" &&
+    Array.isArray(result.translations) &&
+    result.translations.every((translation) => {
+      if (!translation || typeof translation !== "object") return false;
+      const t = translation as Partial<LocaleTranslation>;
+      return (
+        typeof t.locale === "string" &&
+        typeof t.label === "string" &&
+        t.label.trim().length > 0 &&
+        typeof t.headline === "string" &&
+        t.headline.trim().length > 0 &&
+        typeof t.subtitle === "string" &&
+        t.subtitle.trim().length > 0
+      );
+    })
+  );
 }
 
 const SCHEMA = {
@@ -44,10 +87,10 @@ const SCHEMA = {
               items: {
                 type: "object",
                 properties: {
-                  locale:   { type: "string" },
-                  label:    { type: "string" },
-                  headline: { type: "string" },
-                  subtitle: { type: "string" },
+                  locale:   nonEmptyString,
+                  label:    nonEmptyString,
+                  headline: nonEmptyString,
+                  subtitle: nonEmptyString,
                 },
                 required: ["locale", "label", "headline", "subtitle"],
                 additionalProperties: false,
@@ -63,6 +106,33 @@ const SCHEMA = {
     additionalProperties: false,
   },
 };
+
+function buildPrompt(params: {
+  sourceLabel: string;
+  localeList: string;
+  targetCodes: string[];
+  slides: SlideInput[];
+}) {
+  const slidesText = params.slides
+    .map((s) => `Slide "${s.slideKey}":\n  label: ${s.label}\n  headline: ${s.headline}\n  subtitle: ${s.subtitle}`)
+    .join("\n\n");
+
+  return `You are a mobile app marketing copywriter. Translate the following app screenshot slide copy from ${params.sourceLabel} into each of these languages: ${params.localeList}.
+
+FORMAT RULES:
+- label: Short ALL-CAPS category label. Keep concise and natural in the target language.
+- headline: Max 40 chars. May use **bold** around the key accent word/phrase. Use \\n only if needed.
+- subtitle: Max 60 chars. One short, benefit-driven sentence.
+- Never return empty strings for label, headline, or subtitle. If the source field is empty, write a fresh concise target-language line from the slide label and surrounding slide context.
+- Preserve **bold** markup and \\n line break tokens — translate only the surrounding text.
+- Sound natural and native, not word-for-word translated.
+
+SOURCE SLIDES (${params.sourceLabel}):
+${slidesText}
+
+Return a JSON object with key "results" — an array, one entry per source slide. Each entry has "slideKey" and "translations" (an array of objects with "locale", "label", "headline", "subtitle"). Include one translation object per target locale: ${params.targetCodes.join(", ")}.
+Output only valid JSON. No explanations, no markdown, no extra content.`;
+}
 
 export async function POST(req: NextRequest) {
   const { productId, sourceLocale, sourceLabel, targetLocales, slides } = await req.json() as {
@@ -80,50 +150,66 @@ export async function POST(req: NextRequest) {
   const localeList = targetLocales.map((l) => `"${l.code}" (${l.label})`).join(", ");
   const targetCodes = targetLocales.map((l) => l.code);
 
-  const slidesText = slides
-    .map((s) => `Slide "${s.slideKey}":\n  label: ${s.label}\n  headline: ${s.headline}\n  subtitle: ${s.subtitle}`)
-    .join("\n\n");
+  const results: TranslationResult[] = [];
 
-  const prompt = `You are a mobile app marketing copywriter. Translate the following app screenshot slide copy from ${sourceLabel} into each of these languages: ${localeList}.
+  for (const slide of slides) {
+    const prompt = buildPrompt({
+      sourceLabel,
+      localeList,
+      targetCodes,
+      slides: [slide],
+    });
 
-FORMAT RULES:
-- label: Short ALL-CAPS category label. Keep concise and natural in the target language.
-- headline: Max 40 chars. May use **bold** around the key accent word/phrase. Use \\n only if needed.
-- subtitle: Max 60 chars. One short, benefit-driven sentence.
-- Preserve **bold** markup and \\n line break tokens — translate only the surrounding text.
-- Sound natural and native, not word-for-word translated.
+    let raw: string;
+    try {
+      raw = await togetherComplete({
+        prompt,
+        jsonSchema: SCHEMA,
+        maxTokens: Math.max(2048, targetCodes.length * 220),
+      });
+    } catch (e) {
+      console.error("[translate-copy] Together AI error:", e);
+      return NextResponse.json({ error: String(e) }, { status: 502 });
+    }
 
-SOURCE SLIDES (${sourceLabel}):
-${slidesText}
+    let parsed: unknown;
+    try {
+      parsed = extractJsonObject(raw);
+    } catch (e) {
+      console.error("[translate-copy] Failed to parse JSON:", e, raw);
+      return NextResponse.json({ error: "Invalid JSON from model", raw }, { status: 502 });
+    }
 
-Return a JSON object with key "results" — an array, one entry per source slide. Each entry has "slideKey" and "translations" (an array of objects with "locale", "label", "headline", "subtitle"). Include one translation object per target locale: ${targetCodes.join(", ")}.`;
+    const chunkResults =
+      parsed &&
+      typeof parsed === "object" &&
+      "results" in parsed &&
+      Array.isArray((parsed as { results?: unknown }).results)
+        ? (parsed as { results: unknown[] }).results.filter(isTranslationResult)
+        : [];
 
-  let raw: string;
-  try {
-    raw = await togetherComplete({ prompt, jsonSchema: SCHEMA });
-  } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 502 });
-  }
+    if (!chunkResults.length) {
+      return NextResponse.json({ error: "Model returned no results", raw }, { status: 502 });
+    }
 
-  let parsed: { results: TranslationResult[] };
-  try {
-    parsed = JSON.parse(raw) as { results: TranslationResult[] };
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON from model", raw }, { status: 502 });
-  }
-
-  const results = parsed.results;
-  if (!Array.isArray(results) || !results.length) {
-    return NextResponse.json({ error: "Model returned no results", raw }, { status: 502 });
+    results.push(...chunkResults);
   }
 
   for (const result of results) {
     for (const t of result.translations ?? []) {
       if (!targetCodes.includes(t.locale)) continue;
 
-      const label    = t.label ?? "";
-      const headline = markupToSegments(t.headline ?? "");
-      const subtitle = markupToSegments(t.subtitle ?? "");
+      const labelText = t.label.trim();
+      const headlineText = t.headline.trim();
+      const subtitleText = t.subtitle.trim();
+      if (!labelText || !headlineText || !subtitleText) {
+        console.warn("[translate-copy] Skipping empty translation:", result.slideKey, t.locale, t);
+        continue;
+      }
+
+      const label    = labelText;
+      const headline = markupToSegments(headlineText);
+      const subtitle = markupToSegments(subtitleText);
 
       const existing = await db
         .select({ id: slideCopy.id })
