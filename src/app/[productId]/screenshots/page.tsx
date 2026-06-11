@@ -460,6 +460,52 @@ export default function ScreenshotsPage() {
   }, [product.id, activeDevice, newStyleKey, newLabel, newHeadline, newSubtitle, newImageFile, onSlidesChanged]);
 
   const [bulkGenOpen, setBulkGenOpen] = useState(false);
+  const [translatingSlides, setTranslatingSlides] = useState(false);
+
+  const handleTranslateSlides = useCallback(async () => {
+    if (translatingSlides || !productLocales.length) return;
+    const currentLocaleInfo = productLocales.find((l) => l.code === locale);
+    const targetLocales = productLocales.filter((l) => l.code !== locale);
+    if (!targetLocales.length) {
+      toast.error("No other locales to translate into");
+      return;
+    }
+    setTranslatingSlides(true);
+    try {
+      const slideInputs = orderedSlides.map((slide) => {
+        const baseCopy = slide.copyByLocale?.[locale] ?? slide.copy;
+        const effective = getEffectiveCopy(slide.id, baseCopy);
+        return {
+          slideKey: slide.id,
+          label:    typeof effective.label === "string" ? effective.label : "",
+          headline: Array.isArray(effective.headline)
+            ? segmentsToMarkup(effective.headline as import("@/lib/rich-text").RichTextSegment[])
+            : typeof effective.headline === "string" ? effective.headline : "",
+          subtitle: Array.isArray(effective.subtitle)
+            ? segmentsToMarkup(effective.subtitle as import("@/lib/rich-text").RichTextSegment[])
+            : typeof effective.subtitle === "string" ? effective.subtitle : "",
+        };
+      });
+      const res = await fetch("/api/slides/translate-copy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId: product.id,
+          sourceLocale: locale,
+          sourceLabel: currentLocaleInfo?.label ?? locale,
+          targetLocales: targetLocales.map((l) => ({ code: l.code, label: l.label })),
+          slides: slideInputs,
+        }),
+      });
+      const data = await res.json() as { ok?: boolean; translated?: number; error?: string };
+      if (!res.ok || !data.ok) throw new Error(data.error ?? "Translation failed");
+      toast.success(`Translated ${data.translated} slide(s) into ${targetLocales.length} locale(s)`);
+      onSlidesChanged?.();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Translation failed");
+    }
+    setTranslatingSlides(false);
+  }, [translatingSlides, productLocales, locale, orderedSlides, product.id, getEffectiveCopy, onSlidesChanged]);
 
   const handleExport = async () => {
     if (!offscreenRef.current || exporting) return;
@@ -576,6 +622,43 @@ export default function ScreenshotsPage() {
           </svg>
           Generate Slides
         </button>
+        {productLocales.length > 1 && (
+          <button
+            onClick={handleTranslateSlides}
+            disabled={translatingSlides || exporting}
+            title={`Translate slide text from ${locale} into all other locales`}
+            style={{
+              display: "flex", alignItems: "center", gap: 6,
+              background: ctrlBg, color: translatingSlides ? T.fgMuted : ctrlColor,
+              border: `1px solid ${ctrlBorder}`, borderRadius: 7,
+              padding: "7px 14px", fontSize: 13, fontWeight: 600,
+              cursor: translatingSlides || exporting ? "not-allowed" : "pointer",
+              opacity: translatingSlides || exporting ? 0.6 : 1,
+              transition: "all 0.15s",
+            }}
+          >
+            {translatingSlides ? (
+              <>
+                <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} style={{ animation: "spin 1s linear infinite" }}>
+                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                </svg>
+                Translating…
+              </>
+            ) : (
+              <>
+                <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <path d="M5 8l6 6"/>
+                  <path d="M4 14l6-6 2-3"/>
+                  <path d="M2 5h12"/>
+                  <path d="M7 2h1"/>
+                  <path d="M22 22l-5-10-5 10"/>
+                  <path d="M14 18h6"/>
+                </svg>
+                Translate Slides
+              </>
+            )}
+          </button>
+        )}
         <button onClick={handleExport} disabled={exporting}
           style={{
             position: "relative", overflow: "hidden",
