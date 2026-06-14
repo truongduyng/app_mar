@@ -617,11 +617,11 @@ export function MetadataPanel({
               <div className={styles.fieldHeader}>
                 <span className={styles.fieldLabel}>{field.label}</span>
                 <div className={styles.fieldActions}>
-                  {field.id === "whatsNew" && locales.length > 1 && (
+                  {locales.length > 1 && (
                     <button
                       className={styles.smallButton}
                       data-tone={getTranslateTone(translateAllState)}
-                      onClick={() => handleTranslateAll("whatsNew")}
+                      onClick={() => handleTranslateAll(field.id)}
                       disabled={translateAllState === "loading"}
                     >
                       <Languages size={11} />
