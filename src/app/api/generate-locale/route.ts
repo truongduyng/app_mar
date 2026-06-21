@@ -242,8 +242,9 @@ type JsonSchema = {
 async function callTogether<T>(
   prompt: string,
   jsonSchema: JsonSchema,
+  maxTokens = 4000,
 ): Promise<T> {
-  const raw = await togetherComplete({ prompt, jsonSchema });
+  const raw = await togetherComplete({ prompt, jsonSchema, maxTokens });
   try {
     return JSON.parse(raw) as T;
   } catch (err) {

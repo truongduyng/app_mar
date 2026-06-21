@@ -27,7 +27,11 @@ export async function togetherComplete(opts: CompleteOptions): Promise<string> {
       ? { type: "json_schema", json_schema: jsonSchema }
       : { type: "json_object" },
     ...(maxTokens ? { max_tokens: maxTokens } : {}),
-  });
+    // Kimi-K2.6 defaults to chain-of-thought reasoning before emitting content,
+    // which can exhaust max_tokens before the JSON output is produced. We only
+    // need the structured output here, so disable thinking mode.
+    chat_template_kwargs: { thinking: false },
+  } as Parameters<typeof together.chat.completions.create>[0]);
 
   const choice = (
     response as {
@@ -48,6 +52,12 @@ export async function togetherComplete(opts: CompleteOptions): Promise<string> {
     contentLength: content.length,
     contentPreview: content.slice(0, 200),
   });
+
+  if (choice?.finish_reason === "length") {
+    throw new Error(
+      `Together response truncated by max_tokens before completing (jsonSchema: ${jsonSchema?.name ?? "none"}). Increase maxTokens.`,
+    );
+  }
 
   return content;
 }
