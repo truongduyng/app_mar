@@ -244,7 +244,16 @@ async function callTogether<T>(
   jsonSchema: JsonSchema,
 ): Promise<T> {
   const raw = await togetherComplete({ prompt, jsonSchema });
-  return JSON.parse(raw) as T;
+  try {
+    return JSON.parse(raw) as T;
+  } catch (err) {
+    console.error("[generate-locale] failed to parse model output", {
+      jsonSchemaName: jsonSchema.name,
+      rawLength: raw.length,
+      raw,
+    });
+    throw err;
+  }
 }
 
 const s = <T extends Record<string, unknown>>(v: T): T => v;

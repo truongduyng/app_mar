@@ -29,5 +29,25 @@ export async function togetherComplete(opts: CompleteOptions): Promise<string> {
     ...(maxTokens ? { max_tokens: maxTokens } : {}),
   });
 
-  return (response as { choices: Array<{ message: { content: string } }> }).choices[0]?.message.content ?? "{}";
+  const choice = (
+    response as {
+      choices: Array<{
+        message: { content: string };
+        finish_reason?: string;
+      }>;
+      usage?: { completion_tokens?: number; prompt_tokens?: number };
+    }
+  ).choices[0];
+  const content = choice?.message.content ?? "{}";
+
+  console.log("[together] response", {
+    model: TOGETHER_MODEL,
+    jsonSchemaName: jsonSchema?.name,
+    finishReason: choice?.finish_reason,
+    usage: (response as { usage?: unknown }).usage,
+    contentLength: content.length,
+    contentPreview: content.slice(0, 200),
+  });
+
+  return content;
 }
