@@ -14,7 +14,7 @@ export const products = pgTable("products", {
 });
 
 export const productThemes = pgTable("product_themes", {
-  productId: text("product_id").primaryKey().references(() => products.id, { onDelete: "cascade" }),
+  productId: text("product_id").primaryKey().references(() => products.id, { onDelete: "cascade", onUpdate: "cascade" }),
   tokens:    jsonb("tokens").notNull(),
 });
 
@@ -24,7 +24,7 @@ export const productThemes = pgTable("product_themes", {
  */
 export const productLocales = pgTable("product_locales", {
   id:        serial("id").primaryKey(),
-  productId: text("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+  productId: text("product_id").notNull().references(() => products.id, { onDelete: "cascade", onUpdate: "cascade" }),
   code:      text("code").notNull(),
   label:     text("label").notNull(),
   flag:      text("flag"),
@@ -40,7 +40,7 @@ export const productLocales = pgTable("product_locales", {
  */
 export const slideGroups = pgTable("slide_groups", {
   id:        serial("id").primaryKey(),
-  productId: text("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+  productId: text("product_id").notNull().references(() => products.id, { onDelete: "cascade", onUpdate: "cascade" }),
   name:      text("name").notNull(),   // 'default' | locale code e.g. 'vi'
   sortOrder: integer("sort_order").notNull().default(0),
 }, (t) => [
@@ -79,7 +79,7 @@ export const productSlides = pgTable("product_slides", {
  */
 export const slideCopy = pgTable("slide_copy", {
   id:        serial("id").primaryKey(),
-  productId: text("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+  productId: text("product_id").notNull().references(() => products.id, { onDelete: "cascade", onUpdate: "cascade" }),
   slideKey:  text("slide_key").notNull(),
   locale:    text("locale").notNull(),
   label:     text("label").notNull(),
@@ -91,7 +91,7 @@ export const slideCopy = pgTable("slide_copy", {
 
 export const productMetadata = pgTable("product_metadata", {
   id:               serial("id").primaryKey(),
-  productId:        text("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+  productId:        text("product_id").notNull().references(() => products.id, { onDelete: "cascade", onUpdate: "cascade" }),
   locale:           text("locale").notNull(),
   name:             text("name").notNull(),
   subtitle:         text("subtitle").notNull().default(""),
@@ -106,7 +106,7 @@ export const productMetadata = pgTable("product_metadata", {
 
 export const productFeatureGraphics = pgTable("product_feature_graphics", {
   id:        serial("id").primaryKey(),
-  productId: text("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+  productId: text("product_id").notNull().references(() => products.id, { onDelete: "cascade", onUpdate: "cascade" }),
   locale:    text("locale").notNull(),
   tagline:   text("tagline").notNull(),
   subtitle:  text("subtitle"),
@@ -116,7 +116,7 @@ export const productFeatureGraphics = pgTable("product_feature_graphics", {
 
 export const productSocialOgs = pgTable("product_social_ogs", {
   id:        serial("id").primaryKey(),
-  productId: text("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+  productId: text("product_id").notNull().references(() => products.id, { onDelete: "cascade", onUpdate: "cascade" }),
   locale:    text("locale").notNull(),
   tagline:   text("tagline").notNull(),
   subtitle:  text("subtitle"),
@@ -126,7 +126,7 @@ export const productSocialOgs = pgTable("product_social_ogs", {
 
 export const productCtaImages = pgTable("product_cta_images", {
   id:        serial("id").primaryKey(),
-  productId: text("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+  productId: text("product_id").notNull().references(() => products.id, { onDelete: "cascade", onUpdate: "cascade" }),
   locale:    text("locale").notNull(),
   headline:  text("headline").notNull(),
   sc1:       text("sc1").notNull(),

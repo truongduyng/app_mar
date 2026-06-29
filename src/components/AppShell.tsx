@@ -265,7 +265,14 @@ export function AppShell({ children }: { children: ReactNode }) {
           theme={T}
           product={product}
           onClose={() => setEditProductOpen(false)}
-          onSaved={() => { setEditProductOpen(false); toast.success("Product updated"); router.refresh(); }}
+          onSaved={(newId) => {
+            setEditProductOpen(false);
+            toast.success("Product updated");
+            if (newId && newId !== productId) {
+              router.push(`/${newId}/${activeSection}`);
+            }
+            router.refresh();
+          }}
           onArchived={() => {
             setEditProductOpen(false);
             toast.success("Product archived");
@@ -763,10 +770,11 @@ function EditProductModal({ theme: T, product, onClose, onSaved, onArchived }: {
   theme: HydratedProduct["theme"];
   product: HydratedProduct;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (newId?: string) => void;
   onArchived: () => void;
 }) {
   const [name, setName] = useState(product.name);
+  const [productSlug, setProductSlug] = useState(product.id);
   const [accent, setAccent] = useState(T.accent);
   const [bundleId, setBundleId] = useState(product.bundleId ?? "");
   const [packageName, setPackageName] = useState(product.packageName ?? "");
@@ -800,6 +808,7 @@ function EditProductModal({ theme: T, product, onClose, onSaved, onArchived }: {
     try {
       const form = new FormData();
       form.append("productId", product.id);
+      form.append("newId", productSlug.trim().toLowerCase());
       form.append("name", name.trim());
       form.append("accent", accent);
       form.append("bundleId", bundleId);
@@ -808,9 +817,9 @@ function EditProductModal({ theme: T, product, onClose, onSaved, onArchived }: {
       form.append("supportUrl", supportUrl);
       if (iconFile) form.append("icon", iconFile);
       const res = await fetch("/api/product-settings", { method: "POST", body: form });
-      const data = await res.json() as { ok?: boolean; error?: string };
+      const data = await res.json() as { ok?: boolean; error?: string; productId?: string };
       if (res.ok && data.ok) {
-        onSaved();
+        onSaved(data.productId);
       } else {
         const message = data.error ?? "Failed to save";
         setError(message);
@@ -926,6 +935,26 @@ function EditProductModal({ theme: T, product, onClose, onSaved, onArchived }: {
           {/* Divider */}
           <div className="border-t border-white/7" />
 
+          {/* Slug */}
+          <div className="flex flex-col gap-1.5">
+            <label className={labelCls}>Product slug (URL id)</label>
+            <input
+              value={productSlug}
+              onChange={(e) => setProductSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+              placeholder="my-app"
+              maxLength={60}
+              className={`${inputCls} font-mono`}
+            />
+            {productSlug.trim() !== product.id && (
+              <div className="text-[11px] text-amber-400/90">
+                Renaming moves uploaded files and changes the URL for this product.
+              </div>
+            )}
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-white/7" />
+
           {/* Store IDs */}
           <div className="flex flex-col gap-3">
             <div className="text-[11px] font-bold tracking-widest uppercase text-[#555]">Store Publishing</div>
@@ -959,7 +988,7 @@ function EditProductModal({ theme: T, product, onClose, onSaved, onArchived }: {
 
           <button
             type="submit"
-            disabled={!name.trim() || saving || archiving}
+            disabled={!name.trim() || !productSlug.trim() || saving || archiving}
             className="w-full py-2.25 px-4 rounded-[9px] border-none font-bold text-[13px] transition-all duration-150 disabled:cursor-not-allowed mt-1"
             style={{
               background: name.trim() && !saving ? accent : "rgba(255,255,255,0.08)",
