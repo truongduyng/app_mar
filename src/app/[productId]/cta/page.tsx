@@ -105,15 +105,16 @@ export default function CtaPage() {
 
       {/* Headline row */}
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-        <input
-          type="text"
+        <textarea
           value={headline}
           onChange={(e) => setCtaHeadline(e.target.value)}
           placeholder="CTA headline"
+          rows={1}
           style={{
             flex: 1, minWidth: 0, background: inputBg, color: controlText,
-            border: `1px solid ${inputBorder}`, borderRadius: 8, height: 36,
-            padding: "0 14px", fontSize: 13, fontWeight: 500, outline: "none",
+            border: `1px solid ${inputBorder}`, borderRadius: 8, minHeight: 36,
+            padding: "8px 14px", fontSize: 13, fontWeight: 500, outline: "none",
+            fontFamily: "inherit", resize: "vertical",
             boxShadow: chrome.light ? "0 1px 3px rgba(15,23,42,0.12)" : "inset 0 1px 0 rgba(255,255,255,0.06)",
           }}
         />

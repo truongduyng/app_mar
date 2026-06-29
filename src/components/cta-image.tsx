@@ -208,6 +208,7 @@ export function CtaImage({
             lineHeight: 1.12,
             letterSpacing: "-0.025em",
             textAlign: "center",
+            whiteSpace: "pre-wrap",
           }}
         >
           {headline}
