@@ -3,7 +3,7 @@ import { db } from "@/db/client";
 import { slideGroups, productSlides, slideCopy, productLocales } from "@/db/schema";
 import { eq, and, max } from "drizzle-orm";
 import { LOCALE_NAMES } from "@/lib/locale-names";
-import { togetherComplete } from "@/lib/together";
+import { zaiComplete } from "@/lib/zai";
 
 export async function POST(req: NextRequest) {
   const { productId, productName, productDescription, device, locale, styleKey, count } =
@@ -41,7 +41,7 @@ Respond with only the JSON object.`;
 
   let slides: { label: string; headline: string; subtitle: string }[];
   try {
-    const raw = await togetherComplete({ prompt });
+    const raw = await zaiComplete({ prompt });
     let parsed: { slides?: unknown[] };
     try {
       parsed = JSON.parse(raw);

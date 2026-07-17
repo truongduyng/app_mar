@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db/client";
 import { productMetadata } from "@/db/schema";
 import type { MetadataConfig } from "@/lib/types";
-import { togetherComplete } from "@/lib/together";
+import { zaiComplete } from "@/lib/zai";
 
 const LOCALE_NAMES: Record<string, string> = {
   ar: "Arabic",
@@ -101,9 +101,9 @@ ${sourceValue}`;
 
   let raw: string;
   try {
-    raw = await togetherComplete({ prompt, jsonSchema: schema });
+    raw = await zaiComplete({ prompt, jsonSchema: schema });
   } catch (e) {
-    console.error("[translate-field] Together AI error:", e);
+    console.error("[translate-field] Z.AI error:", e);
     return NextResponse.json({ error: String(e) }, { status: 502 });
   }
   let parsed: unknown;

@@ -4,7 +4,7 @@ import { productLocales, slideCopy, productMetadata } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import type { RichTextSegment } from "@/lib/rich-text";
 import type { MetadataConfig } from "@/lib/types";
-import { togetherComplete } from "@/lib/together";
+import { zaiComplete } from "@/lib/zai";
 
 // Map locale code → country/market context for ASO optimisation
 const LOCALE_CONTEXT: Record<
@@ -239,12 +239,12 @@ type JsonSchema = {
   schema: Record<string, unknown>;
 };
 
-async function callTogether<T>(
+async function callZai<T>(
   prompt: string,
   jsonSchema: JsonSchema,
   maxTokens = 4000,
 ): Promise<T> {
-  const raw = await togetherComplete({ prompt, jsonSchema, maxTokens });
+  const raw = await zaiComplete({ prompt, jsonSchema, maxTokens });
   try {
     return JSON.parse(raw) as T;
   } catch (err) {
@@ -370,7 +370,7 @@ Guidelines for each field:
 
 Return a JSON object with exactly these keys: name, subtitle, promoText, shortDescription, description, keywords, whatsNew.`;
 
-  return callTogether<MetadataConfig>(prompt, METADATA_SCHEMA);
+  return callZai<MetadataConfig>(prompt, METADATA_SCHEMA);
 }
 
 async function correctMetadata(
@@ -410,7 +410,7 @@ Return a JSON object containing only the keys that need fixing: ${violations.map
     }),
   };
 
-  const fixes = await callTogether<Partial<MetadataConfig>>(prompt, fixSchema);
+  const fixes = await callZai<Partial<MetadataConfig>>(prompt, fixSchema);
   return { ...meta, ...fixes };
 }
 
@@ -450,7 +450,7 @@ ${slidesInput}
 
 Return a JSON object with a single key "slides" whose value is an array. Each element has: slideKey, label, headline, subtitle.`;
 
-  const result = await callTogether<{ slides: SlideSource[] }>(prompt, SLIDES_SCHEMA);
+  const result = await callZai<{ slides: SlideSource[] }>(prompt, SLIDES_SCHEMA);
   return result.slides;
 }
 

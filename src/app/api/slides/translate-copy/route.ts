@@ -3,7 +3,7 @@ import { db } from "@/db/client";
 import { slideCopy } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import type { RichTextSegment } from "@/lib/rich-text";
-import { togetherComplete } from "@/lib/together";
+import { zaiComplete } from "@/lib/zai";
 
 type SlideInput = { slideKey: string; label: string; headline: string; subtitle: string };
 type LocaleTarget = { code: string; label: string };
@@ -162,13 +162,13 @@ export async function POST(req: NextRequest) {
 
     let raw: string;
     try {
-      raw = await togetherComplete({
+      raw = await zaiComplete({
         prompt,
         jsonSchema: SCHEMA,
         maxTokens: Math.max(2048, targetCodes.length * 220),
       });
     } catch (e) {
-      console.error("[translate-copy] Together AI error:", e);
+      console.error("[translate-copy] Z.AI error:", e);
       return NextResponse.json({ error: String(e) }, { status: 502 });
     }
 
