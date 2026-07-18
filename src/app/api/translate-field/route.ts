@@ -37,6 +37,16 @@ const LOCALE_NAMES: Record<string, string> = {
   "zh-TW": "Chinese (Traditional)",
 };
 
+const FIELD_RULES: Record<keyof MetadataConfig, { maxLength: number; instruction: string }> = {
+  name: { maxLength: 30, instruction: "Use a concise app name; keep the product name/brand recognizable." },
+  subtitle: { maxLength: 30, instruction: "Write a natural, compelling App Store subtitle." },
+  promoText: { maxLength: 170, instruction: "Write natural promotional copy suitable for App Store promotional text." },
+  shortDescription: { maxLength: 80, instruction: "Write a punchy Google Play short description." },
+  description: { maxLength: 4000, instruction: "Preserve the meaning and paragraph structure of the full store description." },
+  keywords: { maxLength: 100, instruction: "Return comma-separated search terms with no spaces after commas; never cut a keyword in half." },
+  whatsNew: { maxLength: 4000, instruction: "Write natural App Store release notes and preserve the meaning." },
+};
+
 export async function POST(req: NextRequest) {
   const { productId, fieldId, sourceLocale, sourceValue, targetLocales } =
     (await req.json()) as {
@@ -52,6 +62,10 @@ export async function POST(req: NextRequest) {
       { error: "Missing required fields" },
       { status: 400 },
     );
+  }
+  const fieldRule = FIELD_RULES[fieldId];
+  if (!fieldRule) {
+    return NextResponse.json({ error: "Unsupported metadata field" }, { status: 400 });
   }
   if (!sourceValue) {
     return NextResponse.json(
@@ -87,7 +101,10 @@ export async function POST(req: NextRequest) {
     },
   };
 
-  const prompt = `Translate the following text into each of these languages: ${localeList}.
+  const prompt = `Translate/adapt the following App Store or Google Play metadata field into each of these languages: ${localeList}.
+Field: ${fieldId}
+Field rules: ${fieldRule.instruction}
+The result for every locale must be no more than ${fieldRule.maxLength} characters, including spaces and punctuation. Do not add explanations or labels.
 Return JSON matching this exact shape:
 {
   "translations": {
@@ -137,7 +154,7 @@ ${sourceValue}`;
     targetLocales
       .map((locale) => [
         locale,
-        translationsObject[locale],
+        normalizeTranslation(fieldId, translationsObject[locale], fieldRule.maxLength),
       ])
       .filter(
         (entry): entry is [string, string] =>
@@ -176,4 +193,26 @@ ${sourceValue}`;
   );
 
   return NextResponse.json({ ok: true, translations });
+}
+
+function normalizeTranslation(
+  fieldId: keyof MetadataConfig,
+  value: unknown,
+  maxLength: number,
+): string | null {
+  if (typeof value !== "string") return null;
+  const text = value.trim();
+  if (!text) return null;
+  if (text.length <= maxLength) return text;
+  if (fieldId === "keywords") {
+    return text
+      .split(",")
+      .map((keyword) => keyword.trim())
+      .filter(Boolean)
+      .reduce((result, keyword) => {
+        const next = result ? `${result},${keyword}` : keyword;
+        return next.length <= maxLength ? next : result;
+      }, "");
+  }
+  return text.slice(0, maxLength).trimEnd();
 }

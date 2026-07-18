@@ -155,8 +155,8 @@ export function MetadataPanel({
     privacyPolicyUrl ?? "",
   );
   const [localSupportUrl, setLocalSupportUrl] = useState(supportUrl ?? "");
-  const [translateAllState, setTranslateAllState] =
-    useState<TranslateAllState>("idle");
+  const [translateStates, setTranslateStates] = useState<Record<string, TranslateAllState>>({});
+  const [translateErrors, setTranslateErrors] = useState<Record<string, string | null>>({});
   const isFieldVisible = useCallback(
     (field: FieldDef) =>
       field.platform === "Both" ||
@@ -226,10 +226,6 @@ export function MetadataPanel({
     setTimeout(() => setCopiedId(null), 1500);
   }, [metadata, visibleFields]);
 
-  const [translateAllError, setTranslateAllError] = useState<string | null>(
-    null,
-  );
-
   const handleTranslateAll = useCallback(
     async (fieldId: keyof MetadataConfig) => {
       const sourceLocale = locales[0]?.code ?? activeLocale;
@@ -241,8 +237,8 @@ export function MetadataPanel({
       const targetLocales = locales
         .filter((l) => l.code !== sourceLocale)
         .map((l) => l.code);
-      setTranslateAllError(null);
-      setTranslateAllState("loading");
+      setTranslateErrors((current) => ({ ...current, [fieldId]: null }));
+      setTranslateStates((current) => ({ ...current, [fieldId]: "loading" }));
       try {
         const res = await fetch("/api/translate-field", {
           method: "POST",
@@ -271,23 +267,23 @@ export function MetadataPanel({
               },
             );
           }
-          setTranslateAllState("done");
+          setTranslateStates((current) => ({ ...current, [fieldId]: "done" }));
           toast.success("Translations generated");
         } else {
           const message = data.error ?? "Failed";
-          setTranslateAllError(message);
-          setTranslateAllState("error");
+          setTranslateErrors((current) => ({ ...current, [fieldId]: message }));
+          setTranslateStates((current) => ({ ...current, [fieldId]: "error" }));
           toast.error(message);
         }
       } catch (e: unknown) {
         const message = e instanceof Error ? e.message : "Failed";
-        setTranslateAllError(message);
-        setTranslateAllState("error");
+        setTranslateErrors((current) => ({ ...current, [fieldId]: message }));
+        setTranslateStates((current) => ({ ...current, [fieldId]: "error" }));
         toast.error(message);
       }
       setTimeout(() => {
-        setTranslateAllState("idle");
-        setTranslateAllError(null);
+        setTranslateStates((current) => ({ ...current, [fieldId]: "idle" }));
+        setTranslateErrors((current) => ({ ...current, [fieldId]: null }));
       }, 4000);
     },
     [
@@ -620,18 +616,18 @@ export function MetadataPanel({
                   {locales.length > 1 && (
                     <button
                       className={styles.smallButton}
-                      data-tone={getTranslateTone(translateAllState)}
+                      data-tone={getTranslateTone(translateStates[field.id] ?? "idle")}
                       onClick={() => handleTranslateAll(field.id)}
-                      disabled={translateAllState === "loading"}
+                      disabled={translateStates[field.id] === "loading"}
                     >
                       <Languages size={11} />
-                      {translateAllState === "loading"
-                        ? "Translating..."
-                        : translateAllState === "done"
-                          ? "Done!"
-                          : translateAllState === "error"
-                            ? (translateAllError ?? "Failed")
-                            : "Translate for all langs"}
+                      {translateStates[field.id] === "loading"
+                        ? "Translating…"
+                        : translateStates[field.id] === "done"
+                          ? "Done"
+                          : translateStates[field.id] === "error"
+                            ? (translateErrors[field.id] ?? "Failed")
+                            : "Translate all"}
                     </button>
                   )}
                   <button
@@ -657,6 +653,7 @@ export function MetadataPanel({
                 value={value}
                 onChange={(e) => handleChange(field.id, e.target.value)}
                 placeholder={field.placeholder}
+                maxLength={field.maxLength}
                 rows={field.multiline ? (field.id === "description" ? 8 : 3) : undefined}
               />
 
