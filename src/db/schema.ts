@@ -8,6 +8,7 @@ export const products = pgTable("products", {
   bundleId:         text("bundle_id"),
   packageName:      text("package_name"),
   privacyPolicyUrl: text("privacy_policy_url"),
+  termsOfUseUrl:    text("terms_of_use_url"),
   supportUrl:       text("support_url"),
   archived:         boolean("archived").notNull().default(false),
   createdAt:        timestamp("created_at").defaultNow(),

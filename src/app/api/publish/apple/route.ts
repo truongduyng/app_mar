@@ -6,6 +6,7 @@ import { products, productMetadata } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 const BASE = "https://api.appstoreconnect.apple.com/v1";
+const STANDARD_EULA_URL = "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/";
 
 type AscHeaders = { Authorization: string; "Content-Type": string };
 
@@ -126,8 +127,13 @@ export async function POST(req: NextRequest) {
       const method = existing ? "PATCH" : "POST";
       const url = existing ? `${BASE}/appStoreVersionLocalizations/${existing.id}` : `${BASE}/appStoreVersionLocalizations`;
 
+      const termsUrl = product.termsOfUseUrl || STANDARD_EULA_URL;
+      const termsLine = `Terms of Use (EULA): ${termsUrl}`;
+      const description = row.description.includes(termsUrl)
+        ? row.description
+        : `${row.description.trim().slice(0, Math.max(0, 4000 - termsLine.length - 2))}\n\n${termsLine}`;
       const versionAttrs = {
-        description: row.description,
+        description,
         keywords: row.keywords,
         promotionalText: row.promoText,
         whatsNew: row.whatsNew || undefined,

@@ -116,6 +116,7 @@ export function MetadataPanel({
   bundleId,
   packageName,
   privacyPolicyUrl,
+  termsOfUseUrl,
   supportUrl,
   onUpdate,
   onUpdateLocale,
@@ -131,6 +132,7 @@ export function MetadataPanel({
   bundleId?: string;
   packageName?: string;
   privacyPolicyUrl?: string;
+  termsOfUseUrl?: string;
   supportUrl?: string;
   onUpdate: (updated: MetadataConfig) => void;
   onUpdateLocale?: (locale: string, updated: MetadataConfig) => void;
@@ -153,6 +155,9 @@ export function MetadataPanel({
   const [localPackageName, setLocalPackageName] = useState(packageName ?? "");
   const [localPrivacyUrl, setLocalPrivacyUrl] = useState(
     privacyPolicyUrl ?? "",
+  );
+  const [localTermsUrl, setLocalTermsUrl] = useState(
+    termsOfUseUrl ?? "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/",
   );
   const [localSupportUrl, setLocalSupportUrl] = useState(supportUrl ?? "");
   const [translateStates, setTranslateStates] = useState<Record<string, TranslateAllState>>({});
@@ -314,6 +319,7 @@ export function MetadataPanel({
             bundleId: localBundleId,
             packageName: localPackageName,
             privacyPolicyUrl: localPrivacyUrl,
+            termsOfUseUrl: localTermsUrl,
             supportUrl: localSupportUrl,
           }),
         }),
@@ -337,6 +343,7 @@ export function MetadataPanel({
     localBundleId,
     localPackageName,
     localPrivacyUrl,
+    localTermsUrl,
     localSupportUrl,
   ]);
 
@@ -584,6 +591,17 @@ export function MetadataPanel({
               value={localPrivacyUrl}
               onChange={(e) => setLocalPrivacyUrl(e.target.value)}
               placeholder="https://example.com/privacy"
+            />
+          </label>
+          <label className={styles.settingField}>
+            <span>Terms of Use (EULA) URL</span>
+            <input
+              className={`${styles.input} ${styles.monoInput}`}
+              type="text"
+              autoComplete="off"
+              value={localTermsUrl}
+              onChange={(e) => setLocalTermsUrl(e.target.value)}
+              placeholder="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"
             />
           </label>
           <label className={styles.settingField}>

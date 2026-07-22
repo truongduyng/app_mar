@@ -130,6 +130,7 @@ export type ProductConfig = {
   /** Google Play package name, e.g. "com.example.myapp" */
   packageName?: string;
   privacyPolicyUrl?: string;
+  termsOfUseUrl?: string;
   supportUrl?: string;
 };
 

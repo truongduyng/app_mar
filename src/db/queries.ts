@@ -169,6 +169,7 @@ export async function getSerializableProducts(): Promise<SerializableProductConf
       bundleId:         product.bundleId ?? undefined,
       packageName:      product.packageName ?? undefined,
       privacyPolicyUrl: product.privacyPolicyUrl ?? undefined,
+      termsOfUseUrl:    product.termsOfUseUrl ?? undefined,
       supportUrl:       product.supportUrl ?? undefined,
       theme,
       locales: locales.length ? locales : undefined,

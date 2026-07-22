@@ -779,6 +779,7 @@ function EditProductModal({ theme: T, product, onClose, onSaved, onArchived }: {
   const [bundleId, setBundleId] = useState(product.bundleId ?? "");
   const [packageName, setPackageName] = useState(product.packageName ?? "");
   const [privacyPolicyUrl, setPrivacyPolicyUrl] = useState(product.privacyPolicyUrl ?? "");
+  const [termsOfUseUrl, setTermsOfUseUrl] = useState(product.termsOfUseUrl ?? "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/");
   const [supportUrl, setSupportUrl] = useState(product.supportUrl ?? "");
   const [iconFile, setIconFile] = useState<File | null>(null);
   const [iconPreview, setIconPreview] = useState<string | null>(null);
@@ -813,7 +814,8 @@ function EditProductModal({ theme: T, product, onClose, onSaved, onArchived }: {
       form.append("accent", accent);
       form.append("bundleId", bundleId);
       form.append("packageName", packageName);
-      form.append("privacyPolicyUrl", privacyPolicyUrl);
+    form.append("privacyPolicyUrl", privacyPolicyUrl);
+      form.append("termsOfUseUrl", termsOfUseUrl);
       form.append("supportUrl", supportUrl);
       if (iconFile) form.append("icon", iconFile);
       const res = await fetch("/api/product-settings", { method: "POST", body: form });
@@ -977,6 +979,11 @@ function EditProductModal({ theme: T, product, onClose, onSaved, onArchived }: {
             <div className="flex flex-col gap-1.5">
               <label className={labelCls}>Privacy Policy URL</label>
               <input value={privacyPolicyUrl} onChange={(e) => setPrivacyPolicyUrl(e.target.value)} placeholder="https://example.com/privacy" className={inputCls} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className={labelCls}>Terms of Use (EULA) URL</label>
+              <input value={termsOfUseUrl} onChange={(e) => setTermsOfUseUrl(e.target.value)} placeholder="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" className={inputCls} />
+              <div className="text-[11px] text-[#666]">Included in Apple descriptions for subscription compliance.</div>
             </div>
             <div className="flex flex-col gap-1.5">
               <label className={labelCls}>Support URL</label>

@@ -19,6 +19,7 @@ export default function MetadataPage() {
       bundleId={product.bundleId}
       packageName={product.packageName}
       privacyPolicyUrl={product.privacyPolicyUrl}
+      termsOfUseUrl={product.termsOfUseUrl}
       supportUrl={product.supportUrl}
       metadata={
         metadataMap[product.id]?.[locale] ??

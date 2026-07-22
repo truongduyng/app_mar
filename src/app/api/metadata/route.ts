@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db/client";
 import { productMetadata } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -20,7 +19,10 @@ export async function POST(req: NextRequest) {
   };
 
   if (!productId || !locale || !metadata) {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Missing required fields" },
+      { status: 400 },
+    );
   }
 
   const metaValues = {

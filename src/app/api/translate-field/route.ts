@@ -3,39 +3,7 @@ import { db } from "@/db/client";
 import { productMetadata } from "@/db/schema";
 import type { MetadataConfig } from "@/lib/types";
 import { zaiComplete } from "@/lib/zai";
-
-const LOCALE_NAMES: Record<string, string> = {
-  ar: "Arabic",
-  cs: "Czech",
-  da: "Danish",
-  de: "German",
-  el: "Greek",
-  es: "Spanish (Spain)",
-  fi: "Finnish",
-  fr: "French",
-  he: "Hebrew",
-  hr: "Croatian",
-  hu: "Hungarian",
-  id: "Indonesian",
-  it: "Italian",
-  ja: "Japanese",
-  ko: "Korean",
-  nl: "Dutch",
-  no: "Norwegian",
-  pl: "Polish",
-  "pt-BR": "Portuguese (Brazil)",
-  pt: "Portuguese",
-  ro: "Romanian",
-  ru: "Russian",
-  sk: "Slovak",
-  sv: "Swedish",
-  th: "Thai",
-  tr: "Turkish",
-  uk: "Ukrainian",
-  vi: "Vietnamese",
-  zh: "Chinese (Simplified)",
-  "zh-TW": "Chinese (Traditional)",
-};
+import { LOCALE_NAMES } from "@/lib/locale-names";
 
 const FIELD_RULES: Record<keyof MetadataConfig, { maxLength: number; instruction: string }> = {
   name: { maxLength: 30, instruction: "Use a concise app name; keep the product name/brand recognizable." },

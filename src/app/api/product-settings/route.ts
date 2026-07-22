@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   const contentType = req.headers.get("content-type") ?? "";
   let productId: string, newId: string | undefined, name: string | undefined, bundleId: string | undefined,
     packageName: string | undefined, privacyPolicyUrl: string | undefined,
-    supportUrl: string | undefined, accent: string | undefined,
+    termsOfUseUrl: string | undefined, supportUrl: string | undefined, accent: string | undefined,
     archived: boolean | undefined, iconFile: File | undefined | null;
 
   if (contentType.includes("multipart/form-data")) {
@@ -22,6 +22,7 @@ export async function POST(req: NextRequest) {
     bundleId         = (form.get("bundleId") as string | null) ?? undefined;
     packageName      = (form.get("packageName") as string | null) ?? undefined;
     privacyPolicyUrl = (form.get("privacyPolicyUrl") as string | null) ?? undefined;
+    termsOfUseUrl    = (form.get("termsOfUseUrl") as string | null) ?? undefined;
     supportUrl       = (form.get("supportUrl") as string | null) ?? undefined;
     accent           = (form.get("accent") as string | null) ?? undefined;
     iconFile         = form.get("icon") as File | null;
@@ -33,6 +34,7 @@ export async function POST(req: NextRequest) {
     bundleId         = typeof body.bundleId === "string" ? body.bundleId : undefined;
     packageName      = typeof body.packageName === "string" ? body.packageName : undefined;
     privacyPolicyUrl = typeof body.privacyPolicyUrl === "string" ? body.privacyPolicyUrl : undefined;
+    termsOfUseUrl    = typeof body.termsOfUseUrl === "string" ? body.termsOfUseUrl : undefined;
     supportUrl       = typeof body.supportUrl === "string" ? body.supportUrl : undefined;
     accent           = typeof body.accent === "string" ? body.accent : undefined;
     archived         = typeof body.archived === "boolean" ? body.archived : undefined;
@@ -97,6 +99,7 @@ export async function POST(req: NextRequest) {
     bundleId?: string | null;
     packageName?: string | null;
     privacyPolicyUrl?: string | null;
+    termsOfUseUrl?: string | null;
     supportUrl?: string | null;
     archived?: boolean;
   };
@@ -106,6 +109,7 @@ export async function POST(req: NextRequest) {
   if (bundleId  !== undefined)    productUpdate.bundleId         = bundleId  || null;
   if (packageName !== undefined)  productUpdate.packageName      = packageName || null;
   if (privacyPolicyUrl !== undefined) productUpdate.privacyPolicyUrl = privacyPolicyUrl || null;
+  if (termsOfUseUrl !== undefined)    productUpdate.termsOfUseUrl    = termsOfUseUrl || null;
   if (supportUrl !== undefined)   productUpdate.supportUrl       = supportUrl || null;
   if (archived !== undefined)     productUpdate.archived         = archived;
 
