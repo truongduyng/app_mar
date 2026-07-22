@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { LOCALE_NAMES } from "@/lib/locale-names";
-import { zaiComplete } from "@/lib/zai";
+import { zaiComplete, ZAI_VISION_MODEL } from "@/lib/zai";
 
 export async function POST(req: NextRequest) {
   const { productName, productDescription, label, currentHeadline, currentSubtitle, locale, screenshotBase64 } = await req.json() as {
@@ -41,7 +41,11 @@ RULES:
 - Write in ${language}. Sound native, not translated."}`;
 
   try {
-    const raw = await zaiComplete({ prompt: promptText, imageBase64: screenshotBase64 });
+    const raw = await zaiComplete({
+      prompt: promptText,
+      imageBase64: screenshotBase64,
+      model: ZAI_VISION_MODEL,
+    });
 
     let result: { headline?: string; subtitle?: string };
     try {

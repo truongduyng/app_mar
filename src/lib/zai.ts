@@ -1,6 +1,10 @@
 import OpenAI from "openai";
 
+/** Default text model used by non-visual generation flows. */
 export const ZAI_MODEL = "glm-4.7-flashx";
+
+/** Vision model for tasks that must inspect an image, such as slide copy generation. */
+export const ZAI_VISION_MODEL = "glm-4.6v-flash";
 
 const zai = new OpenAI({
   apiKey: process.env.ZAI_API_KEY,
@@ -18,13 +22,15 @@ function stripCodeFence(content: string): string {
 interface CompleteOptions {
   prompt: string;
   imageBase64?: string;
+  /** Override the default model for a modality-specific generation task. */
+  model?: string;
   /** Z.AI does not support json_schema response_format; the schema shape must be described in the prompt instead. */
   jsonSchema?: JsonSchema;
   maxTokens?: number;
 }
 
 export async function zaiComplete(opts: CompleteOptions): Promise<string> {
-  const { prompt, imageBase64, jsonSchema, maxTokens } = opts;
+  const { prompt, imageBase64, jsonSchema, maxTokens, model = ZAI_MODEL } = opts;
 
   const fullPrompt = jsonSchema
     ? `${prompt}\n\nRespond with JSON matching this schema:\n${JSON.stringify(jsonSchema.schema)}`
@@ -35,7 +41,7 @@ export async function zaiComplete(opts: CompleteOptions): Promise<string> {
     : [{ role: "user", content: fullPrompt }];
 
   const response = await zai.chat.completions.create({
-    model: ZAI_MODEL,
+    model,
     messages,
     response_format: { type: "json_object" },
     ...(maxTokens ? { max_tokens: maxTokens } : {}),
@@ -46,7 +52,7 @@ export async function zaiComplete(opts: CompleteOptions): Promise<string> {
   const content = stripCodeFence(choice?.message.content ?? "{}");
 
   console.log("[zai] response", {
-    model: ZAI_MODEL,
+    model,
     jsonSchemaName: jsonSchema?.name,
     finishReason: choice?.finish_reason,
     usage: response.usage,
@@ -68,7 +74,7 @@ export async function zaiComplete(opts: CompleteOptions): Promise<string> {
     // with an explicit correction is cheaper than failing the whole request.
     console.warn("[zai] malformed JSON, retrying once", { contentPreview: content.slice(0, 200) });
     const retryResponse = await zai.chat.completions.create({
-      model: ZAI_MODEL,
+      model,
       messages: [
         ...messages,
         { role: "assistant", content },

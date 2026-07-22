@@ -90,7 +90,7 @@ Products, slides, copy, metadata, and all asset configurations live in Postgres,
 - `POST /api/translate-field` — AI-translates a single metadata field to target locales; uses `glm-4.6`
 - `POST /api/slides/add` — creates a new slide row (slide_groups + product_slides + slide_copy) from multipart form data
 - `POST /api/slides/delete` — deletes a slide and its associated copy/image file
-- `POST /api/slides/generate-copy` — AI-generates headline/subtitle for a slide given a screenshot; uses `glm-4.6`
+- `POST /api/slides/generate-copy` — AI-generates headline/subtitle for a slide given a screenshot; uses `glm-4.6v-flash`
 - `POST /api/product-settings` — updates `bundleId`, `packageName`, `privacyPolicyUrl`, `supportUrl` on a product
 - `DELETE /api/locale` — removes all DB rows for a given product+locale (locales, copy, metadata, feature graphics, social OGs, CTA images)
 
