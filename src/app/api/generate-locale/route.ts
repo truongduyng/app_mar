@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db/client";
-import { productLocales, slideCopy, productMetadata } from "@/db/schema";
+import { productLocales, slideCopy, productMetadata, products } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import type { RichTextSegment } from "@/lib/rich-text";
 import type { MetadataConfig } from "@/lib/types";
 import { zaiComplete } from "@/lib/zai";
 import { getLocaleContext } from "@/lib/locale-names";
+import { ensureTermsOfUse } from "@/lib/terms";
 
 type SlideSource = {
   slideKey: string;
@@ -291,6 +292,10 @@ export async function POST(req: NextRequest) {
   }
 
   const ctx = getLocaleContext(targetLocale);
+  const [product] = await db
+    .select({ termsOfUseUrl: products.termsOfUseUrl })
+    .from(products)
+    .where(eq(products.id, productId));
 
   // ── 1. Generate metadata and slides in parallel ────────────────────────────
   let generatedMetadata: MetadataConfig;
@@ -334,10 +339,10 @@ export async function POST(req: NextRequest) {
   // ── 3. Clean description formatting ───────────────────────────────────────
   const cleanMeta = {
     ...generatedMetadata,
-    description: (generatedMetadata.description ?? "")
+    description: ensureTermsOfUse((generatedMetadata.description ?? "")
       .replace(/([^\n])\n([A-ZÀ-ɏ][A-ZÀ-ɏ\s]{3,})\n/g, "$1\n\n$2\n\n")
       .replace(/\n{3,}/g, "\n\n")
-      .trim(),
+      .trim(), product?.termsOfUseUrl ?? undefined),
   };
 
   // ── 4. Persist to DB ───────────────────────────────────────────────────────

@@ -1,11 +1,15 @@
-import { redirect } from "next/navigation";
-import { getSerializableProducts } from "@/db/queries";
+"use client";
 
-export const dynamic = "force-dynamic";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
-export default async function Page() {
-  const products = await getSerializableProducts();
-  const first = products[0];
-  if (!first) return <div>No products configured.</div>;
-  redirect(`/${first.id}/screenshots`);
+export default function Page() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const savedProductId = localStorage.getItem("selectedProductId");
+    router.replace(savedProductId ? `/${savedProductId}/screenshots` : "/redirect");
+  }, [router]);
+
+  return null;
 }

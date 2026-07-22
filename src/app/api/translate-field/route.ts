@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db/client";
-import { productMetadata } from "@/db/schema";
+import { productMetadata, products } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import type { MetadataConfig } from "@/lib/types";
 import { zaiComplete } from "@/lib/zai";
 import { LOCALE_NAMES } from "@/lib/locale-names";
+import { ensureTermsOfUse } from "@/lib/terms";
 
 const FIELD_RULES: Record<keyof MetadataConfig, { maxLength: number; instruction: string }> = {
   name: { maxLength: 30, instruction: "Use a concise app name; keep the product name/brand recognizable." },
@@ -43,6 +45,11 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
+
+  const [product] = await db
+    .select({ termsOfUseUrl: products.termsOfUseUrl })
+    .from(products)
+    .where(eq(products.id, productId));
 
   // Build locale list for the prompt: "cs (Czech), vi (Vietnamese), ..."
   const localeList = targetLocales
@@ -129,6 +136,15 @@ ${sourceValue}`;
           typeof entry[1] === "string" && entry[1].trim().length > 0,
       ),
   );
+
+  if (fieldId === "description") {
+    for (const locale of Object.keys(translations)) {
+      translations[locale] = ensureTermsOfUse(
+        translations[locale],
+        product?.termsOfUseUrl ?? undefined,
+      );
+    }
+  }
 
   if (!Object.keys(translations).length) {
     return NextResponse.json(
