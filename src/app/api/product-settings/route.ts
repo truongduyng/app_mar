@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir, rename } from "fs/promises";
 import path from "path";
 import { db } from "@/db/client";
-import { products, productThemes, productSlides } from "@/db/schema";
-import { eq, like, sql } from "drizzle-orm";
+import { products, productThemes, productSlides, slideGroups } from "@/db/schema";
+import { and, eq, like, sql } from "drizzle-orm";
 
 const SLUG_RE = /^[a-z0-9-]+$/;
 
@@ -115,6 +115,46 @@ export async function POST(req: NextRequest) {
 
   if (Object.keys(productUpdate).length > 0) {
     await db.update(products).set(productUpdate).where(eq(products.id, productId));
+  }
+
+  // A Google package name means the product supports Android. Seed Android
+  // slide rows automatically from the existing iPhone rows, if needed.
+  if (packageName?.trim()) {
+    const groups = await db.select().from(slideGroups).where(eq(slideGroups.productId, productId));
+    for (const group of groups) {
+      const iphoneSlides = await db.select().from(productSlides).where(and(
+        eq(productSlides.groupId, group.id),
+        eq(productSlides.device, "iphone"),
+      ));
+      for (const slide of iphoneSlides) {
+        const [androidSlide] = await db.select().from(productSlides).where(and(
+          eq(productSlides.groupId, group.id),
+          eq(productSlides.device, "android"),
+          eq(productSlides.slideKey, slide.slideKey),
+        ));
+
+        if (androidSlide) {
+          // Backfill older Android rows, but preserve any Android-specific upload.
+          if (!androidSlide.imagePath && slide.imagePath) {
+            await db.update(productSlides)
+              .set({ imagePath: slide.imagePath })
+              .where(eq(productSlides.id, androidSlide.id));
+          }
+          continue;
+        }
+
+        await db.insert(productSlides).values({
+          groupId: group.id,
+          device: "android",
+          slideKey: slide.slideKey,
+          componentKey: slide.componentKey === "GenericSideSlide"
+            ? "GenericAndroidSideSlide"
+            : "GenericAndroidCenteredSlide",
+          imagePath: slide.imagePath,
+          sortOrder: slide.sortOrder,
+        });
+      }
+    }
   }
 
   // Update accent color in theme tokens if provided

@@ -112,7 +112,7 @@ export function ProductProvider({
 
   const [productId, setProductIdState] = useState(initialProductId);
   const [locale, setLocaleState] = useState(initialLocale);
-  const [platform, setPlatform] = useState<AppPlatform>("iphone");
+  const [platform, setPlatformState] = useState<AppPlatform>("iphone");
   const [uiMode, setUiModeState] = useState<UiMode>("dark");
   const [ready, setReady] = useState(false);
   const [extraLocales, setExtraLocales] = useState<Record<string, LocaleDef[]>>({});
@@ -181,6 +181,13 @@ export function ProductProvider({
     product.name;
 
   useEffect(() => {
+    const savedPlatform = localStorage.getItem(`selectedPlatform_${productId}`);
+    const currentProduct = PRODUCTS.find((p) => p.id === productId);
+    const hasAndroid = Boolean(currentProduct?.slides.android?.length);
+    setPlatformState(savedPlatform === "android" && hasAndroid ? "android" : "iphone");
+  }, [productId, PRODUCTS]);
+
+  useEffect(() => {
     const savedLocale = localStorage.getItem(`selectedLocale_${initialProductId}`);
     if (savedLocale) setLocaleState(savedLocale);
 
@@ -196,6 +203,11 @@ export function ProductProvider({
       }
     } catch { /* ignore */ }
   }, [initialProductId]);
+
+  const setPlatform = useCallback((next: AppPlatform) => {
+    setPlatformState(next);
+    localStorage.setItem(`selectedPlatform_${productId}`, next);
+  }, [productId]);
 
   const setCtaSc1 = useCallback((v: string) => setCtaScMap((m) => {
     const next = { ...m, [product.id]: { ...m[product.id], sc1: v } };
