@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db/client";
 import { slideCopy } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
+import { segmentsToMarkup } from "@/lib/rich-text";
 import type { RichTextSegment } from "@/lib/rich-text";
 import { zaiComplete } from "@/lib/zai";
 
@@ -155,17 +156,34 @@ Rules for the output:
 }
 
 export async function POST(req: NextRequest) {
-  const { productId, sourceLocale, sourceLabel, targetLocales, slides } = await req.json() as {
+  const { productId, sourceLocale, sourceLabel, targetLocales } = await req.json() as {
     productId: string;
     sourceLocale: string;
     sourceLabel: string;
     targetLocales: LocaleTarget[];
-    slides: SlideInput[];
   };
 
-  if (!productId || !sourceLocale || !targetLocales?.length || !slides?.length) {
+  if (!productId || !sourceLocale || !targetLocales?.length) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
+
+  const sourceRows = await db
+    .select({ slideKey: slideCopy.slideKey, label: slideCopy.label, headline: slideCopy.headline })
+    .from(slideCopy)
+    .where(and(
+      eq(slideCopy.productId, productId),
+      eq(slideCopy.locale, sourceLocale),
+    ));
+
+  if (!sourceRows.length) {
+    return NextResponse.json({ error: "No source copy found for this locale" }, { status: 400 });
+  }
+
+  const slides: SlideInput[] = sourceRows.map((row) => ({
+    slideKey: row.slideKey,
+    label: row.label,
+    headline: segmentsToMarkup(row.headline as RichTextSegment[]),
+  }));
 
   const localeList = targetLocales.map((l) => `"${l.code}" (${l.label})`).join(", ");
   const targetCodes = targetLocales.map((l) => l.code);

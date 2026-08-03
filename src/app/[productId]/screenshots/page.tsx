@@ -463,17 +463,7 @@ export default function ScreenshotsPage() {
     }
     setTranslatingSlides(true);
     try {
-      const slideInputs = orderedSlides.map((slide) => {
-        const baseCopy = slide.copyByLocale?.[locale] ?? slide.copy;
-        const effective = getEffectiveCopy(slide.id, baseCopy);
-        return {
-          slideKey: slide.id,
-          label:    typeof effective.label === "string" ? effective.label : "",
-          headline: Array.isArray(effective.headline)
-            ? segmentsToMarkup(effective.headline as import("@/lib/rich-text").RichTextSegment[])
-            : typeof effective.headline === "string" ? effective.headline : "",
-        };
-      });
+      // Server reads the saved source copy for `locale` directly from the DB.
       const res = await fetch("/api/slides/translate-copy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -482,7 +472,6 @@ export default function ScreenshotsPage() {
           sourceLocale: locale,
           sourceLabel: currentLocaleInfo?.label ?? locale,
           targetLocales: targetLocales.map((l) => ({ code: l.code, label: l.label })),
-          slides: slideInputs,
         }),
       });
       const data = await res.json() as { ok?: boolean; translated?: number; error?: string };
@@ -493,7 +482,7 @@ export default function ScreenshotsPage() {
       toast.error(e instanceof Error ? e.message : "Translation failed");
     }
     setTranslatingSlides(false);
-  }, [translatingSlides, productLocales, locale, orderedSlides, product.id, getEffectiveCopy, onSlidesChanged]);
+  }, [translatingSlides, productLocales, locale, product.id, onSlidesChanged]);
 
   const handleExport = async () => {
     if (!offscreenRef.current || exporting) return;
