@@ -12,7 +12,6 @@ type SlideSource = {
   slideKey: string;
   label: string;
   headline: string;
-  subtitle: string;
 };
 
 type GenerateBody = {
@@ -94,9 +93,8 @@ const SLIDES_SCHEMA: JsonSchema = {
             slideKey: s({ type: "string" }),
             label: s({ type: "string" }),
             headline: s({ type: "string" }),
-            subtitle: s({ type: "string" }),
           }),
-          required: ["slideKey", "label", "headline", "subtitle"],
+          required: ["slideKey", "label", "headline"],
           additionalProperties: false,
         }),
       }),
@@ -222,27 +220,25 @@ async function generateSlides(
       (s) =>
         `Slide "${s.slideKey}":
   label: ${s.label}
-  headline: ${s.headline}
-  subtitle: ${s.subtitle}`,
+  headline: ${s.headline}`,
     )
     .join("\n\n");
 
   const prompt = `You are a senior mobile app marketing copywriter creating screenshot copy for the ${ctx.country} market. Your copy should feel like it was written by a native ${ctx.language} speaker who understands the app deeply — not translated.
 
-Your task: study the source slide copy below to understand the message and intent of each slide. Then write fresh, compelling ${ctx.language} copy that resonates with the ${ctx.country} audience. You may rewrite headlines and subtitles with a different angle, stronger hook, or better cultural fit — as long as the core message is preserved.
+Your task: study the source slide copy below to understand the message and intent of each slide. Then write fresh, compelling ${ctx.language} copy that resonates with the ${ctx.country} audience. You may rewrite the headline with a different angle, stronger hook, or better cultural fit — as long as the core message is preserved.
 
 Market context: ${ctx.marketNotes}
 
 FORMAT RULES:
 - label: Short ALL-CAPS category label (max 30 chars). Adapt to sound natural in ${ctx.language}, not a literal translation.
 - headline: Max 40 characters (excluding markup). The main benefit statement. You may use **bold** to wrap the key accent word/phrase (e.g. "Track **every milestone**"). Use a newline only if needed.
-- subtitle: Max 60 characters. One short sentence only. Conversational, benefit-driven. Use a newline only if absolutely needed.
 - Overall: write punchy, emotional copy that sells the benefit — not a dry list of features.
 
 SOURCE SLIDES (${sourceLocale.toUpperCase()}) — understand the intent, then rewrite for ${ctx.language}:
 ${slidesInput}
 
-Return a JSON object with a single key "slides" whose value is an array. Each element has: slideKey, label, headline, subtitle.`;
+Return a JSON object with a single key "slides" whose value is an array. Each element has: slideKey, label, headline.`;
 
   const result = await callZai<{ slides: SlideSource[] }>(prompt, SLIDES_SCHEMA);
   return result.slides;
@@ -388,7 +384,6 @@ export async function POST(req: NextRequest) {
 
   for (const slide of generatedSlides) {
     const headline = markupToSegments(slide.headline ?? "");
-    const subtitle = markupToSegments(slide.subtitle ?? "");
     const label = slide.label ?? "";
 
     const existing = await db
@@ -405,7 +400,7 @@ export async function POST(req: NextRequest) {
     if (existing.length) {
       await db
         .update(slideCopy)
-        .set({ label, headline, subtitle })
+        .set({ label, headline })
         .where(
           and(
             eq(slideCopy.productId, productId),
@@ -420,7 +415,6 @@ export async function POST(req: NextRequest) {
         locale: targetLocale,
         label,
         headline,
-        subtitle,
       });
     }
   }

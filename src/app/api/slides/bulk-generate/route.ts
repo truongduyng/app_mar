@@ -32,14 +32,13 @@ Target language: ${language}
 Return a JSON object with a "slides" array of exactly ${count} objects, each with:
 - "label": short internal name, lowercase English, 1-4 words (e.g. "track progress", "instant sync")
 - "headline": max 40 chars, punchy benefit statement, use **word** to bold 1-3 key words, \\n only if needed
-- "subtitle": max 60 chars, one short benefit-driven sentence, \\n only if needed
 
 Cover different angles: core value prop, key features, social proof, ease of use, etc. No duplicate themes.
-Write headline and subtitle in ${language}. Sound native, not translated.
+Write headline in ${language}. Sound native, not translated.
 
 Respond with only the JSON object.`;
 
-  let slides: { label: string; headline: string; subtitle: string }[];
+  let slides: { label: string; headline: string }[];
   try {
     const raw = await zaiComplete({ prompt });
     let parsed: { slides?: unknown[] };
@@ -53,10 +52,9 @@ Respond with only the JSON object.`;
     if (!Array.isArray(parsed.slides)) {
       return NextResponse.json({ error: "Model did not return slides array" }, { status: 502 });
     }
-    slides = (parsed.slides as { label?: string; headline?: string; subtitle?: string }[]).map((s) => ({
+    slides = (parsed.slides as { label?: string; headline?: string }[]).map((s) => ({
       label: String(s.label ?? "Slide"),
       headline: String(s.headline ?? ""),
-      subtitle: String(s.subtitle ?? ""),
     }));
   } catch (e) {
     console.error("[bulk-generate] AI error:", e);
@@ -103,7 +101,6 @@ Respond with only the JSON object.`;
       .returning();
 
     const headlineSegs = slide.headline ? [{ t: "text", v: slide.headline }] : [];
-    const subtitleSegs = slide.subtitle ? [{ t: "text", v: slide.subtitle }] : [];
 
     for (const code of localeCodes) {
       await db.insert(slideCopy).values({
@@ -112,7 +109,6 @@ Respond with only the JSON object.`;
         locale: code,
         label: slide.label,
         headline: headlineSegs,
-        subtitle: subtitleSegs,
       }).onConflictDoNothing();
     }
 

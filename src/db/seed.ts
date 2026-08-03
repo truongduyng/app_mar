@@ -17,7 +17,6 @@ type CopyRow = {
   locale: string;
   label: string;
   headline: RichTextSegment[];
-  subtitle: RichTextSegment[];
 };
 
 type SlideRow = {
@@ -89,7 +88,6 @@ const honeCopy: CopyRow[] = [
     locale: "en",
     label: "THE POWER OF SMALL HABITS",
     headline: [txt("Lasting Change."), br(), acc("Starts Today.")],
-    subtitle: [txt("Focus on daily, sustainable actions for a better you.")],
   },
   {
     productId: "hone",
@@ -97,11 +95,6 @@ const honeCopy: CopyRow[] = [
     locale: "en",
     label: "MINDFUL REFLECTION",
     headline: [txt("Reflect. Align."), br(), acc("Thrive.")],
-    subtitle: [
-      txt(
-        "Journal your daily thoughts. Let AI guide your emotional well-being and mental clarity.",
-      ),
-    ],
   },
   {
     productId: "hone",
@@ -109,9 +102,6 @@ const honeCopy: CopyRow[] = [
     locale: "en",
     label: "DAILY WELL-BEING",
     headline: [txt("Micro-Habits."), br(), acc("Macro Growth.")],
-    subtitle: [
-      txt("Focus on sustainable actions that improve your life over time."),
-    ],
   },
   {
     productId: "hone",
@@ -119,11 +109,6 @@ const honeCopy: CopyRow[] = [
     locale: "en",
     label: "STAY CONSISTENT",
     headline: [txt("Celebrate"), br(), acc("Every Win")],
-    subtitle: [
-      txt(
-        "Every small step counts. Build the momentum that makes change inevitable.",
-      ),
-    ],
   },
   {
     productId: "hone",
@@ -131,11 +116,6 @@ const honeCopy: CopyRow[] = [
     locale: "en",
     label: "HOLISTIC PROGRESS",
     headline: [txt("Visualize"), br(), acc("Your Evolution")],
-    subtitle: [
-      txt(
-        "Track mood patterns, energy levels, and habit consistency in one unified view.",
-      ),
-    ],
   },
   {
     productId: "hone",
@@ -143,11 +123,6 @@ const honeCopy: CopyRow[] = [
     locale: "en",
     label: "SYSTEMS FOR LIFE",
     headline: [txt("Daily Actions"), br(), acc("Not Overhauls")],
-    subtitle: [
-      txt(
-        "Ditch the overnight pressure. Build systems that integrate into your lifestyle.",
-      ),
-    ],
   },
   {
     productId: "hone",
@@ -155,11 +130,6 @@ const honeCopy: CopyRow[] = [
     locale: "en",
     label: "YOUR JOURNEY",
     headline: [txt("Document"), br(), acc("The Best You")],
-    subtitle: [
-      txt(
-        "Share your path to well-being and celebrate the compounding power of daily habits.",
-      ),
-    ],
   },
 ];
 
@@ -210,11 +180,6 @@ const amfoCopy: CopyRow[] = [
     locale: "en",
     label: "AMBIENT SOUNDS",
     headline: [txt("Find"), br(), acc("your calm.")],
-    subtitle: [
-      txt("50+ curated ambient sounds"),
-      br(),
-      txt("for focus, sleep, and flow."),
-    ],
   },
   {
     productId: "amfo",
@@ -222,11 +187,6 @@ const amfoCopy: CopyRow[] = [
     locale: "en",
     label: "SOUND MIXER",
     headline: [txt("Layer sounds."), br(), acc("Save presets.")],
-    subtitle: [
-      txt("Mix rain, café, and nature."),
-      br(),
-      txt("Save your perfect combinations."),
-    ],
   },
   {
     productId: "amfo",
@@ -234,11 +194,6 @@ const amfoCopy: CopyRow[] = [
     locale: "en",
     label: "FOCUS TIMER",
     headline: [txt("Set a timer."), br(), acc("Disappear.")],
-    subtitle: [
-      txt("Custom durations to perfectly"),
-      br(),
-      txt("match your workflow or sleep."),
-    ],
   },
   {
     productId: "amfo",
@@ -246,11 +201,6 @@ const amfoCopy: CopyRow[] = [
     locale: "en",
     label: "DEEP FOCUS",
     headline: [txt("Silence"), br(), acc("the noise.")],
-    subtitle: [
-      txt("A beautiful, distraction-free"),
-      br(),
-      txt("timer keeps you locked in."),
-    ],
   },
   {
     productId: "amfo",
@@ -258,11 +208,6 @@ const amfoCopy: CopyRow[] = [
     locale: "en",
     label: "CUSTOMIZE",
     headline: [txt("Your perfect"), br(), acc("environment")],
-    subtitle: [
-      txt("Auto-hide controls. Sleep fade out."),
-      br(),
-      txt("Make the app work for you."),
-    ],
   },
 ];
 
@@ -377,11 +322,6 @@ const lichtaCopy: CopyRow[] = [
     locale: "vi",
     label: "LỊCH ÂM VIỆT NAM",
     headline: [txt("Lịch Âm"), br(), acc("trong tầm tay.")],
-    subtitle: [
-      txt("Âm lịch, Can Chi, Tiết Khí,"),
-      br(),
-      txt("Hoàng Đạo - tất cả ở một chỗ."),
-    ],
   },
   {
     productId: "lichta",
@@ -389,11 +329,6 @@ const lichtaCopy: CopyRow[] = [
     locale: "en",
     label: "LUNAR CALENDAR",
     headline: [txt("Today's date,"), br(), acc("at a glance.")],
-    subtitle: [
-      txt("Lunar date, Can Chi, Solar Terms,"),
-      br(),
-      txt("Auspicious Hours — all in one place."),
-    ],
   },
   {
     productId: "lichta",
@@ -401,11 +336,6 @@ const lichtaCopy: CopyRow[] = [
     locale: "vi",
     label: "SỰ KIỆN ÂM LỊCH",
     headline: [txt("Không bao giờ"), br(), acc("quên ngày giỗ.")],
-    subtitle: [
-      txt("Giỗ chạp, sinh nhật, ngày cưới"),
-      br(),
-      txt("theo âm lịch - nhắc tự động."),
-    ],
   },
   {
     productId: "lichta",
@@ -413,11 +343,6 @@ const lichtaCopy: CopyRow[] = [
     locale: "en",
     label: "LUNAR EVENTS",
     headline: [txt("Never miss"), br(), acc("an anniversary.")],
-    subtitle: [
-      txt("Death anniversaries, birthdays,"),
-      br(),
-      txt("weddings by lunar date — auto-reminded."),
-    ],
   },
   {
     productId: "lichta",
@@ -425,11 +350,6 @@ const lichtaCopy: CopyRow[] = [
     locale: "vi",
     label: "LỊCH ÂM CHI TIẾT",
     headline: [txt("Can Chi,"), br(), acc("Hoàng Đạo.")],
-    subtitle: [
-      txt("Tiết khí, Thần Sát, giờ Hoàng Đạo"),
-      br(),
-      txt("hiển thị ngay khi chọn ngày."),
-    ],
   },
   {
     productId: "lichta",
@@ -437,11 +357,6 @@ const lichtaCopy: CopyRow[] = [
     locale: "en",
     label: "DETAILED LUNAR",
     headline: [txt("Can Chi &"), br(), acc("Auspicious Hours.")],
-    subtitle: [
-      txt("Solar terms, Lucky Gods, Auspicious Hours"),
-      br(),
-      txt("shown the moment you pick a date."),
-    ],
   },
   {
     productId: "lichta",
@@ -449,11 +364,6 @@ const lichtaCopy: CopyRow[] = [
     locale: "vi",
     label: "XEM TỬ VI AI",
     headline: [txt("Tử Vi AI"), br(), acc("bất cứ lúc nào.")],
-    subtitle: [
-      txt("Tử vi, vận mệnh, phong thủy"),
-      br(),
-      txt("AI trả lời ngay."),
-    ],
   },
   {
     productId: "lichta",
@@ -461,11 +371,6 @@ const lichtaCopy: CopyRow[] = [
     locale: "en",
     label: "LICH TA AI MASTER",
     headline: [txt("Your AI Astrologer,"), br(), acc("anytime.")],
-    subtitle: [
-      txt("Horoscopes, feng shui, Vietnamese"),
-      br(),
-      txt("customs — AI answers instantly."),
-    ],
   },
   {
     productId: "lichta",
@@ -473,11 +378,6 @@ const lichtaCopy: CopyRow[] = [
     locale: "vi",
     label: "GIAO DIỆN CÁ NHÂN",
     headline: [txt("Màu sắc"), br(), acc("theo ý bạn.")],
-    subtitle: [
-      txt("Hình nền thành phố Việt Nam,"),
-      br(),
-      txt("màu chủ đạo tùy chỉnh thoải mái."),
-    ],
   },
   {
     productId: "lichta",
@@ -485,11 +385,6 @@ const lichtaCopy: CopyRow[] = [
     locale: "en",
     label: "PERSONAL THEMES",
     headline: [txt("Colors"), br(), acc("your way.")],
-    subtitle: [
-      txt("Vietnamese city wallpapers,"),
-      br(),
-      txt("custom accent colors to your taste."),
-    ],
   },
   {
     productId: "lichta",
@@ -497,11 +392,6 @@ const lichtaCopy: CopyRow[] = [
     locale: "vi",
     label: "TỬ VI - PHONG THỦY",
     headline: [txt("Vận mệnh."), br(), acc("Rõ từng ngày.")],
-    subtitle: [
-      txt("Chat với AI về tình duyên, công việc,"),
-      br(),
-      txt("sức khỏe - theo lá số của bạn."),
-    ],
   },
   {
     productId: "lichta",
@@ -509,11 +399,6 @@ const lichtaCopy: CopyRow[] = [
     locale: "en",
     label: "ASTROLOGY & FENG SHUI",
     headline: [txt("Your destiny."), br(), acc("Day by day.")],
-    subtitle: [
-      txt("Chat with AI about love, career,"),
-      br(),
-      txt("health — based on your birth chart."),
-    ],
   },
   {
     productId: "lichta",
@@ -521,11 +406,6 @@ const lichtaCopy: CopyRow[] = [
     locale: "vi",
     label: "",
     headline: [txt("Widget đẹp"), br(), acc("mỗi ngày.")],
-    subtitle: [
-      txt("Thêm widget vào màn hình chính,"),
-      br(),
-      txt("xem lịch âm ngay không cần mở app."),
-    ],
   },
   {
     productId: "lichta",
@@ -533,11 +413,6 @@ const lichtaCopy: CopyRow[] = [
     locale: "en",
     label: "",
     headline: [txt("Beautiful widgets"), br(), acc("every day.")],
-    subtitle: [
-      txt("Add a widget to your home screen,"),
-      br(),
-      txt("check the lunar date without opening the app."),
-    ],
   },
 ];
 
@@ -647,11 +522,6 @@ const tinystepsCopy: CopyRow[] = [
     locale: "en",
     label: "BABY GROWTH TRACKER",
     headline: [txt("Every milestone."), br(), acc("Captured.")],
-    subtitle: [
-      txt("Track weight, height, and head size"),
-      br(),
-      txt("with beautiful growth charts."),
-    ],
   },
   {
     productId: "tinysteps",
@@ -659,11 +529,6 @@ const tinystepsCopy: CopyRow[] = [
     locale: "vi",
     label: "THEO DÕI BÉ LỚN",
     headline: [txt("Từng bước nhỏ."), br(), acc("Đều đáng nhớ.")],
-    subtitle: [
-      txt("Theo dõi cân nặng, chiều cao,"),
-      br(),
-      txt("và vòng đầu với biểu đồ trực quan."),
-    ],
   },
   {
     productId: "tinysteps",
@@ -671,11 +536,6 @@ const tinystepsCopy: CopyRow[] = [
     locale: "en",
     label: "DEVELOPMENTAL MILESTONES",
     headline: [txt("Never miss"), br(), acc("a first.")],
-    subtitle: [
-      txt("Track 42+ milestones from"),
-      br(),
-      txt("0–12 months, guided by age."),
-    ],
   },
   {
     productId: "tinysteps",
@@ -683,11 +543,6 @@ const tinystepsCopy: CopyRow[] = [
     locale: "vi",
     label: "CỘT MỐC PHÁT TRIỂN",
     headline: [txt("Đừng bỏ lỡ"), br(), acc("khoảnh khắc nào.")],
-    subtitle: [
-      txt("Theo dõi 42+ cột mốc từ"),
-      br(),
-      txt("0–12 tháng, theo từng giai đoạn."),
-    ],
   },
   {
     productId: "tinysteps",
@@ -695,11 +550,6 @@ const tinystepsCopy: CopyRow[] = [
     locale: "en",
     label: "VACCINATION TRACKER",
     headline: [txt("Stay on"), br(), acc("schedule.")],
-    subtitle: [
-      txt("Track every dose, see what's due,"),
-      br(),
-      txt("never miss a vaccination."),
-    ],
   },
   {
     productId: "tinysteps",
@@ -707,11 +557,6 @@ const tinystepsCopy: CopyRow[] = [
     locale: "vi",
     label: "LỊCH TIÊM CHỦNG",
     headline: [txt("Đúng lịch."), br(), acc("An tâm.")],
-    subtitle: [
-      txt("Theo dõi từng mũi tiêm,"),
-      br(),
-      txt("không bao giờ quên lịch hẹn."),
-    ],
   },
   {
     productId: "tinysteps",
@@ -719,11 +564,6 @@ const tinystepsCopy: CopyRow[] = [
     locale: "en",
     label: "BABY JOURNAL",
     headline: [txt("Memories"), br(), acc("worth keeping.")],
-    subtitle: [
-      txt("A beautiful timeline of your"),
-      br(),
-      txt("baby's most precious moments."),
-    ],
   },
   {
     productId: "tinysteps",
@@ -731,11 +571,6 @@ const tinystepsCopy: CopyRow[] = [
     locale: "vi",
     label: "NHẬT KÝ BÉ YÊU",
     headline: [txt("Kỷ niệm"), br(), acc("đáng giữ.")],
-    subtitle: [
-      txt("Dòng thời gian xinh đẹp ghi lại"),
-      br(),
-      txt("những khoảnh khắc quý giá nhất."),
-    ],
   },
   {
     productId: "tinysteps",
@@ -743,11 +578,6 @@ const tinystepsCopy: CopyRow[] = [
     locale: "en",
     label: "AI PARENTING GUIDE",
     headline: [txt("Ask anything."), br(), acc("Get answers.")],
-    subtitle: [
-      txt("AI-powered insights about your"),
-      br(),
-      txt("baby's growth and development."),
-    ],
   },
   {
     productId: "tinysteps",
@@ -755,11 +585,6 @@ const tinystepsCopy: CopyRow[] = [
     locale: "vi",
     label: "TRỢ LÝ AI CHO BỐ MẸ",
     headline: [txt("Hỏi gì"), br(), acc("cũng được.")],
-    subtitle: [
-      txt("AI phân tích sự phát triển và"),
-      br(),
-      txt("tăng trưởng của bé cho bạn."),
-    ],
   },
   {
     productId: "tinysteps",
@@ -767,11 +592,6 @@ const tinystepsCopy: CopyRow[] = [
     locale: "en",
     label: "FAMILY SHARING",
     headline: [txt("Track"), br(), acc("together.")],
-    subtitle: [
-      txt("Invite your partner or family"),
-      br(),
-      txt("to share the journey."),
-    ],
   },
   {
     productId: "tinysteps",
@@ -779,11 +599,6 @@ const tinystepsCopy: CopyRow[] = [
     locale: "vi",
     label: "CHIA SẺ GIA ĐÌNH",
     headline: [txt("Cùng nhau"), br(), acc("theo dõi.")],
-    subtitle: [
-      txt("Mời bạn đời hoặc gia đình"),
-      br(),
-      txt("cùng chăm sóc bé yêu."),
-    ],
   },
   {
     productId: "tinysteps",
@@ -791,11 +606,6 @@ const tinystepsCopy: CopyRow[] = [
     locale: "en",
     label: "COMPLETE PICTURE",
     headline: [txt("Watch them"), br(), acc("grow.")],
-    subtitle: [
-      txt("Milestones, vaccinations, and growth"),
-      br(),
-      txt("tracking — all in one place."),
-    ],
   },
   {
     productId: "tinysteps",
@@ -803,11 +613,6 @@ const tinystepsCopy: CopyRow[] = [
     locale: "vi",
     label: "BỨC TRANH TOÀN DIỆN",
     headline: [txt("Nhìn bé"), br(), acc("lớn lên.")],
-    subtitle: [
-      txt("Cột mốc, tiêm chủng, và biểu đồ"),
-      br(),
-      txt("tăng trưởng — tất cả ở một chỗ."),
-    ],
   },
   // vi group — vi locale only (locale-specific slides shown when locale='vi')
   {
@@ -816,11 +621,6 @@ const tinystepsCopy: CopyRow[] = [
     locale: "vi",
     label: "THEO DÕI BÉ LỚN",
     headline: [txt("Từng bước nhỏ."), br(), acc("Đều đáng nhớ.")],
-    subtitle: [
-      txt("Theo dõi cân nặng, chiều cao,"),
-      br(),
-      txt("và vòng đầu với biểu đồ trực quan."),
-    ],
   },
   {
     productId: "tinysteps",
@@ -828,11 +628,6 @@ const tinystepsCopy: CopyRow[] = [
     locale: "vi",
     label: "NHẬT KÝ BÉ YÊU",
     headline: [txt("Kỷ niệm"), br(), acc("đáng giữ.")],
-    subtitle: [
-      txt("Dòng thời gian xinh đẹp ghi lại"),
-      br(),
-      txt("những khoảnh khắc quý giá nhất."),
-    ],
   },
   {
     productId: "tinysteps",
@@ -840,11 +635,6 @@ const tinystepsCopy: CopyRow[] = [
     locale: "vi",
     label: "TRỢ LÝ AI CHO BỐ MẸ",
     headline: [txt("Hỏi gì"), br(), acc("cũng được.")],
-    subtitle: [
-      txt("AI phân tích sự phát triển và"),
-      br(),
-      txt("tăng trưởng của bé cho bạn."),
-    ],
   },
   {
     productId: "tinysteps",
@@ -852,11 +642,6 @@ const tinystepsCopy: CopyRow[] = [
     locale: "vi",
     label: "TUỲ CHỈNH THEO Ý BẠN",
     headline: [txt("Cài đặt"), br(), acc("theo sở thích.")],
-    subtitle: [
-      txt("Chọn ngôn ngữ, đơn vị đo lường,"),
-      br(),
-      txt("và thông báo phù hợp với gia đình bạn."),
-    ],
   },
   {
     productId: "tinysteps",
@@ -864,11 +649,6 @@ const tinystepsCopy: CopyRow[] = [
     locale: "vi",
     label: "CỘT MỐC PHÁT TRIỂN",
     headline: [txt("Đừng bỏ lỡ"), br(), acc("khoảnh khắc nào.")],
-    subtitle: [
-      txt("Theo dõi 42+ cột mốc từ"),
-      br(),
-      txt("0–24 tháng, theo từng giai đoạn."),
-    ],
   },
   {
     productId: "tinysteps",
@@ -876,11 +656,6 @@ const tinystepsCopy: CopyRow[] = [
     locale: "vi",
     label: "LỊCH TIÊM CHỦNG",
     headline: [txt("Đúng lịch."), br(), acc("An tâm.")],
-    subtitle: [
-      txt("Theo dõi từng mũi tiêm,"),
-      br(),
-      txt("không bao giờ quên lịch hẹn."),
-    ],
   },
 ];
 
@@ -952,11 +727,6 @@ const fitfoCopy: CopyRow[] = [
     locale: "en",
     label: "FITNESS TRACKER",
     headline: [txt("Your fitness."), br(), acc("Scored.")],
-    subtitle: [
-      txt("Track workouts, calories, and progress"),
-      br(),
-      txt("with a personal AI-generated plan."),
-    ],
   },
   {
     productId: "fitfo",
@@ -964,11 +734,6 @@ const fitfoCopy: CopyRow[] = [
     locale: "en",
     label: "AI WORKOUT PLAN",
     headline: [txt("Train smarter."), br(), acc("Every day.")],
-    subtitle: [
-      txt("A daily workout built around"),
-      br(),
-      txt("your goals, schedule, and body type."),
-    ],
   },
   {
     productId: "fitfo",
@@ -976,11 +741,6 @@ const fitfoCopy: CopyRow[] = [
     locale: "en",
     label: "NUTRITION TRACKING",
     headline: [txt("Fuel the"), br(), acc("right way.")],
-    subtitle: [
-      txt("Track macros and calories for every meal."),
-      br(),
-      txt("Adjust for training and rest days."),
-    ],
   },
   {
     productId: "fitfo",
@@ -988,11 +748,6 @@ const fitfoCopy: CopyRow[] = [
     locale: "en",
     label: "PERSONAL FIT SCORE",
     headline: [txt("Know where"), br(), acc("you stand.")],
-    subtitle: [
-      txt("Your fitness mapped across strength,"),
-      br(),
-      txt("stamina, discipline, and more."),
-    ],
   },
   {
     productId: "fitfo",
@@ -1000,11 +755,6 @@ const fitfoCopy: CopyRow[] = [
     locale: "en",
     label: "30-DAY FORECAST",
     headline: [txt("See what's"), br(), acc("possible.")],
-    subtitle: [
-      txt("Your AI plan predicts muscle gained,"),
-      br(),
-      txt("calories burned, and score growth."),
-    ],
   },
   {
     productId: "fitfo",
@@ -1012,11 +762,6 @@ const fitfoCopy: CopyRow[] = [
     locale: "en",
     label: "PERSONALIZED ONBOARDING",
     headline: [txt("Built for"), br(), acc("your body.")],
-    subtitle: [
-      txt("FitFo learns your somatotype and builds"),
-      br(),
-      txt("a plan that actually fits you."),
-    ],
   },
   {
     productId: "fitfo",
@@ -1024,11 +769,6 @@ const fitfoCopy: CopyRow[] = [
     locale: "en",
     label: "VISUAL PROGRESS",
     headline: [txt("Watch the"), br(), acc("change.")],
-    subtitle: [
-      txt("Log progress photos and your profile"),
-      br(),
-      txt("side by side — see your transformation."),
-    ],
   },
   {
     productId: "fitfo",
@@ -1036,7 +776,6 @@ const fitfoCopy: CopyRow[] = [
     locale: "en",
     label: "EVERYTHING YOU NEED",
     headline: [txt("And so"), br(), acc("much more.")],
-    subtitle: [txt("Every tool to hit your goal, in one app.")],
   },
 ];
 

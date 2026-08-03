@@ -85,7 +85,6 @@ export const slideCopy = pgTable("slide_copy", {
   locale:    text("locale").notNull(),
   label:     text("label").notNull(),
   headline:  jsonb("headline").notNull(),  // RichTextSegment[]
-  subtitle:  jsonb("subtitle").notNull(),  // RichTextSegment[]
 }, (t) => [
   unique().on(t.productId, t.slideKey, t.locale),
 ]);

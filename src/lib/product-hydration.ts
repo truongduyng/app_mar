@@ -12,7 +12,6 @@ function hydrateSlideCopy(
   return {
     label: copy.label,
     headline: renderRichText(copy.headline, accentColor),
-    subtitle: renderRichText(copy.subtitle, accentColor),
   };
 }
 

@@ -18,10 +18,10 @@ import { sectionChrome } from "@/components/sections/shared";
 import { toast } from "sonner";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
-type CopyEdit = { label: string; headline: string; subtitle: string };
+type CopyEdit = { label: string; headline: string };
 type SaveState = "idle" | "saving" | "saved" | "error";
 
-/** Convert a SlideCopy (headline/subtitle may be React.ReactNode or RichTextSegment[]) to editable markup strings */
+/** Convert a SlideCopy (headline may be React.ReactNode or RichTextSegment[]) to editable markup strings */
 function compressImage(dataUrl: string, maxWidth = 800, quality = 0.7): Promise<string> {
   return new Promise((resolve) => {
     const img = new Image();
@@ -46,7 +46,6 @@ function copyToEdit(copy: SlideCopy): CopyEdit {
   return {
     label: copy.label,
     headline: toMarkup(copy.headline),
-    subtitle: toMarkup(copy.subtitle),
   };
 }
 
@@ -55,7 +54,6 @@ function editToCopy(edit: CopyEdit, accentColor: string): SlideCopy {
   return {
     label: edit.label,
     headline: renderRichText(markupToSegments(edit.headline), accentColor),
-    subtitle: renderRichText(markupToSegments(edit.subtitle), accentColor),
   };
 }
 
@@ -94,7 +92,6 @@ export default function ScreenshotsPage() {
   const [newStyleKey, setNewStyleKey]     = useState(defaultSlideStyleKey("iphone"));
   const [newLabel, setNewLabel]           = useState("");
   const [newHeadline, setNewHeadline]     = useState("");
-  const [newSubtitle, setNewSubtitle]     = useState("");
   const [newImageFile, setNewImageFile]   = useState<File | null>(null);
   const [newImagePreview, setNewImagePreview] = useState<string | null>(null);
   const [creating, setCreating]           = useState(false);
@@ -136,23 +133,20 @@ export default function ScreenshotsPage() {
           productDescription: product.metadata?.description,
           label,
           currentHeadline: isCreate ? newHeadline : copyEdits[slideId!]?.headline,
-          currentSubtitle: isCreate ? newSubtitle : copyEdits[slideId!]?.subtitle,
           locale,
           screenshotBase64,
         }),
       });
-      const data = await res.json() as { ok?: boolean; headline?: string; subtitle?: string; error?: string };
+      const data = await res.json() as { ok?: boolean; headline?: string; error?: string };
       if (!res.ok || !data.ok) throw new Error(data.error ?? "Generation failed");
       if (isCreate) {
         setNewHeadline(data.headline ?? "");
-        setNewSubtitle(data.subtitle ?? "");
       } else {
         setCopyEdits((prev) => ({
           ...prev,
           [slideId!]: {
             ...prev[slideId!],
             headline: data.headline ?? prev[slideId!]?.headline ?? "",
-            subtitle: data.subtitle ?? prev[slideId!]?.subtitle ?? "",
           },
         }));
       }
@@ -161,7 +155,7 @@ export default function ScreenshotsPage() {
       toast.error(e instanceof Error ? e.message : "Copy generation failed");
     }
     setGeneratingCopy(false);
-  }, [product.name, locale, newLabel, newHeadline, newSubtitle, newImagePreview, copyEdits]);
+  }, [product.name, locale, newLabel, newHeadline, newImagePreview, copyEdits]);
 
   const activeSlides = product.slidesByLocale?.[locale] ?? product.slides;
   const activeDevice = platform === "android" && activeSlides.android?.length ? "android" : "iphone";
@@ -224,7 +218,6 @@ export default function ScreenshotsPage() {
           [slideId]: {
             label: data.label,
             headline: segmentsToMarkup(data.headline ?? []),
-            subtitle: segmentsToMarkup(data.subtitle ?? []),
           },
         }));
         return;
@@ -251,7 +244,6 @@ export default function ScreenshotsPage() {
           locale,
           label:     edit.label,
           headline:  markupToSegments(edit.headline),
-          subtitle:  markupToSegments(edit.subtitle),
         }),
       });
       if (res.ok) {
@@ -439,14 +431,13 @@ export default function ScreenshotsPage() {
     form.append("slideKey",     autoSlideKey);
     form.append("label",        newLabel);
     form.append("headline",     newHeadline);
-    form.append("subtitle",     newSubtitle);
     form.append("file",         newImageFile);
     try {
       const res  = await fetch("/api/slides/add", { method: "POST", body: form });
       const data = await res.json() as { ok?: boolean; error?: string };
       if (!res.ok || !data.ok) throw new Error(data.error ?? "Create failed");
       setNewLabel("");
-      setNewHeadline(""); setNewSubtitle("");
+      setNewHeadline("");
       setNewImageFile(null); setNewImagePreview(null);
       setPanelMode("edit");
       toast.success("Slide created");
@@ -457,7 +448,7 @@ export default function ScreenshotsPage() {
       toast.error(message);
     }
     setCreating(false);
-  }, [product.id, activeDevice, newStyleKey, newLabel, newHeadline, newSubtitle, newImageFile, onSlidesChanged]);
+  }, [product.id, activeDevice, newStyleKey, newLabel, newHeadline, newImageFile, onSlidesChanged]);
 
   const [bulkGenOpen, setBulkGenOpen] = useState(false);
   const [translatingSlides, setTranslatingSlides] = useState(false);
@@ -481,9 +472,6 @@ export default function ScreenshotsPage() {
           headline: Array.isArray(effective.headline)
             ? segmentsToMarkup(effective.headline as import("@/lib/rich-text").RichTextSegment[])
             : typeof effective.headline === "string" ? effective.headline : "",
-          subtitle: Array.isArray(effective.subtitle)
-            ? segmentsToMarkup(effective.subtitle as import("@/lib/rich-text").RichTextSegment[])
-            : typeof effective.subtitle === "string" ? effective.subtitle : "",
         };
       });
       const res = await fetch("/api/slides/translate-copy", {
@@ -983,14 +971,14 @@ export default function ScreenshotsPage() {
               />
             </div>
 
-            {/* Headline + Subtitle with AI generate */}
+            {/* Headline with AI generate */}
             <div>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
                 <div style={{ fontSize: 12, color: T.fgMuted, fontWeight: 600 }}>Headline</div>
                 <button
                   onClick={() => handleGenerateCopy(panelMode === "edit" ? selectedSlide!.id : null, panelMode === "create", panelMode === "edit" ? getImagePath(selectedSlide!) : "")}
                   disabled={generatingCopy || !(panelMode === "create" ? newLabel : copyEdits[selectedSlide!.id]?.label)}
-                  title="Generate headline & subtitle with AI"
+                  title="Generate headline with AI"
                   style={{
                     display: "flex", alignItems: "center", gap: 5,
                     background: generatingCopy ? "rgba(255,255,255,0.04)" : `${T.accent}22`,
@@ -1022,17 +1010,6 @@ export default function ScreenshotsPage() {
               <textarea
                 value={panelMode === "create" ? newHeadline : copyEdits[selectedSlide!.id]?.headline ?? ""}
                 onChange={(e) => panelMode === "create" ? setNewHeadline(e.target.value) : handleCopyChange(selectedSlide!.id, "headline", e.target.value)}
-                rows={3}
-                style={inputStyle}
-              />
-            </div>
-
-            {/* Subtitle */}
-            <div>
-              <div style={{ fontSize: 12, color: T.fgMuted, marginBottom: 6, fontWeight: 600 }}>Subtitle</div>
-              <textarea
-                value={panelMode === "create" ? newSubtitle : copyEdits[selectedSlide!.id]?.subtitle ?? ""}
-                onChange={(e) => panelMode === "create" ? setNewSubtitle(e.target.value) : handleCopyChange(selectedSlide!.id, "subtitle", e.target.value)}
                 rows={3}
                 style={inputStyle}
               />
@@ -1160,7 +1137,7 @@ function BulkGenerateModal({ theme: T, productId, productName, productDescriptio
         <div style={{ padding: "18px 20px 14px", borderBottom: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <div style={{ fontWeight: 700, fontSize: 15, color: "#fff" }}>Generate Slides with AI</div>
-            <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>AI creates slide labels, headlines & subtitles — add images later</div>
+            <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>AI creates slide labels & headlines — add images later</div>
           </div>
           <button onClick={onClose} disabled={running} style={{ background: "none", border: "none", color: "#666", cursor: running ? "not-allowed" : "pointer", fontSize: 20, lineHeight: 1, padding: 4 }}>×</button>
         </div>

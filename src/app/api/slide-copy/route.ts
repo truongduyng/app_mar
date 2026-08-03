@@ -10,7 +10,6 @@ type Body = {
   locale: string;
   label: string;
   headline: RichTextSegment[];
-  subtitle: RichTextSegment[];
 };
 
 export async function GET(req: NextRequest) {
@@ -36,7 +35,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { productId, slideKey, locale, label, headline, subtitle } = await req.json() as Body;
+  const { productId, slideKey, locale, label, headline } = await req.json() as Body;
 
   if (!productId || !slideKey || !locale) {
     return NextResponse.json({ error: "productId, slideKey and locale are required" }, { status: 400 });
@@ -54,14 +53,14 @@ export async function POST(req: NextRequest) {
   if (existing.length) {
     await db
       .update(slideCopy)
-      .set({ label, headline, subtitle })
+      .set({ label, headline })
       .where(and(
         eq(slideCopy.productId, productId),
         eq(slideCopy.slideKey, slideKey),
         eq(slideCopy.locale, locale),
       ));
   } else {
-    await db.insert(slideCopy).values({ productId, slideKey, locale, label, headline, subtitle });
+    await db.insert(slideCopy).values({ productId, slideKey, locale, label, headline });
   }
 
   return NextResponse.json({ ok: true });

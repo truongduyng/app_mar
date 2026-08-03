@@ -74,7 +74,6 @@ export async function getSerializableProducts(): Promise<SerializableProductConf
           const primaryCopy = copies.find((c) => c.locale === groupPrimaryLocale) ?? copies[0] ?? {
             label: slide.slideKey,
             headline: [],
-            subtitle: [],
           };
           if (!primaryCopy) {
             // Kept for type narrowing if the fallback above changes later.
@@ -90,7 +89,6 @@ export async function getSerializableProducts(): Promise<SerializableProductConf
             copyByLocale[c.locale] = {
               label:    c.label,
               headline: c.headline as RichTextSegment[],
-              subtitle: c.subtitle as RichTextSegment[],
             };
           }
 
@@ -102,7 +100,6 @@ export async function getSerializableProducts(): Promise<SerializableProductConf
             copy: {
               label:    primaryCopy.label,
               headline: primaryCopy.headline as RichTextSegment[],
-              subtitle: primaryCopy.subtitle as RichTextSegment[],
             },
             copyByLocale: Object.keys(copyByLocale).length ? copyByLocale : undefined,
           };

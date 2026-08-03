@@ -291,7 +291,6 @@ export function ProductProvider({
       slideKey: s.id,
       label:    s.copy.label,
       headline: segmentsToPlain(s.copy.headline as RichTextSegment[]),
-      subtitle: segmentsToPlain(s.copy.subtitle as RichTextSegment[]),
     }));
 
     setRegenLocaleCode(locCode);

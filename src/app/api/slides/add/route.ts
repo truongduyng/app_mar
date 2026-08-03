@@ -13,7 +13,6 @@ export async function POST(req: NextRequest) {
   const slideKey    = form.get("slideKey") as string | null;
   const label       = form.get("label") as string | null;
   const headline    = form.get("headline") as string | null;
-  const subtitle    = form.get("subtitle") as string | null;
   const file        = form.get("file") as File | null;
 
   if (!productId || !componentKey || !device || !slideKey || !label) {
@@ -80,7 +79,6 @@ export async function POST(req: NextRequest) {
 
   const localeCodes = locales.length ? locales.map((l) => l.code) : ["en"];
   const headlineSegs = headline ? [{ t: "text", v: headline }] : [];
-  const subtitleSegs = subtitle ? [{ t: "text", v: subtitle }] : [];
 
   for (const code of localeCodes) {
     await db.insert(slideCopy).values({
@@ -89,7 +87,6 @@ export async function POST(req: NextRequest) {
       locale: code,
       label: label ?? slideKey,
       headline: headlineSegs,
-      subtitle: subtitleSegs,
     }).onConflictDoNothing();
   }
 

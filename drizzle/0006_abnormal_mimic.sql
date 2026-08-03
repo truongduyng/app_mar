@@ -1,0 +1,1 @@
+ALTER TABLE "slide_copy" DROP COLUMN "subtitle";

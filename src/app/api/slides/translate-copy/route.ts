@@ -5,9 +5,9 @@ import { eq, and } from "drizzle-orm";
 import type { RichTextSegment } from "@/lib/rich-text";
 import { zaiComplete } from "@/lib/zai";
 
-type SlideInput = { slideKey: string; label: string; headline: string; subtitle: string };
+type SlideInput = { slideKey: string; label: string; headline: string };
 type LocaleTarget = { code: string; label: string };
-type LocaleTranslation = { locale: string; label: string; headline: string; subtitle: string };
+type LocaleTranslation = { locale: string; label: string; headline: string };
 type TranslationResult = { slideKey: string; translations: LocaleTranslation[] };
 
 const nonEmptyString = { type: "string", minLength: 1 };
@@ -48,6 +48,24 @@ function extractJsonObject(raw: string): unknown {
   }
 }
 
+/**
+ * glm-4.7-flashx sometimes echoes the JSON schema shape instead of filling it in, e.g.
+ * `{"type":"object","properties":{"results":[...]}}` instead of `{"results":[...]}`.
+ * Unwrap that case so the real payload underneath is still usable.
+ */
+function unwrapSchemaEcho(value: unknown): unknown {
+  if (
+    value &&
+    typeof value === "object" &&
+    !("results" in value) &&
+    "properties" in value &&
+    typeof (value as { properties?: unknown }).properties === "object"
+  ) {
+    return (value as { properties: unknown }).properties;
+  }
+  return value;
+}
+
 function isTranslationResult(value: unknown): value is TranslationResult {
   if (!value || typeof value !== "object") return false;
   const result = value as Partial<TranslationResult>;
@@ -62,9 +80,7 @@ function isTranslationResult(value: unknown): value is TranslationResult {
         typeof t.label === "string" &&
         t.label.trim().length > 0 &&
         typeof t.headline === "string" &&
-        t.headline.trim().length > 0 &&
-        typeof t.subtitle === "string" &&
-        t.subtitle.trim().length > 0
+        t.headline.trim().length > 0
       );
     })
   );
@@ -90,9 +106,8 @@ const SCHEMA = {
                   locale:   nonEmptyString,
                   label:    nonEmptyString,
                   headline: nonEmptyString,
-                  subtitle: nonEmptyString,
                 },
-                required: ["locale", "label", "headline", "subtitle"],
+                required: ["locale", "label", "headline"],
                 additionalProperties: false,
               },
             },
@@ -114,7 +129,7 @@ function buildPrompt(params: {
   slides: SlideInput[];
 }) {
   const slidesText = params.slides
-    .map((s) => `Slide "${s.slideKey}":\n  label: ${s.label}\n  headline: ${s.headline}\n  subtitle: ${s.subtitle}`)
+    .map((s) => `Slide "${s.slideKey}":\n  label: ${s.label}\n  headline: ${s.headline}`)
     .join("\n\n");
 
   return `You are a mobile app marketing copywriter. Translate the following app screenshot slide copy from ${params.sourceLabel} into each of these languages: ${params.localeList}.
@@ -122,16 +137,21 @@ function buildPrompt(params: {
 FORMAT RULES:
 - label: Short ALL-CAPS category label. Keep concise and natural in the target language.
 - headline: Max 40 chars. May use **bold** around the key accent word/phrase. Use \\n only if needed.
-- subtitle: Max 60 chars. One short, benefit-driven sentence.
-- Never return empty strings for label, headline, or subtitle. If the source field is empty, write a fresh concise target-language line from the slide label and surrounding slide context.
+- Never return empty strings for label or headline. If the source field is empty, write a fresh concise target-language line from the slide label and surrounding slide context.
 - Preserve **bold** markup and \\n line break tokens — translate only the surrounding text.
 - Sound natural and native, not word-for-word translated.
 
 SOURCE SLIDES (${params.sourceLabel}):
 ${slidesText}
 
-Return a JSON object with key "results" — an array, one entry per source slide. Each entry has "slideKey" and "translations" (an array of objects with "locale", "label", "headline", "subtitle"). Include one translation object per target locale: ${params.targetCodes.join(", ")}.
-Output only valid JSON. No explanations, no markdown, no extra content.`;
+Output ONLY a JSON object shaped EXACTLY like this example (filled in with real translations, not this example's values):
+{"results":[{"slideKey":"example-key","translations":[{"locale":"${params.targetCodes[0]}","label":"EXAMPLE LABEL","headline":"Example headline"}]}]}
+
+Rules for the output:
+- Top-level object has exactly one key: "results". Do NOT wrap it in "type", "properties", or any JSON-Schema-like structure — output the DATA itself, not a schema describing it.
+- "results" is an array with one entry per source slide, in the same order, using the same "slideKey".
+- Each entry's "translations" array has exactly one object per target locale: ${params.targetCodes.join(", ")}.
+- No explanations, no markdown code fences, no extra keys.`;
 }
 
 export async function POST(req: NextRequest) {
@@ -165,7 +185,7 @@ export async function POST(req: NextRequest) {
       raw = await zaiComplete({
         prompt,
         jsonSchema: SCHEMA,
-        maxTokens: Math.max(2048, targetCodes.length * 220),
+        maxTokens: 10000,
       });
     } catch (e) {
       console.error("[translate-copy] Z.AI error:", e);
@@ -174,22 +194,38 @@ export async function POST(req: NextRequest) {
 
     let parsed: unknown;
     try {
-      parsed = extractJsonObject(raw);
+      parsed = unwrapSchemaEcho(extractJsonObject(raw));
     } catch (e) {
-      console.error("[translate-copy] Failed to parse JSON:", e, raw);
+      console.error("[translate-copy] Failed to parse JSON:", e, "raw:", raw);
       return NextResponse.json({ error: "Invalid JSON from model", raw }, { status: 502 });
     }
 
-    const chunkResults =
+    const rawResults =
       parsed &&
       typeof parsed === "object" &&
       "results" in parsed &&
       Array.isArray((parsed as { results?: unknown }).results)
-        ? (parsed as { results: unknown[] }).results.filter(isTranslationResult)
-        : [];
+        ? (parsed as { results: unknown[] }).results
+        : null;
+
+    if (!rawResults) {
+      console.error("[translate-copy] Response missing 'results' array. Parsed:", JSON.stringify(parsed));
+      return NextResponse.json({ error: "Model returned no results", raw }, { status: 502 });
+    }
+
+    const chunkResults = rawResults.filter(isTranslationResult);
 
     if (!chunkResults.length) {
-      return NextResponse.json({ error: "Model returned no results", raw }, { status: 502 });
+      console.error(
+        "[translate-copy] All entries in 'results' failed shape validation. Entries:",
+        JSON.stringify(rawResults),
+      );
+      return NextResponse.json({ error: "Model returned no valid results", raw }, { status: 502 });
+    } else if (chunkResults.length < rawResults.length) {
+      console.warn(
+        "[translate-copy] Some entries failed shape validation:",
+        JSON.stringify(rawResults.filter((r) => !isTranslationResult(r))),
+      );
     }
 
     results.push(...chunkResults);
@@ -201,15 +237,13 @@ export async function POST(req: NextRequest) {
 
       const labelText = t.label.trim();
       const headlineText = t.headline.trim();
-      const subtitleText = t.subtitle.trim();
-      if (!labelText || !headlineText || !subtitleText) {
+      if (!labelText || !headlineText) {
         console.warn("[translate-copy] Skipping empty translation:", result.slideKey, t.locale, t);
         continue;
       }
 
       const label    = labelText;
       const headline = markupToSegments(headlineText);
-      const subtitle = markupToSegments(subtitleText);
 
       const existing = await db
         .select({ id: slideCopy.id })
@@ -223,14 +257,14 @@ export async function POST(req: NextRequest) {
       if (existing.length) {
         await db
           .update(slideCopy)
-          .set({ label, headline, subtitle })
+          .set({ label, headline })
           .where(and(
             eq(slideCopy.productId, productId),
             eq(slideCopy.slideKey, result.slideKey),
             eq(slideCopy.locale, t.locale),
           ));
       } else {
-        await db.insert(slideCopy).values({ productId, slideKey: result.slideKey, locale: t.locale, label, headline, subtitle });
+        await db.insert(slideCopy).values({ productId, slideKey: result.slideKey, locale: t.locale, label, headline });
       }
     }
   }

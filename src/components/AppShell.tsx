@@ -494,7 +494,6 @@ function AddLocaleModal({ theme: T, productId, existingCodes, sourceLoc, sourceM
       slideKey: s.id,
       label:    s.copy.label,
       headline: segmentsToPlain(s.copy.headline as RichTextSegment[]),
-      subtitle: segmentsToPlain(s.copy.subtitle as RichTextSegment[]),
     }));
 
     const locales = COMMON_LOCALES.filter((l) => selected.has(l.code));

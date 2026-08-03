@@ -20,7 +20,6 @@ export type ThemeTokens = {
 export type SlideCopy = {
   label: string;
   headline: React.ReactNode;
-  subtitle: React.ReactNode;
 };
 
 export type SlideDef = {
@@ -43,7 +42,7 @@ export type SlideDef = {
  *
  * Example:
  *   export const COPY: SlideCopyMap = {
- *     hero: { en: { label: "HERO", headline: "...", subtitle: "..." }, vi: { ... } },
+ *     hero: { en: { label: "HERO", headline: "..." }, vi: { ... } },
  *   }
  */
 export type SlideCopyMap = Record<string, Record<string, SlideCopy>>;
@@ -141,7 +140,6 @@ import type { RichTextSegment } from "./rich-text";
 export type SerializableSlideCopy = {
   label: string;
   headline: RichTextSegment[];
-  subtitle: RichTextSegment[];
 };
 
 export type SerializableSlideDef = {
