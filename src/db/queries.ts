@@ -71,9 +71,17 @@ export async function getSerializableProducts(): Promise<SerializableProductConf
         .map((slide): SerializableSlideDef => {
           const copies = productCopy.filter((c) => c.slideKey === slide.slideKey);
 
-          const primaryCopy = copies.find((c) => c.locale === groupPrimaryLocale);
+          const primaryCopy = copies.find((c) => c.locale === groupPrimaryLocale) ?? copies[0] ?? {
+            label: slide.slideKey,
+            headline: [],
+            subtitle: [],
+          };
           if (!primaryCopy) {
+            // Kept for type narrowing if the fallback above changes later.
             throw new Error(`No copy for ${pid}/${slide.slideKey}/${groupPrimaryLocale}`);
+          }
+          if (!copies.length || !copies.some((c) => c.locale === groupPrimaryLocale)) {
+            console.warn(`[products] Using fallback copy for ${pid}/${slide.slideKey}/${groupPrimaryLocale}`);
           }
 
           const copyByLocale: Record<string, SerializableSlideCopy> = {};
